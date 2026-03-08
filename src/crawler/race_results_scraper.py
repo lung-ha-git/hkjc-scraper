@@ -58,7 +58,7 @@ class RaceResultsScraper:
         page = await context.new_page()
         
         try:
-            await page.goto(url, wait_until="networkidle")
+            await page.goto(url, wait_until="domcontentloaded")
             await asyncio.sleep(self.delay)
             
             # Extract race metadata
