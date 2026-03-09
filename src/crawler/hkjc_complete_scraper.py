@@ -178,8 +178,8 @@ class HKJCCompleteScraper:
         if len(horse_ids) < 50:
             print(f"   Found {len(horse_ids)}, trying filters...")
             
-            # Try to find and click name length filter links
-            name_lengths = ["一字", "二字", "三字", "四字"]
+            # Try to find and click name length filter links (二字馬/三字馬/四字馬)
+            name_lengths = ["二字馬", "三字馬", "四字馬"]
             
             for length in name_lengths:
                 try:
