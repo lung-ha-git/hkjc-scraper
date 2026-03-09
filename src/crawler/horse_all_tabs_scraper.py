@@ -22,10 +22,11 @@ logger = logging.getLogger(__name__)
 class HorseAllTabsScraper:
     """
     Complete scraper for all horse detail tabs
-    Scrapes: race_history, distance_stats, workouts, medical, movements, overseas, jersey
+    Scrapes: race_history, distance_stats, workouts, medical, movements, overseas, jersey, rating
     """
     
     BASE_URL = "https://racing.hkjc.com/zh-hk/local/information/horse"
+    RATING_URL = "https://racing.hkjc.com/zh-hk/local/information/ratingresultweight"
     
     # Tab mapping (text on tab -> internal key)
     TAB_MAPPING = {
@@ -139,6 +140,15 @@ class HorseAllTabsScraper:
                 except Exception as e:
                     logger.error(f"Error scraping {tab_text}: {e}")
                     result[key] = {"error": str(e)} if key in ["distance_stats", "pedigree"] else []
+            
+            # Scrape horse ratings from ratingresultweight page
+            print("\n📊 RATINGS. Scraping 馬匹評分/體重/名次...")
+            try:
+                result["horse_ratings"] = await self._scrape_ratings()
+                print(f"   ✅ {len(result['horse_ratings'])} scraped")
+            except Exception as e:
+                logger.error(f"Error scraping ratings: {e}")
+                result["horse_ratings"] = []
             
             await self.page.close()
             return result
@@ -573,6 +583,108 @@ class HorseAllTabsScraper:
         except Exception as e:
             logger.error(f"Error in _scrape_overseas: {e}")
         return races
+    
+    async def _scrape_ratings(self) -> List[Dict]:
+        """Scrape horse ratings from ratingresultweight page"""
+        ratings = []
+        try:
+            rating_url = f"https://racing.hkjc.com/zh-hk/local/information/ratingresultweight?horseid={self.hkjc_horse_id}"
+            await self.page.goto(rating_url, wait_until="networkidle")
+            await self.page.wait_for_timeout(self.delay * 1000)
+            
+            tables = await self.page.query_selector_all("table")
+            
+            for table in tables:
+                rows = await table.query_selector_all("tr")
+                if len(rows) < 10:
+                    continue
+                
+                # Check if this is the rating table - look at row 2 which should have "評分"
+                if len(rows) <= 2:
+                    continue
+                row2_cells = await rows[2].query_selector_all("td, th")
+                if len(row2_cells) == 0:
+                    continue
+                row2_first = await row2_cells[0].inner_text()
+                if "評分" not in row2_first:
+                    continue
+                
+                # Get number of columns (races)
+                first_data_row = await rows[1].query_selector_all("td")
+                num_cols = len(first_data_row)
+                
+                for col_idx in range(1, num_cols):
+                    try:
+                        date = (await first_data_row[col_idx].inner_text()).strip() if col_idx < len(first_data_row) else ""
+                        if not date:
+                            continue
+                        
+                        # Extract all fields for this column
+                        rating_cells = await rows[2].query_selector_all("td")
+                        result_cells = await rows[3].query_selector_all("td")
+                        weight_cells = await rows[4].query_selector_all("td")
+                        venue_cells = await rows[5].query_selector_all("td")
+                        track_type_cells = await rows[6].query_selector_all("td")
+                        distance_cells = await rows[7].query_selector_all("td")
+                        course_cells = await rows[8].query_selector_all("td")
+                        condition_cells = await rows[9].query_selector_all("td")
+                        class_cells = await rows[10].query_selector_all("td")
+                        
+                        # Parse date format: "11/02/2026" -> "2026-02-11"
+                        date_parts = date.split("/")
+                        if len(date_parts) == 3:
+                            formatted_date = f"{date_parts[2]}-{date_parts[1]}-{date_parts[0]}"
+                        else:
+                            formatted_date = date
+                        
+                        # Parse fields
+                        distance_str = (await distance_cells[col_idx].inner_text()).strip() if col_idx < len(distance_cells) else "0"
+                        class_str = (await class_cells[col_idx].inner_text()).strip() if col_idx < len(class_cells) else ""
+                        weight_str = (await weight_cells[col_idx].inner_text()).strip() if col_idx < len(weight_cells) else "0"
+                        rating_str = (await rating_cells[col_idx].inner_text()).strip() if col_idx < len(rating_cells) else "0"
+                        
+                        try:
+                            distance = int(distance_str)
+                        except:
+                            distance = 0
+                        
+                        try:
+                            race_class = int(class_str)
+                        except:
+                            race_class = 0
+                        
+                        try:
+                            horse_weight = int(weight_str)
+                        except:
+                            horse_weight = 0
+                        
+                        try:
+                            rating = int(rating_str)
+                        except:
+                            rating = 0
+                        
+                        record = {
+                            "hkjc_horse_id": self.hkjc_horse_id,
+                            "date": formatted_date,
+                            "rating": rating,
+                            "result": (await result_cells[col_idx].inner_text()).strip() if col_idx < len(result_cells) else "",
+                            "horse_weight": horse_weight,
+                            "venue": (await venue_cells[col_idx].inner_text()).strip() if col_idx < len(venue_cells) else "",
+                            "track_type": (await track_type_cells[col_idx].inner_text()).strip() if col_idx < len(track_type_cells) else "",
+                            "distance": distance,
+                            "course": (await course_cells[col_idx].inner_text()).strip() if col_idx < len(course_cells) else "",
+                            "track_condition": (await condition_cells[col_idx].inner_text()).strip() if col_idx < len(condition_cells) else "",
+                            "race_class": race_class
+                        }
+                        
+                        ratings.append(record)
+                    except Exception as e:
+                        continue
+                
+                break
+        except Exception as e:
+            logger.error(f"Error in _scrape_ratings: {e}")
+        return ratings
     
     async def _scrape_pedigree(self) -> Dict:
         """Scrape pedigree info"""

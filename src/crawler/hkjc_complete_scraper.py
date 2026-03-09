@@ -436,57 +436,117 @@ class HKJCCompleteScraper:
                                 
                                 race_urls[race_key]["source_horses"].append(horse_id)
                     
-                    # Task 1: 馬匹評分/體重/名次
+                    # Task 1: 馬匹評分/體重/名次 - NEW FORMAT
                     try:
-                        await page.click("text=馬匹評分/體重/名次", timeout=3000)
+                        rating_url = f"https://racing.hkjc.com/zh-hk/local/information/ratingresultweight?horseid={horse_id}"
+                        await page.goto(rating_url, wait_until="domcontentloaded")
                         await asyncio.sleep(2)
                         
                         # Parse the rating table
-                        tables = await page.query_selector_all("table.bigborder")
+                        tables = await page.query_selector_all("table")
                         
-                        rating_by_date = {}
+                        rating_records = []
                         
                         for table in tables:
                             rows = await table.query_selector_all("tr")
+                            if len(rows) < 10:
+                                continue
                             
-                            for row in rows[1:]:
-                                cells = await row.query_selector_all("td")
-                                if len(cells) < 10:
+                            # Check if this is the rating table (should have date row, rating row, result row, etc.)
+                            header_row = await rows[0].inner_text()
+                            if "評分" not in header_row and "賽果" not in header_row:
+                                continue
+                            
+                            # Extract columns (each column is a race, each row is a field)
+                            # Row 1: dates, Row 2: ratings, Row 3: results, Row 4: weights
+                            # Row 5: venue, Row 6: track_type, Row 7: distance, Row 8: course
+                            # Row 9: track_condition, Row 10: race_class
+                            
+                            # Get number of columns (races)
+                            first_data_row = await rows[1].query_selector_all("td")
+                            num_cols = len(first_data_row)
+                            
+                            for col_idx in range(1, num_cols):  # Skip first column (headers)
+                                try:
+                                    date = (await first_data_row[col_idx].inner_text()).strip() if col_idx < len(first_data_row) else ""
+                                    if not date:
+                                        continue
+                                    
+                                    # Extract all fields for this column
+                                    rating_cells = await rows[2].query_selector_all("td")
+                                    result_cells = await rows[3].query_selector_all("td")
+                                    weight_cells = await rows[4].query_selector_all("td")
+                                    venue_cells = await rows[5].query_selector_all("td")
+                                    track_type_cells = await rows[6].query_selector_all("td")
+                                    distance_cells = await rows[7].query_selector_all("td")
+                                    course_cells = await rows[8].query_selector_all("td")
+                                    condition_cells = await rows[9].query_selector_all("td")
+                                    class_cells = await rows[10].query_selector_all("td")
+                                    
+                                    # Parse date format: "11/02/2026" -> "2026-02-11"
+                                    date_parts = date.split("/")
+                                    if len(date_parts) == 3:
+                                        formatted_date = f"{date_parts[2]}-{date_parts[1]}-{date_parts[0]}"
+                                    else:
+                                        formatted_date = date
+                                    
+                                    # Parse distance (remove any non-numeric)
+                                    distance_str = (await distance_cells[col_idx].inner_text()).strip() if col_idx < len(distance_cells) else "0"
+                                    try:
+                                        distance = int(distance_str)
+                                    except:
+                                        distance = 0
+                                    
+                                    # Parse race class
+                                    class_str = (await class_cells[col_idx].inner_text()).strip() if col_idx < len(class_cells) else ""
+                                    try:
+                                        race_class = int(class_str)
+                                    except:
+                                        race_class = 0
+                                    
+                                    # Parse horse weight
+                                    weight_str = (await weight_cells[col_idx].inner_text()).strip() if col_idx < len(weight_cells) else "0"
+                                    try:
+                                        horse_weight = int(weight_str)
+                                    except:
+                                        horse_weight = 0
+                                    
+                                    # Parse rating
+                                    rating_str = (await rating_cells[col_idx].inner_text()).strip() if col_idx < len(rating_cells) else "0"
+                                    try:
+                                        rating = int(rating_str)
+                                    except:
+                                        rating = 0
+                                    
+                                    record = {
+                                        "hkjc_horse_id": horse_id,
+                                        "date": formatted_date,
+                                        "rating": rating,
+                                        "result": (await result_cells[col_idx].inner_text()).strip() if col_idx < len(result_cells) else "",
+                                        "horse_weight": horse_weight,
+                                        "venue": (await venue_cells[col_idx].inner_text()).strip() if col_idx < len(venue_cells) else "",
+                                        "track_type": (await track_type_cells[col_idx].inner_text()).strip() if col_idx < len(track_type_cells) else "",
+                                        "distance": distance,
+                                        "course": (await course_cells[col_idx].inner_text()).strip() if col_idx < len(course_cells) else "",
+                                        "track_condition": (await condition_cells[col_idx].inner_text()).strip() if col_idx < len(condition_cells) else "",
+                                        "race_class": race_class
+                                    }
+                                    
+                                    rating_records.append(record)
+                                except Exception as e:
                                     continue
-                                
-                                # Extract date as key
-                                date = (await cells[2].inner_text()).strip()
-                                if not date:
-                                    continue
-                                
-                                # Get position/total
-                                position = (await cells[1].inner_text()).strip()
-                                result = f"{position}"
-                                
-                                rating_by_date[date] = {
-                                    "rating": (await cells[8].inner_text()).strip() if len(cells) > 8 else "",
-                                    "result": result,
-                                    "weight": (await cells[16].inner_text()).strip() if len(cells) > 16 else "",
-                                    "track": (await cells[3].inner_text()).strip() if len(cells) > 3 else "",
-                                    "surface": "草地" if "草" in (await cells[3].inner_text()) else "全天候",
-                                    "distance": (await cells[4].inner_text()).strip() if len(cells) > 4 else "",
-                                    "course": (await cells[5].inner_text()).strip() if len(cells) > 5 else "",
-                                    "condition": (await cells[6].inner_text()).strip() if len(cells) > 6 else "",
-                                    "class": (await cells[7].inner_text()).strip() if len(cells) > 7 else "",
-                                }
+                            
+                            break  # Found the table, no need to check others
                         
-                        # Save to separate collection
-                        if rating_by_date:
-                            existing = self.db.db["horse_ratings"].find_one({
-                                "hkjc_horse_id": horse_id
-                            })
-                            if not existing:
-                                self.db.db["horse_ratings"].insert_one({
-                                    "hkjc_horse_id": horse_id,
-                                    "ratings_by_date": rating_by_date
-                                })
+                        # Save to horse_ratings collection (one document per record)
+                        if rating_records:
+                            # Delete old records
+                            self.db.db["horse_ratings"].delete_many({"hkjc_horse_id": horse_id})
+                            # Insert new records
+                            self.db.db["horse_ratings"].insert_many(rating_records)
+                            print(f"      ✅ horse_ratings: {len(rating_records)} records")
                     except Exception as e:
-                        pass
+                        print(f"      ⚠️  horse_ratings failed: {e}")
                     
                     # ============================================================
                     # REUSE HorseAllTabsScraper for all remaining tabs (Task 2-6)
