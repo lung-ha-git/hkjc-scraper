@@ -240,19 +240,116 @@ class HKJCCompleteScraper:
                     text = await page.inner_text("body")
                     title = await page.title()
                     
-                    # Extract basic info
+                    # Extract comprehensive horse info
                     horse_data = {"hkjc_horse_id": horse_id}
                     
-                    # Name - get from page title instead
+                    # Name - get from page title
                     # Title format: "馬名 - 馬匹資料 - 賽馬資訊 - 香港賽馬會"
                     title_match = re.search(r'^([^-]+)', title)
                     if title_match:
                         horse_data["name"] = title_match.group(1).strip()
                     
-                    # Trainer
+                    # 出生地 / 馬齡 (Country of origin / Age)
+                    # Example: "紐西蘭 / 5"
+                    origin_age_match = re.search(r'出生地\s*/\s*馬齡\s*[:：]\s*([^\s/]+)\s*/\s*(\d+)', text)
+                    if origin_age_match:
+                        horse_data["country_of_origin"] = origin_age_match.group(1).strip()
+                        horse_data["age"] = int(origin_age_match.group(2).strip())
+                    
+                    # 毛色 / 性別 (Color / Sex)
+                    # Example: "棗 / 閹"
+                    color_sex_match = re.search(r'毛色\s*/\s*性別\s*[:：]\s*([^\s/]+)\s*/\s*(\S+)', text)
+                    if color_sex_match:
+                        horse_data["color"] = color_sex_match.group(1).strip()
+                        horse_data["sex"] = color_sex_match.group(2).strip()
+                    
+                    # 進口類別 (Import type)
+                    import_type_match = re.search(r'進口類別\s*[:：]\s*([^\n]+)', text)
+                    if import_type_match:
+                        horse_data["import_type"] = import_type_match.group(1).strip()
+                    
+                    # 今季獎金 (Season prize)
+                    # Example: "$7,786,500" -> 7786500
+                    season_prize_match = re.search(r'今季獎金.*?:\s*\$?([\d,]+)', text)
+                    if season_prize_match:
+                        horse_data["season_prize"] = int(season_prize_match.group(1).replace(',', ''))
+                    
+                    # 總獎金 (Total prize)
+                    total_prize_match = re.search(r'總獎金.*?:\s*\$?([\d,]+)', text)
+                    if total_prize_match:
+                        horse_data["total_prize"] = int(total_prize_match.group(1).replace(',', ''))
+                    
+                    # 冠-亞-季-總出賽次數 (Wins-Seconds-Thirds-Total starts)
+                    # Example: "6-3-2-17"
+                    career_match = re.search(r'冠-亞-季-總出賽次數.*?(\d+)-(\d+)-(\d+)-(\d+)', text)
+                    if career_match:
+                        horse_data["career_wins"] = int(career_match.group(1))
+                        horse_data["career_seconds"] = int(career_match.group(2))
+                        horse_data["career_thirds"] = int(career_match.group(3))
+                        horse_data["career_starts"] = int(career_match.group(4))
+                    
+                    # 最近十個賽馬日 出賽場數 (Runs in last 10 race days)
+                    recent_runs_match = re.search(r'最近十個賽馬日\s*出賽場數\s*[:：]\s*(\d+)', text)
+                    if recent_runs_match:
+                        horse_data["recent_10_race_days_runs"] = int(recent_runs_match.group(1))
+                    
+                    # 現在位置 (到達日期) (Current location (arrival date))
+                    # Example: "香港 (10/01/2026)"
+                    location_match = re.search(r'現在位置.*?\(到達日期\).*?([^\s(]+)\s*\((\d{2}/\d{2}/\d{2,4})\)', text)
+                    if location_match:
+                        horse_data["current_location"] = location_match.group(1).strip()
+                        horse_data["arrival_date"] = location_match.group(2).strip()
+                    
+                    # 進口日期 (Import date)
+                    import_date_match = re.search(r'進口日期\s*[:：]\s*(\d{2}/\d{2}/\d{2,4})', text)
+                    if import_date_match:
+                        horse_data["import_date"] = import_date_match.group(1).strip()
+                    
+                    # 練馬師 (Trainer)
                     trainer_match = re.search(r'練馬師\s*[:：]\s*([^\n]+)', text)
                     if trainer_match:
-                        horse_data["trainer"] = trainer_match.group(1).strip()
+                        trainer_text = trainer_match.group(1).strip()
+                        # Remove any links
+                        trainer_text = re.sub(r'\[.*?\]', '', trainer_text).strip()
+                        horse_data["trainer"] = trainer_text
+                    
+                    # 馬主 (Horse owner)
+                    owner_match = re.search(r'馬主\s*[:：]\s*([^\n]+)', text)
+                    if owner_match:
+                        owner_text = owner_match.group(1).strip()
+                        owner_text = re.sub(r'\[.*?\]', '', owner_text).strip()
+                        horse_data["owner"] = owner_text
+                    
+                    # 現時評分 (Current rating)
+                    current_rating_match = re.search(r'現時評分\s*[:：]\s*(\d+)', text)
+                    if current_rating_match:
+                        horse_data["current_rating"] = int(current_rating_match.group(1))
+                    
+                    # 季初評分 (Season start rating)
+                    season_start_rating_match = re.search(r'季初評分\s*[:：]\s*(\d+)', text)
+                    if season_start_rating_match:
+                        horse_data["season_start_rating"] = int(season_start_rating_match.group(1))
+                    
+                    # 父系 (Sire)
+                    sire_match = re.search(r'父系\s*[:：]\s*([^\n]+)', text)
+                    if sire_match:
+                        sire_text = sire_match.group(1).strip()
+                        sire_text = re.sub(r'\[.*?\]', '', sire_text).strip()
+                        horse_data["sire"] = sire_text
+                    
+                    # 母系 (Dam)
+                    dam_match = re.search(r'母系\s*[:：]\s*([^\n]+)', text)
+                    if dam_match:
+                        dam_text = dam_match.group(1).strip()
+                        dam_text = re.sub(r'\[.*?\]', '', dam_text).strip()
+                        horse_data["dam"] = dam_text
+                    
+                    # 外祖父 (Maternal grand sire)
+                    mgs_match = re.search(r'外祖父\s*[:：]\s*([^\n]+)', text)
+                    if mgs_match:
+                        mgs_text = mgs_match.group(1).strip()
+                        mgs_text = re.sub(r'\[.*?\]', '', mgs_text).strip()
+                        horse_data["maternal_grand_sire"] = mgs_text
                     
                     # Save to horses collection
                     self.db.db["horses"].replace_one(
@@ -260,6 +357,8 @@ class HKJCCompleteScraper:
                         horse_data, 
                         upsert=True
                     )
+                    
+                    self.stats["horses"] += 1
                     
                     # Extract race URLs from table
                     tables = await page.query_selector_all("table.bigborder")
