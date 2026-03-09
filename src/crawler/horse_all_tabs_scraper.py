@@ -520,8 +520,8 @@ class HorseAllTabsScraper:
                 if len(rows) < 2:
                     continue
                 header = await rows[0].inner_text()
-                # Look for table with 馬號, 日期, 詳情 columns
-                if "馬號" in header and "日期" in header and "詳情" in header:
+                # Look for table with exact columns: 馬號, 馬名, 日期, 詳情 (skip 後備馬匹 table)
+                if "馬號" in header and "馬名" in header and "日期" in header and "詳情" in header and "後備" not in header:
                     for row in rows[1:]:
                         cells = await row.query_selector_all("td")
                         if len(cells) >= 4:
