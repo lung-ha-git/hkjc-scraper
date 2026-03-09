@@ -286,6 +286,26 @@ class HKJCCompleteScraper:
                             if date_match and course_match and no_match:
                                 race_key = f"{date_match.group(1)}_{course_match.group(1)}_{no_match.group(1)}"
                                 
+                                # Extract race data from cells
+                                race_data = {
+                                    "hkjc_horse_id": horse_id,
+                                    "race_no": (await cells[0].inner_text()).strip(),
+                                    "position": (await cells[1].inner_text()).strip(),
+                                    "date": (await cells[2].inner_text()).strip(),
+                                    "venue": (await cells[3].inner_text()).strip(),
+                                    "distance": (await cells[4].inner_text()).strip(),
+                                    "race_url": full_url,
+                                    "race_id": race_key,
+                                }
+                                
+                                # Save race history (check for duplicate)
+                                existing = self.db.db["horse_race_history"].find_one({
+                                    "hkjc_horse_id": horse_id,
+                                    "race_id": race_key
+                                })
+                                if not existing:
+                                    self.db.db["horse_race_history"].insert_one(race_data)
+                                
                                 if race_key not in race_urls:
                                     race_urls[race_key] = {
                                         "url": full_url,
@@ -296,6 +316,9 @@ class HKJCCompleteScraper:
                                     }
                                 
                                 race_urls[race_key]["source_horses"].append(horse_id)
+                    
+                    # Also save race history to MongoDB
+                    # (We need to extract full race data, not just URL)
                     
                     print(f"   ✅ {horse_id}: {len(race_urls)} unique races")
                     
