@@ -922,8 +922,8 @@ class HKJCCompleteScraper:
         return race_urls
     
     async def scrape_races(self, browser, race_urls: Dict):
-        """Phase 4: Scrape race results"""
-        print("\n📋 PHASE 4: Race Results")
+        """Phase 4: Scrape race results - MERGED FORMAT"""
+        print("\n📋 PHASE 4: Race Results (Merged)")
         print("-" * 50)
         
         semaphore = asyncio.Semaphore(self.max_concurrent)
@@ -933,16 +933,16 @@ class HKJCCompleteScraper:
                 page = await browser.new_page()
                 
                 try:
-                    await page.goto(race_info["url"], wait_until="domcontentloaded")
-                    await asyncio.sleep(2)
+                    await page.goto(race_info["url"], wait_until="networkidle")
+                    await asyncio.sleep(3)
                     
                     text = await page.inner_text("body")
                     
-                    # Extract race metadata
+                    # Build merged race document
                     race_data = {
-                        "_id": race_key,
+                        "hkjc_race_id": race_key,
                         "race_date": race_info["race_date"],
-                        "racecourse": race_info["course"],
+                        "venue": race_info["course"],
                         "race_no": race_info["race_no"],
                     }
                     
@@ -951,7 +951,7 @@ class HKJCCompleteScraper:
                     if race_id_match:
                         race_data["race_id_num"] = int(race_id_match.group(2))
                     
-                    # Distance
+                    # Distance and class
                     dist_match = re.search(r'([一二三]級賽|[一二三四五]班)\s*-\s*(\d+)米', text)
                     if dist_match:
                         race_data["class"] = dist_match.group(1)
@@ -967,54 +967,164 @@ class HKJCCompleteScraper:
                     if prize_match:
                         race_data["prize"] = f"HK${prize_match.group(1)}"
                     
-                    # Extract results
-                    tables = await page.query_selector_all("table.f_tac.table_bd.draggable")
+                    # ========== Extract RESULTS ==========
+                    tables = await page.query_selector_all("table")
                     results = []
                     
                     for table in tables:
-                        rows = await table.query_selector_all("tr")
+                        class_name = await table.get_attribute("class") or ""
+                        if "f_tac" not in class_name:
+                            continue
                         
+                        rows = await table.query_selector_all("tr")
+                        if len(rows) < 3:
+                            continue
+                        
+                        # Check if this is the results table (has 馬號 column)
+                        header_cells = await rows[0].query_selector_all("th, td")
+                        headers = [(await h.inner_text()).strip() for h in header_cells]
+                        
+                        if "馬號" not in headers and "名次" not in headers:
+                            continue
+                        
+                        # Find column indices
+                        col_idx = {}
+                        for i, h in enumerate(headers):
+                            h_clean = h.strip()
+                            if "馬號" in h_clean:
+                                col_idx["horse_number"] = i
+                            elif "馬名" in h_clean:
+                                col_idx["horse_name"] = i
+                            elif "名次" in h_clean:
+                                col_idx["rank"] = i
+                            elif "練馬師" in h_clean:
+                                col_idx["trainer"] = i
+                            elif "實際負磅" in h_clean:
+                                col_idx["actual_weight"] = i
+                            elif "體重" in h_clean:
+                                col_idx["declared_weight"] = i
+                            elif "獨贏" in h_clean:
+                                col_idx["win_odds"] = i
+                            elif "騎師" in h_clean:
+                                col_idx["jockey"] = i
+                            elif "檔位" in h_clean:
+                                col_idx["draw"] = i
+                            elif "頭馬距離" in h_clean:
+                                col_idx["finish_distance"] = i
+                            elif "沿途走位" in h_clean:
+                                col_idx["running_position"] = i
+                            elif "完成時間" in h_clean:
+                                col_idx["finish_time"] = i
+                        
+                        # Extract data rows
                         for row in rows[1:]:
                             cells = await row.query_selector_all("td")
-                            if len(cells) < 8:
+                            if len(cells) < 5:
                                 continue
                             
-                            # Check position
-                            pos = (await cells[0].inner_text()).strip()
-                            if not pos.isdigit():
+                            cell_texts = [(await c.inner_text()).strip() for c in cells]
+                            
+                            # Check position/rank
+                            rank = cell_texts[col_idx.get("rank", 0)] if col_idx.get("rank", 0) < len(cell_texts) else ""
+                            if not rank or not rank.isdigit():
                                 continue
                             
-                            # Horse link
-                            link = await cells[2].query_selector("a")
+                            # Extract horse_id from link
                             horse_id = ""
                             horse_name = ""
-                            if link:
-                                href = await link.get_attribute("href")
-                                mid = re.search(r'horseid=([^&]+)', href or "")
-                                if mid:
-                                    horse_id = mid.group(1)
-                                horse_name = (await link.inner_text()).strip()
+                            if col_idx.get("horse_name") and col_idx["horse_name"] < len(cells):
+                                link = await cells[col_idx["horse_name"]].query_selector("a")
+                                if link:
+                                    href = await link.get_attribute("href")
+                                    mid = re.search(r'horseid=([^&]+)', href or "")
+                                    if mid:
+                                        horse_id = mid.group(1)
+                                    horse_name = (await link.inner_text()).strip()
                             
                             result = {
-                                "race_id": race_key,
-                                "position": int(pos),
-                                "horse_no": (await cells[1].inner_text()).strip(),
-                                "horse_id": horse_id,
+                                "horse_number": int(cell_texts[col_idx.get("horse_number", 1)]) if col_idx.get("horse_number") and col_idx["horse_number"] < len(cell_texts) and cell_texts[col_idx["horse_number"]].isdigit() else 0,
                                 "horse_name": horse_name,
-                                "jockey": (await cells[3].inner_text()).strip(),
-                                "trainer": (await cells[4].inner_text()).strip(),
+                                "rank": int(rank),
+                                "trainer": cell_texts[col_idx.get("trainer", 4)] if col_idx.get("trainer") and col_idx["trainer"] < len(cell_texts) else "",
+                                "actual_weight": int(cell_texts[col_idx.get("actual_weight", 6)]) if col_idx.get("actual_weight") and col_idx["actual_weight"] < len(cell_texts) and cell_texts[col_idx["actual_weight"]].isdigit() else 0,
+                                "declared_weight": int(cell_texts[col_idx.get("declared_weight", 5)]) if col_idx.get("declared_weight") and col_idx["declared_weight"] < len(cell_texts) and cell_texts[col_idx["declared_weight"]].isdigit() else 0,
+                                "win_odds": float(cell_texts[col_idx.get("win_odds", 7)]) if col_idx.get("win_odds") and col_idx["win_odds"] < len(cell_texts) else 0.0,
+                                "jockey": cell_texts[col_idx.get("jockey", 3)] if col_idx.get("jockey") and col_idx["jockey"] < len(cell_texts) else "",
+                                "draw": int(cell_texts[col_idx.get("draw", 8)]) if col_idx.get("draw") and col_idx["draw"] < len(cell_texts) and cell_texts[col_idx["draw"]].isdigit() else 0,
+                                "finish_distance": cell_texts[col_idx.get("finish_distance", 11)] if col_idx.get("finish_distance") and col_idx["finish_distance"] < len(cell_texts) else "-",
+                                "running_position": cell_texts[col_idx.get("running_position", 12)] if col_idx.get("running_position") and col_idx["running_position"] < len(cell_texts) else "",
+                                "finish_time": cell_texts[col_idx.get("finish_time", 13)] if col_idx.get("finish_time") and col_idx["finish_time"] < len(cell_texts) else ""
                             }
                             results.append(result)
                     
-                    # Save race
-                    self.db.db["races"].replace_one({"_id": race_key}, race_data, upsert=True)
+                    race_data["results"] = results
                     
-                    # Save results
-                    self.db.db["race_results"].delete_many({"race_id": race_key})
-                    if results:
-                        self.db.db["race_results"].insert_many(results)
+                    # ========== Extract PAYOUT ==========
+                    payout = {}
                     
-                    print(f"   ✅ {race_key}: {len(results)} horses")
+                    # Try to find payout tables
+                    payout_tables = await page.query_selector_all("table")
+                    for pt in payout_tables:
+                        pt_text = await pt.inner_text()
+                        
+                        # Win
+                        if "獨贏" in pt_text:
+                            payout["win"] = await self._extract_payout(pt, "獨贏")
+                        # Place
+                        if "位置" in pt_text and "獨贏" not in pt_text:
+                            payout["place"] = await self._extract_payout(pt, "位置")
+                        # Quinella
+                        if "孖寶" in pt_text:
+                            payout["quinella"] = await self._extract_payout(pt, "孖寶")
+                        # Quinella Place
+                        if "位置Q" in pt_text or "位置孖寶" in pt_text:
+                            payout["quinella_place"] = await self._extract_payout(pt, "位置Q")
+                        # Forecast
+                        if "預測" in pt_text:
+                            payout["forecast"] = await self._extract_payout(pt, "預測")
+                        # Tierce
+                        if "三連環" in pt_text:
+                            payout["tierce"] = await self._extract_payout(pt, "三連環")
+                        # Trio
+                        if "三T" in pt_text:
+                            payout["trio"] = await self._extract_payout(pt, "T")
+                        # First 4
+                        if "四連環" in pt_text:
+                            payout["first_4"] = await self._extract_payout(pt, "四連環")
+                        # Quartet
+                        if "四重彩" in pt_text:
+                            payout["quartet"] = await self._extract_payout(pt, "四重彩")
+                        # Double
+                        if "雙贏" in pt_text:
+                            payout["double"] = await self._extract_payout(pt, "雙贏")
+                    
+                    race_data["payout"] = payout
+                    
+                    # ========== Extract INCIDENTS ==========
+                    incidents = []
+                    # Look for incident table or section
+                    for table in payout_tables:
+                        table_text = await table.inner_text()
+                        if "事故報告" in table_text or "無敵" in table_text:
+                            rows = await table.query_selector_all("tr")
+                            for row in rows[1:]:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) >= 3:
+                                    cell_texts = [(await c.inner_text()).strip() for c in cells]
+                                    if cell_texts[0].isdigit():
+                                        incidents.append({
+                                            "rank": int(cell_texts[0]),
+                                            "horse_number": int(cell_texts[1]) if cell_texts[1].isdigit() else 0,
+                                            "horse_name": cell_texts[2] if len(cell_texts) > 2 else "",
+                                            "incident_report": cell_texts[3] if len(cell_texts) > 3 else ""
+                                        })
+                    
+                    race_data["incidents"] = incidents
+                    
+                    # Save to merged collection
+                    self.db.db["races"].replace_one({"hkjc_race_id": race_key}, race_data, upsert=True)
+                    
+                    print(f"   ✅ {race_key}: {len(results)} horses, payout={len(payout)}, incidents={len(incidents)}")
                     self.stats["races"] += 1
                     
                 except Exception as e:
@@ -1027,6 +1137,33 @@ class HKJCCompleteScraper:
         # Scrape all races
         tasks = [scrape_race(k, v) for k, v in race_urls.items()]
         await asyncio.gather(*tasks, return_exceptions=True)
+    
+    async def _extract_payout(self, table, bet_type: str) -> List[Dict]:
+        """Extract payout data from a table"""
+        payout_list = []
+        try:
+            rows = await table.query_selector_all("tr")
+            for row in rows[1:]:  # Skip header
+                cells = await row.query_selector_all("td")
+                if len(cells) >= 2:
+                    combo = (await cells[0].inner_text()).strip()
+                    div_str = (await cells[1].inner_text()).strip()
+                    
+                    # Parse dividend (remove $ and ,)
+                    div_str = div_str.replace("$", "").replace(",", "")
+                    try:
+                        dividend = float(div_str)
+                    except:
+                        dividend = 0.0
+                    
+                    if combo and dividend > 0:
+                        payout_list.append({
+                            "winning_combination": combo,
+                            "dividend": dividend
+                        })
+        except Exception as e:
+            logger.error(f"Error extracting payout for {bet_type}: {e}")
+        return payout_list
     
     def print_summary(self):
         """Print final summary"""
