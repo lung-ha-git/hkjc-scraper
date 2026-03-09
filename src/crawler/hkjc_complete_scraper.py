@@ -387,14 +387,28 @@ class HKJCCompleteScraper:
                             if date_match and course_match and no_match:
                                 race_key = f"{date_match.group(1)}_{course_match.group(1)}_{no_match.group(1)}"
                                 
-                                # Extract race data from cells
+                                # Extract ALL race data from cells
+                                # Columns: 場次, 名次, 日期, 馬場/跑道/賽道, 途程, 場地狀況, 賽事班次, 檔位, 評分, 練馬師, 騎師, 頭馬距離, 獨贏賠率, 實際負磅, 沿途走位, 完成時間, 排位體重, 配備
                                 race_data = {
                                     "hkjc_horse_id": horse_id,
-                                    "race_no": (await cells[0].inner_text()).strip(),
-                                    "position": (await cells[1].inner_text()).strip(),
-                                    "date": (await cells[2].inner_text()).strip(),
-                                    "venue": (await cells[3].inner_text()).strip(),
-                                    "distance": (await cells[4].inner_text()).strip(),
+                                    "race_no": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                    "position": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                    "date": (await cells[2].inner_text()).strip() if len(cells) > 2 else "",
+                                    "venue": (await cells[3].inner_text()).strip() if len(cells) > 3 else "",
+                                    "distance": (await cells[4].inner_text()).strip() if len(cells) > 4 else "",
+                                    "track_condition": (await cells[5].inner_text()).strip() if len(cells) > 5 else "",
+                                    "race_class": (await cells[6].inner_text()).strip() if len(cells) > 6 else "",
+                                    "draw": (await cells[7].inner_text()).strip() if len(cells) > 7 else "",
+                                    "rating": (await cells[8].inner_text()).strip() if len(cells) > 8 else "",
+                                    "trainer": (await cells[9].inner_text()).strip() if len(cells) > 9 else "",
+                                    "jockey": (await cells[10].inner_text()).strip() if len(cells) > 10 else "",
+                                    "distance_behind": (await cells[11].inner_text()).strip() if len(cells) > 11 else "",
+                                    "odds": (await cells[12].inner_text()).strip() if len(cells) > 12 else "",
+                                    "weight": (await cells[13].inner_text()).strip() if len(cells) > 13 else "",
+                                    "running_position": (await cells[14].inner_text()).strip() if len(cells) > 14 else "",
+                                    "finish_time": (await cells[15].inner_text()).strip() if len(cells) > 15 else "",
+                                    "draw_weight": (await cells[16].inner_text()).strip() if len(cells) > 16 else "",
+                                    "gear": (await cells[17].inner_text()).strip() if len(cells) > 17 else "",
                                     "race_url": full_url,
                                     "race_id": race_key,
                                 }
@@ -418,8 +432,15 @@ class HKJCCompleteScraper:
                                 
                                 race_urls[race_key]["source_horses"].append(horse_id)
                     
-                    # Also save race history to MongoDB
-                    # (We need to extract full race data, not just URL)
+                    # TODO: Click other tabs to get more data (Phase 3.5)
+                    # tabs = [
+                    #     ("馬匹評分/體重/名次", "horse_rating"),
+                    #     ("所跑途程賽績紀錄", "distance_stats"),
+                    #     ("晨操紀錄", "workouts"),
+                    #     ("傷患紀錄", "medical"),
+                    #     ("搬遷紀錄", "movements"),
+                    #     ("血統簡評", "pedigree")
+                    # ]
                     
                     print(f"   ✅ {horse_id}: {len(race_urls)} unique races")
                     
