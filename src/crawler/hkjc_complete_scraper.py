@@ -469,14 +469,16 @@ class HKJCCompleteScraper:
                     except Exception as e:
                         pass  # Tab might not exist or no data
                     
-                    # Task 2: 所跑途程賽績紀錄 (完整結構)
+                    # Task 2: 所跑途程賽績紀錄 - Use dedicated URL
                     try:
-                        await page.click("text=所跑途程賽績紀錄", timeout=3000)
+                        # Open dedicated performance page
+                        perf_url = f"https://racing.hkjc.com/zh-hk/local/information/performance?horseid={horse_id}"
+                        await page.goto(perf_url, wait_until="domcontentloaded")
                         await asyncio.sleep(2)
                         
                         text = await page.inner_text("body")
                         
-                        # Initialize data structure
+                        # Initialize structure
                         dist_perf = {
                             "hkjc_horse_id": horse_id,
                             "track_performance": [],
@@ -485,32 +487,39 @@ class HKJCCompleteScraper:
                             "overall_total": {}
                         }
                         
-                        # Parse text to extract structured data
-                        # This is complex - need to identify sections
+                        # Parse 場地成績 (Track Performance)
+                        # Format: 草地 好地至快地 4 0 1 1 2
+                        track_section = text.find("場地成績")
+                        if track_section > 0:
+                            track_text = text[track_section:track_section+1000]
+                            lines = track_text.split('\n')
+                            
+                            current_surface = ""
+                            for line in lines:
+                                line = line.strip()
+                                if not line:
+                                    continue
+                                if "草地" in line or "全天候" in line:
+                                    current_surface = line
+                                elif line[0].isdigit() or any(c.isdigit() for c in line[:5]):
+                                    # This is data line
+                                    parts = line.split()
+                                    if len(parts) >= 5:
+                                        dist_perf["track_performance"].append({
+                                            "surface": current_surface.split()[0] if current_surface else "",
+                                            "condition": current_surface.split()[1] if len(current_surface.split()) > 1 else "",
+                                            "starts": parts[0],
+                                            "win": parts[1] if len(parts) > 1 else "0",
+                                            "2nd": parts[2] if len(parts) > 2 else "0",
+                                            "3rd": parts[3] if len(parts) > 3 else "0",
+                                            "unplaced": parts[4] if len(parts) > 4 else "0"
+                                        })
                         
-                        # For now, save what we can extract from tables
-                        tables = await page.query_selector_all("table.horseperformance")
-                        
-                        all_rows = []
-                        for table in tables:
-                            rows = await table.query_selector_all("tr")
-                            for row in rows:
-                                cells = await row.query_selector_all("td")
-                                cell_texts = []
-                                for c in cells:
-                                    cell_texts.append((await c.inner_text()).strip())
-                                if cell_texts:
-                                    all_rows.append(cell_texts)
-                        
-                        # Try to parse into structure
-                        # Group by sections in the table
-                        
-                        # Save as single document
+                        # Save
                         existing = self.db.db["horse_distance_stats"].find_one({
                             "hkjc_horse_id": horse_id
                         })
-                        if not existing and all_rows:
-                            dist_perf["raw_data"] = all_rows
+                        if not existing:
                             self.db.db["horse_distance_stats"].insert_one(dist_perf)
                     except:
                         pass
