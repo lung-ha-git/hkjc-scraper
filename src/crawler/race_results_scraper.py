@@ -109,7 +109,7 @@ class RaceResultsScraper:
             race_id_match = re.search(r'第\s*(\d+)\s*場\s*\((\d+)\)', text)
             if race_id_match:
                 meta["race_no_display"] = int(race_id_match.group(1))
-                meta["race_id"] = int(race_id_match.group(2))
+                meta["race_id_num"] = int(race_id_match.group(2))  # HKJC numeric ID
             
             # Race name and class
             # Example: "一級賽 - 2000米" and "花旗銀行香港金盃"
