@@ -469,14 +469,11 @@ class HKJCCompleteScraper:
                     except Exception as e:
                         pass  # Tab might not exist or no data
                     
-                    # Task 2: 所跑途程賽績紀錄 - Use dedicated URL
+                    # Task 2: 所跑途程賽績紀錄 - Use dedicated URL with proper parsing
                     try:
-                        # Open dedicated performance page
                         perf_url = f"https://racing.hkjc.com/zh-hk/local/information/performance?horseid={horse_id}"
                         await page.goto(perf_url, wait_until="domcontentloaded")
                         await asyncio.sleep(2)
-                        
-                        text = await page.inner_text("body")
                         
                         # Initialize structure
                         dist_perf = {
@@ -487,39 +484,84 @@ class HKJCCompleteScraper:
                             "overall_total": {}
                         }
                         
-                        # Parse 場地成績 (Track Performance)
-                        # Format: 草地 好地至快地 4 0 1 1 2
-                        track_section = text.find("場地成績")
-                        if track_section > 0:
-                            track_text = text[track_section:track_section+1000]
-                            lines = track_text.split('\n')
+                        # Find performance table
+                        tables = await page.query_selector_all("table.horseperformance")
+                        
+                        for table in tables:
+                            rows = await table.query_selector_all("tr")
                             
-                            current_surface = ""
-                            for line in lines:
-                                line = line.strip()
-                                if not line:
+                            current_section = ''
+                            current_dist = ''
+                            
+                            for row in rows:
+                                cells = await row.query_selector_all("td")
+                                cell_texts = [(await c.inner_text()).strip() for c in cells]
+                                
+                                if not cell_texts:
                                     continue
-                                if "草地" in line or "全天候" in line:
-                                    current_surface = line
-                                elif line[0].isdigit() or any(c.isdigit() for c in line[:5]):
-                                    # This is data line
-                                    parts = line.split()
-                                    if len(parts) >= 5:
+                                
+                                # Check for section headers
+                                if cell_texts[0] == '場地成績':
+                                    current_section = 'track'
+                                    continue
+                                elif cell_texts[0] == '路程成績':
+                                    current_section = 'distance'
+                                    continue
+                                elif cell_texts[0] == '歷季成績':
+                                    current_section = 'season'
+                                    continue
+                                
+                                # Skip summary rows
+                                if any(x in cell_texts[1] for x in ['總成績', '總']):
+                                    continue
+                                
+                                # Parse track performance
+                                if current_section == 'track':
+                                    surface = cell_texts[0] if cell_texts[0] else surface
+                                    condition = cell_texts[1]
+                                    
+                                    if len(cell_texts) >= 5 and condition not in ['總成績']:
                                         dist_perf["track_performance"].append({
-                                            "surface": current_surface.split()[0] if current_surface else "",
-                                            "condition": current_surface.split()[1] if len(current_surface.split()) > 1 else "",
-                                            "starts": parts[0],
-                                            "win": parts[1] if len(parts) > 1 else "0",
-                                            "2nd": parts[2] if len(parts) > 2 else "0",
-                                            "3rd": parts[3] if len(parts) > 3 else "0",
-                                            "unplaced": parts[4] if len(parts) > 4 else "0"
+                                            "surface": surface if '草地' in str(surface) or '全天候' in str(surface) else '草地',
+                                            "condition": condition,
+                                            "starts": cell_texts[2],
+                                            "win": cell_texts[3],
+                                            "2nd": cell_texts[4],
+                                            "3rd": cell_texts[5],
+                                            "unplaced": cell_texts[6] if len(cell_texts) > 6 else '0'
+                                        })
+                                
+                                # Parse distance performance
+                                elif current_section == 'distance':
+                                    if cell_texts[0]:
+                                        current_dist = cell_texts[0]
+                                    if len(cell_texts) >= 5:
+                                        dist_perf["distance_performance"].setdefault(current_dist, []).append({
+                                            "distance": cell_texts[1],
+                                            "starts": cell_texts[2],
+                                            "win": cell_texts[3],
+                                            "2nd": cell_texts[4],
+                                            "3rd": cell_texts[5],
+                                            "unplaced": cell_texts[6] if len(cell_texts) > 6 else '0'
+                                        })
+                                
+                                # Parse seasonal performance
+                                elif current_section == 'season':
+                                    if len(cell_texts) >= 5 and cell_texts[1] not in ['總成績']:
+                                        dist_perf["seasonal_performance"].append({
+                                            "season": cell_texts[1],
+                                            "starts": cell_texts[2],
+                                            "win": cell_texts[3],
+                                            "2nd": cell_texts[4],
+                                            "3rd": cell_texts[5],
+                                            "unplaced": cell_texts[6] if len(cell_texts) > 6 else '0'
                                         })
                         
                         # Save
                         existing = self.db.db["horse_distance_stats"].find_one({
                             "hkjc_horse_id": horse_id
                         })
-                        if not existing:
+                        if not existing and (dist_perf["track_performance"] or dist_perf["distance_performance"]):
                             self.db.db["horse_distance_stats"].insert_one(dist_perf)
                     except:
                         pass
