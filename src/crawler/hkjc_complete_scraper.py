@@ -141,29 +141,80 @@ class HKJCCompleteScraper:
         await page.close()
     
     async def scrape_horse_list(self, browser) -> List[str]:
-        """Phase 2: Get horse list (二字馬)"""
-        print("\n📋 PHASE 2: Horse List (二字馬)")
+        """Phase 2: Get ALL horse list (一字/二字/三字/四字)"""
+        print("\n📋 PHASE 2: Horse List (ALL - 一字/二字/三字/四字)")
         print("-" * 50)
         
         page = await browser.new_page()
         
-        # Use pre-fetched list or scrape
-        # For now, use known IDs
-        horse_ids = [
-            "HK_2023_J256",  # 祝願
-            "HK_2022_H411",  # 氣勢
-            "HK_2022_H412",  # 球星
-            "HK_2021_G236",  # 安遇
-            "HK_2022_H452",  # 安騁
-            "HK_2024_K014",  # 玩笑
-            "HK_2024_K369",  # 晒冷
-            "HK_2023_J219",  # 飲杯
-            "HK_2024_K173",  # 翠紅
-            "HK_2024_K234",  # 天星
-        ]
+        # Go to selecthorse page and get ALL horses
+        print("🔍 Getting ALL horses from HKJC...")
+        
+        await page.goto("https://racing.hkjc.com/zh-hk/local/information/selecthorse",
+                       wait_until="domcontentloaded")
+        await asyncio.sleep(3)
+        
+        # Method: Click through different name length filters
+        # Or get ALL horse links from the page
+        
+        # First try: Get all horse links directly
+        all_links = await page.query_selector_all("a[href*='horse?horseid=']")
+        
+        horse_ids = []
+        seen = set()
+        
+        for link in all_links:
+            href = await link.get_attribute("href")
+            match = re.search(r'horseid=([^&/]+)', href or "")
+            
+            if match:
+                horse_id = match.group(1)
+                # Filter out non-HK horse IDs (like HK_2020_XXX)
+                if horse_id.startswith("HK_") and horse_id not in seen:
+                    seen.add(horse_id)
+                    horse_ids.append(horse_id)
+        
+        # If not enough, try clicking filters
+        if len(horse_ids) < 50:
+            print(f"   Found {len(horse_ids)}, trying filters...")
+            
+            # Try to find and click name length filter links
+            name_lengths = ["一字", "二字", "三字", "四字"]
+            
+            for length in name_lengths:
+                try:
+                    await page.goto("https://racing.hkjc.com/zh-hk/local/information/selecthorse",
+                                   wait_until="domcontentloaded")
+                    await asyncio.sleep(2)
+                    
+                    # Click the filter
+                    filter_link = await page.query_selector(f"text={length}")
+                    if filter_link:
+                        await filter_link.click()
+                        await asyncio.sleep(3)
+                        
+                        # Get links
+                        links = await page.query_selector_all("a[href*='horse?horseid=']")
+                        
+                        for link in links:
+                            href = await link.get_attribute("href")
+                            match = re.search(r'horseid=([^&/]+)', href or "")
+                            
+                            if match:
+                                horse_id = match.group(1)
+                                if horse_id.startswith("HK_") and horse_id not in seen:
+                                    seen.add(horse_id)
+                                    horse_ids.append(horse_id)
+                        
+                        print(f"   {length}: +{len(links)} horses")
+                except Exception as e:
+                    print(f"   Error with {length}: {e}")
+        
+        # Remove duplicates
+        horse_ids = list(set(horse_ids))
         
         self.stats["horses"] = len(horse_ids)
-        print(f"   ✅ {len(horse_ids)} horses ready")
+        print(f"   ✅ Total: {len(horse_ids)} horses ready")
         
         await page.close()
         return horse_ids
