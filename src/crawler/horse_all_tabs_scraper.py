@@ -194,7 +194,7 @@ class HorseAllTabsScraper:
             return False
     
     async def _scrape_race_history(self) -> List[Dict]:
-        """Scrape race history table"""
+        """Scrape race history table with new format"""
         races = []
         try:
             tables = await self.page.query_selector_all("table")
@@ -206,16 +206,103 @@ class HorseAllTabsScraper:
                 header_text = await header_cells[0].inner_text() if len(header_cells) > 0 else ""
                 if "場次" in header_text:
                     headers = [await c.inner_text() for c in header_cells]
+                    
+                    # Find column indices
+                    col_idx = {}
+                    for i, h in enumerate(headers):
+                        h_clean = h.strip()
+                        if "場次" in h_clean:
+                            col_idx["race_number"] = i
+                        elif "名次" in h_clean:
+                            col_idx["rank"] = i
+                        elif "日期" in h_clean:
+                            col_idx["date"] = i
+                        elif "馬場" in h_clean or "跑道" in h_clean:
+                            col_idx["track_condition"] = i
+                        elif "途程" in h_clean:
+                            col_idx["distance"] = i
+                        elif "場地狀況" in h_clean or "場地" in h_clean:
+                            col_idx["going"] = i
+                        elif "賽事班次" in h_clean or "班次" in h_clean:
+                            col_idx["race_class"] = i
+                        elif "檔位" in h_clean:
+                            col_idx["draw"] = i
+                        elif "評分" in h_clean:
+                            col_idx["rating"] = i
+                        elif "練馬師" in h_clean:
+                            col_idx["trainer"] = i
+                        elif "騎師" in h_clean:
+                            col_idx["jockey"] = i
+                        elif "頭馬距離" in h_clean:
+                            col_idx["finish_distance"] = i
+                        elif "獨贏" in h_clean:
+                            col_idx["win_odds"] = i
+                        elif "實際負磅" in h_clean:
+                            col_idx["actual_weight"] = i
+                        elif "沿途走位" in h_clean:
+                            col_idx["running_position"] = i
+                        elif "完成時間" in h_clean:
+                            col_idx["finish_time"] = i
+                        elif "排位體重" in h_clean or "體重" in h_clean:
+                            col_idx["declared_weight"] = i
+                        elif "配備" in h_clean:
+                            col_idx["equipment"] = i
+                    
                     for row in rows[1:]:
                         cells = await row.query_selector_all("td")
                         if len(cells) >= 10:
+                            cell_texts = [(await c.inner_text()).strip() for c in cells]
+                            
                             race_data = {"hkjc_horse_id": self.hkjc_horse_id}
-                            for j, cell in enumerate(cells):
-                                val = await cell.inner_text()
-                                if j < len(headers):
-                                    header = headers[j].strip().replace('\n', '_').replace('/', '_')
-                                    race_data[header] = val.strip() if val else ""
-                            races.append(race_data)
+                            
+                            # Map to new keys
+                            if "race_number" in col_idx and col_idx["race_number"] < len(cell_texts):
+                                race_data["race_number"] = cell_texts[col_idx["race_number"]]
+                            if "rank" in col_idx and col_idx["rank"] < len(cell_texts):
+                                race_data["rank"] = cell_texts[col_idx["rank"]]
+                            if "date" in col_idx and col_idx["date"] < len(cell_texts):
+                                race_data["date"] = cell_texts[col_idx["date"]]
+                            if "track_condition" in col_idx and col_idx["track_condition"] < len(cell_texts):
+                                race_data["track_condition"] = cell_texts[col_idx["track_condition"]]
+                            if "distance" in col_idx and col_idx["distance"] < len(cell_texts):
+                                # Extract numeric distance
+                                dist_str = cell_texts[col_idx["distance"]]
+                                race_data["distance"] = int(dist_str) if dist_str.isdigit() else 0
+                            if "going" in col_idx and col_idx["going"] < len(cell_texts):
+                                race_data["going"] = cell_texts[col_idx["going"]]
+                            if "race_class" in col_idx and col_idx["race_class"] < len(cell_texts):
+                                class_str = cell_texts[col_idx["race_class"]]
+                                race_data["race_class"] = int(class_str) if class_str.isdigit() else 0
+                            if "draw" in col_idx and col_idx["draw"] < len(cell_texts):
+                                draw_str = cell_texts[col_idx["draw"]]
+                                race_data["draw"] = int(draw_str) if draw_str.isdigit() else 0
+                            if "rating" in col_idx and col_idx["rating"] < len(cell_texts):
+                                rating_str = cell_texts[col_idx["rating"]]
+                                race_data["rating"] = int(rating_str) if rating_str.isdigit() else 0
+                            if "trainer" in col_idx and col_idx["trainer"] < len(cell_texts):
+                                race_data["trainer"] = cell_texts[col_idx["trainer"]]
+                            if "jockey" in col_idx and col_idx["jockey"] < len(cell_texts):
+                                race_data["jockey"] = cell_texts[col_idx["jockey"]]
+                            if "finish_distance" in col_idx and col_idx["finish_distance"] < len(cell_texts):
+                                race_data["finish_distance"] = cell_texts[col_idx["finish_distance"]]
+                            if "win_odds" in col_idx and col_idx["win_odds"] < len(cell_texts):
+                                odds_str = cell_texts[col_idx["win_odds"]].replace('$', '').replace(',', '')
+                                race_data["win_odds"] = float(odds_str) if odds_str.replace('.', '').isdigit() else 0.0
+                            if "actual_weight" in col_idx and col_idx["actual_weight"] < len(cell_texts):
+                                weight_str = cell_texts[col_idx["actual_weight"]]
+                                race_data["actual_weight"] = int(weight_str) if weight_str.isdigit() else 0
+                            if "running_position" in col_idx and col_idx["running_position"] < len(cell_texts):
+                                race_data["running_position"] = cell_texts[col_idx["running_position"]]
+                            if "finish_time" in col_idx and col_idx["finish_time"] < len(cell_texts):
+                                race_data["finish_time"] = cell_texts[col_idx["finish_time"]]
+                            if "declared_weight" in col_idx and col_idx["declared_weight"] < len(cell_texts):
+                                weight_str = cell_texts[col_idx["declared_weight"]]
+                                race_data["declared_weight"] = int(weight_str) if weight_str.isdigit() else 0
+                            if "equipment" in col_idx and col_idx["equipment"] < len(cell_texts):
+                                race_data["equipment"] = cell_texts[col_idx["equipment"]]
+                            
+                            if race_data.get("date"):
+                                races.append(race_data)
                     break
         except Exception as e:
             logger.error(f"Error in _scrape_race_history: {e}")
