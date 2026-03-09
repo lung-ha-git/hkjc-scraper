@@ -27,6 +27,8 @@ class HorseAllTabsScraper:
     
     BASE_URL = "https://racing.hkjc.com/zh-hk/local/information/horse"
     RATING_URL = "https://racing.hkjc.com/zh-hk/local/information/ratingresultweight"
+    VETERINARY_URL = "https://racing.hkjc.com/zh-hk/local/information/veterinaryrecord"
+    MOVEMENT_URL = "https://racing.hkjc.com/zh-hk/local/information/movementrecords"
     
     # Tab mapping (text on tab -> internal key)
     TAB_MAPPING = {
@@ -504,57 +506,75 @@ class HorseAllTabsScraper:
         return workouts
     
     async def _scrape_medical(self) -> List[Dict]:
-        """Scrape medical/vet records"""
+        """Scrape medical/vet records using direct URL"""
         records = []
         try:
+            # Use direct URL for veterinary records
+            vet_url = f"{self.VETERINARY_URL}?horseid={self.hkjc_horse_id}"
+            await self.page.goto(vet_url, wait_until="networkidle")
+            await self.page.wait_for_timeout(self.delay * 1000)
+            
             tables = await self.page.query_selector_all("table")
             for table in tables:
-                table_id = await table.get_attribute("id") or ""
                 rows = await table.query_selector_all("tr")
                 if len(rows) < 2:
                     continue
                 header = await rows[0].inner_text()
-                if "傷患" in header or "日期" in header or "傷勢" in header or "病情" in header:
+                # Look for table with 馬號, 日期, 詳情 columns
+                if "馬號" in header and "日期" in header and "詳情" in header:
                     for row in rows[1:]:
                         cells = await row.query_selector_all("td")
-                        if len(cells) >= 2:
+                        if len(cells) >= 4:
+                            cell_texts = [(await c.inner_text()).strip() for c in cells]
+                            # Skip empty rows
+                            if not cell_texts[2] and not cell_texts[3]:
+                                continue
                             record = {
                                 "hkjc_horse_id": self.hkjc_horse_id,
-                                "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
-                                "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                "date": cell_texts[2] if len(cell_texts) > 2 else "",
+                                "details": cell_texts[3] if len(cell_texts) > 3 else "",
+                                "passed_date": cell_texts[4] if len(cell_texts) > 4 else ""
                             }
-                            if record.get("date"):
+                            if record.get("date") or record.get("details"):
                                 records.append(record)
-                    if records:
-                        break
+                    break
         except Exception as e:
             logger.error(f"Error in _scrape_medical: {e}")
         return records
     
     async def _scrape_movements(self) -> List[Dict]:
-        """Scrape movement/location changes"""
+        """Scrape movement/location changes using direct URL"""
         movements = []
         try:
+            # Use direct URL for movement records
+            movement_url = f"{self.MOVEMENT_URL}?horseid={self.hkjc_horse_id}"
+            await self.page.goto(movement_url, wait_until="networkidle")
+            await self.page.wait_for_timeout(self.delay * 1000)
+            
             tables = await self.page.query_selector_all("table")
             for table in tables:
-                table_id = await table.get_attribute("id") or ""
                 rows = await table.query_selector_all("tr")
                 if len(rows) < 2:
                     continue
                 header = await rows[0].inner_text()
-                if "MovementRecord" in table_id or "搬遷" in header or "搬馬" in header:
+                # Look for table with 從, 至, 到達日期 columns
+                if "從" in header and "至" in header and "到達日期" in header:
                     for row in rows[1:]:
                         cells = await row.query_selector_all("td")
-                        if len(cells) >= 2:
+                        if len(cells) >= 3:
+                            cell_texts = [(await c.inner_text()).strip() for c in cells]
+                            # Skip empty rows
+                            if not any(cell_texts):
+                                continue
                             movement = {
                                 "hkjc_horse_id": self.hkjc_horse_id,
-                                "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
-                                "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                "from_location": cell_texts[0] if len(cell_texts) > 0 else "",
+                                "to_location": cell_texts[1] if len(cell_texts) > 1 else "",
+                                "arrival_date": cell_texts[2] if len(cell_texts) > 2 else ""
                             }
-                            if movement.get("date"):
+                            if movement.get("from_location") or movement.get("to_location"):
                                 movements.append(movement)
-                    if movements:
-                        break
+                    break
         except Exception as e:
             logger.error(f"Error in _scrape_movements: {e}")
         return movements
