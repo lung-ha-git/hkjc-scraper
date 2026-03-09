@@ -381,7 +381,11 @@ class HKJCCompleteScraper:
                                 continue
                             
                             href = await links[0].get_attribute("href")
-                            full_url = "https://racing.hkjc.com" + href
+                            # Use correct URL format for race results
+                            if "localresults" in href:
+                                full_url = "https://racing.hkjc.com" + href
+                            else:
+                                full_url = "https://racing.hkjc.com" + href
                             
                             # Parse URL
                             date_match = re.search(r'racedate=([^&]+)', href)
@@ -933,8 +937,12 @@ class HKJCCompleteScraper:
                 page = await browser.new_page()
                 
                 try:
-                    await page.goto(race_info["url"], wait_until="networkidle")
-                    await asyncio.sleep(3)
+                    # Use domcontentloaded for faster initial load, then wait
+                    await page.goto(race_info["url"], wait_until="domcontentloaded")
+                    await asyncio.sleep(2)
+                    
+                    # Wait for tables to load
+                    await page.wait_for_selector("table.f_tac", timeout=10000)
                     
                     text = await page.inner_text("body")
                     
