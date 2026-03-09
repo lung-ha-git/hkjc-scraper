@@ -471,16 +471,12 @@ class HKJCCompleteScraper:
                                     "class": (await cells[7].inner_text()).strip() if len(cells) > 7 else "",
                                 }
                         
-                        # Save as single document with date as key
+                        # Save to horses collection
                         if rating_by_date:
-                            existing = self.db.db["horse_ratings"].find_one({
-                                "hkjc_horse_id": horse_id
-                            })
-                            if not existing:
-                                self.db.db["horse_ratings"].insert_one({
-                                    "hkjc_horse_id": horse_id,
-                                    "ratings_by_date": rating_by_date
-                                })
+                            self.db.db["horses"].update_one(
+                                {"hkjc_horse_id": horse_id},
+                                {"$set": {"ratings_by_date": rating_by_date}}
+                            )
                     except Exception as e:
                         pass
                     
