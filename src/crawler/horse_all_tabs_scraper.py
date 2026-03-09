@@ -707,9 +707,13 @@ class HorseAllTabsScraper:
         return ratings
     
     async def _scrape_pedigree(self) -> Dict:
-        """Scrape pedigree info"""
+        """Scrape pedigree info - just get URL"""
         pedigree = {"hkjc_horse_id": self.hkjc_horse_id}
         try:
+            # Get current URL after clicking pedigree tab
+            pedigree["pedigree_url"] = self.page.url if self.page else ""
+            
+            # Also try to extract pedigree text
             text = await self.page.inner_text("body")
             sire_match = re.search(r'父系\s*[:：]\s*([^\n]+)', text)
             dam_match = re.search(r'母系\s*[:：]\s*([^\n]+)', text)
@@ -763,13 +767,26 @@ class HorseAllTabsScraper:
             print(f"   ✅ horse_distance_stats: venue={venue_count}, distance={dist_count}, seasons={season_count}")
         
         # Update pedigree
+        # Add pedigree_url to horses collection
         if data.get("pedigree"):
+            pedigree_data = data["pedigree"]
+            pedigree_url = pedigree_data.get("pedigree_url", "")
+            
+            # Update horses collection with pedigree info
+            if pedigree_url:
+                db.db["horses"].update_one(
+                    {"hkjc_horse_id": hkjc_id},
+                    {"$set": {"pedigree_url": pedigree_url}},
+                    upsert=True
+                )
+                print(f"   ✅ pedigree_url added to horses")
+            
+            # Also save to horse_pedigree for backward compatibility
             db.db["horse_pedigree"].update_one(
                 {"hkjc_horse_id": hkjc_id},
-                {"$set": data["pedigree"]},
+                {"$set": pedigree_data},
                 upsert=True
             )
-            print(f"   ✅ horse_pedigree: updated")
         
         db.disconnect()
         print("\n✅ All data saved!")
