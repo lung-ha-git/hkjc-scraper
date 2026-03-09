@@ -526,8 +526,13 @@ class HorseAllTabsScraper:
                         cells = await row.query_selector_all("td")
                         if len(cells) >= 4:
                             cell_texts = [(await c.inner_text()).strip() for c in cells]
-                            # Skip empty rows
+                            # Skip empty rows and header-like rows
                             if not cell_texts[2] and not cell_texts[3]:
+                                continue
+                            
+                            # Skip header-like rows (these are not real medical records)
+                            date_value = cell_texts[2].strip() if len(cell_texts) > 2 else ""
+                            if any(keyword in date_value for keyword in ['毛色', '性別', '出生', '進口', '獎金', '出賽', '位置', '練馬師', '馬名', '馬號', '總']):
                                 continue
                             record = {
                                 "hkjc_horse_id": self.hkjc_horse_id,
