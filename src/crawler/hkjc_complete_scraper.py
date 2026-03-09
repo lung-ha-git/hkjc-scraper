@@ -3,7 +3,7 @@ HKJC Complete Scraper Workflow
 =============================
 Phase 1: Jockeys & Trainers
 Phase 2: Horse List (二字馬)
-Phase 3: Horse Details + Race URLs
+Phase 3: Horse Details + Race URLs (uses HorseAllTabsScraper)
 Phase 4: Race Results
 
 Usage:
@@ -23,6 +23,10 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
 from playwright.async_api import async_playwright
+try:
+    from .horse_all_tabs_scraper import HorseAllTabsScraper
+except ImportError:
+    from horse_all_tabs_scraper import HorseAllTabsScraper  # Fallback for direct execution
 
 
 class HKJCCompleteScraper:
@@ -484,13 +488,42 @@ class HKJCCompleteScraper:
                     except Exception as e:
                         pass
                     
-                    # Task 2: 所跑途程賽績紀錄 - Use dedicated URL with proper parsing
+                    # ============================================================
+                    # REUSE HorseAllTabsScraper for all remaining tabs (Task 2-6)
+                    # This ensures consistent parsing logic in one place
+                    # ============================================================
+                    try:
+                        print(f"      📥 Using HorseAllTabsScraper for {horse_id}...")
+                        
+                        # Use HorseAllTabsScraper to get all tab data
+                        tab_scraper = HorseAllTabsScraper(headless=True, delay=2)
+                        
+                        async with tab_scraper:
+                            # Scrape all tabs
+                            tab_data = await tab_scraper.scrape_horse(horse_id)
+                            
+                            # Save all data to MongoDB (this handles all collections)
+                            await tab_scraper.save_to_mongodb(tab_data)
+                            
+                            # Log what was scraped
+                            track_count = len(tab_data.get('distance_stats', {}).get('track_performance', []))
+                            print(f"      ✅ distance_stats: {track_count} track records")
+                            print(f"      ✅ workouts: {len(tab_data.get('workouts', []))}")
+                            print(f"      ✅ medical: {len(tab_data.get('medical', []))}")
+                            print(f"      ✅ movements: {len(tab_data.get('movements', []))}")
+                            print(f"      ✅ overseas: {len(tab_data.get('overseas', []))}")
+                    
+                    except Exception as e:
+                        print(f"      ⚠️  HorseAllTabsScraper failed: {e}")
+                    
+                    # Task 2: 所跑途程賽績紀錄 - DEPRECATED, now using HorseAllTabsScraper
+                    # (kept for reference, can be removed later)
                     try:
                         perf_url = f"https://racing.hkjc.com/zh-hk/local/information/performance?horseid={horse_id}"
                         await page.goto(perf_url, wait_until="domcontentloaded")
                         await asyncio.sleep(2)
                         
-                        # Initialize structure
+                        # Initialize structure - NEW FORMAT
                         dist_perf = {
                             "hkjc_horse_id": horse_id,
                             "track_performance": [],
@@ -498,6 +531,9 @@ class HKJCCompleteScraper:
                             "seasonal_performance": [],
                             "overall_total": {}
                         }
+                        
+                        # Track current venue for distance performance
+                        current_venue = None  # shatin_turf, shatin_awt, happy_valley_turf
                         
                         # Find performance table
                         tables = await page.query_selector_all("table.horseperformance")
@@ -521,6 +557,7 @@ class HKJCCompleteScraper:
                                     continue
                                 elif cell_texts[0] == '路程成績':
                                     current_section = 'distance'
+                                    current_venue = None
                                     continue
                                 elif cell_texts[0] == '歷季成績':
                                     current_section = 'season'
@@ -530,47 +567,94 @@ class HKJCCompleteScraper:
                                 if any(x in cell_texts[1] for x in ['總成績', '總']):
                                     continue
                                 
-                                # Parse track performance
+                                # Parse track performance (場地成績)
                                 if current_section == 'track':
-                                    surface = cell_texts[0] if cell_texts[0] else surface
-                                    condition = cell_texts[1]
+                                    surface = cell_texts[0] if cell_texts[0] else ""
+                                    condition = cell_texts[1] if len(cell_texts) > 1 else ""
                                     
-                                    if len(cell_texts) >= 5 and condition not in ['總成績']:
-                                        dist_perf["track_performance"].append({
-                                            "surface": surface if '草地' in str(surface) or '全天候' in str(surface) else '草地',
-                                            "condition": condition,
-                                            "starts": cell_texts[2],
-                                            "win": cell_texts[3],
-                                            "2nd": cell_texts[4],
-                                            "3rd": cell_texts[5],
-                                            "unplaced": cell_texts[6] if len(cell_texts) > 6 else '0'
-                                        })
+                                    if not surface or "總" in surface:
+                                        continue
+                                    
+                                    # Determine surface type
+                                    surface_type = "草地" if "草" in surface else "全天候跑道"
+                                    
+                                    dist_perf["track_performance"].append({
+                                        "surface": surface_type,
+                                        "condition": condition,
+                                        "starts": int(cell_texts[2]) if cell_texts[2].isdigit() else 0,
+                                        "win": int(cell_texts[3]) if cell_texts[3].isdigit() else 0,
+                                        "2nd": int(cell_texts[4]) if cell_texts[4].isdigit() else 0,
+                                        "3rd": int(cell_texts[5]) if len(cell_texts) > 5 and cell_texts[5].isdigit() else 0,
+                                        "unplaced": int(cell_texts[6]) if len(cell_texts) > 6 and cell_texts[6].isdigit() else 0
+                                    })
                                 
-                                # Parse distance performance
+                                # Parse distance performance (路程成績) - NEW FORMAT
                                 elif current_section == 'distance':
-                                    if cell_texts[0]:
-                                        current_dist = cell_texts[0]
-                                    if len(cell_texts) >= 5:
-                                        dist_perf["distance_performance"].setdefault(current_dist, []).append({
-                                            "distance": cell_texts[1],
-                                            "starts": cell_texts[2],
-                                            "win": cell_texts[3],
-                                            "2nd": cell_texts[4],
-                                            "3rd": cell_texts[5],
-                                            "unplaced": cell_texts[6] if len(cell_texts) > 6 else '0'
-                                        })
+                                    first_text = cell_texts[0].strip() if cell_texts[0] else ""
+                                    
+                                    # Check for venue headers (沙田馬場, 跑馬地馬場)
+                                    if "沙田" in first_text:
+                                        if "草地" in first_text:
+                                            current_venue = "shatin_turf"
+                                        else:
+                                            current_venue = "shatin_awt"
+                                        continue
+                                    elif "跑馬地" in first_text:
+                                        current_venue = "happy_valley_turf"
+                                        continue
+                                    
+                                    if current_venue and first_text:
+                                        distance = first_text
+                                        
+                                        # Check for total row (總成績)
+                                        if "總" in first_text or "合計" in first_text:
+                                            dist_perf["distance_performance"][f"{current_venue}_total"] = {
+                                                "starts": int(cell_texts[1]) if len(cell_texts) > 1 and cell_texts[1].isdigit() else 0,
+                                                "win": int(cell_texts[2]) if len(cell_texts) > 2 and cell_texts[2].isdigit() else 0,
+                                                "2nd": int(cell_texts[3]) if len(cell_texts) > 3 and cell_texts[3].isdigit() else 0,
+                                                "3rd": int(cell_texts[4]) if len(cell_texts) > 4 and cell_texts[4].isdigit() else 0,
+                                                "unplaced": int(cell_texts[5]) if len(cell_texts) > 5 and cell_texts[5].isdigit() else 0
+                                            }
+                                        else:
+                                            # Individual distance record
+                                            if current_venue not in dist_perf["distance_performance"]:
+                                                dist_perf["distance_performance"][current_venue] = []
+                                            
+                                            dist_perf["distance_performance"][current_venue].append({
+                                                "distance": distance,
+                                                "starts": int(cell_texts[1]) if len(cell_texts) > 1 and cell_texts[1].isdigit() else 0,
+                                                "win": int(cell_texts[2]) if len(cell_texts) > 2 and cell_texts[2].isdigit() else 0,
+                                                "2nd": int(cell_texts[3]) if len(cell_texts) > 3 and cell_texts[3].isdigit() else 0,
+                                                "3rd": int(cell_texts[4]) if len(cell_texts) > 4 and cell_texts[4].isdigit() else 0,
+                                                "unplaced": int(cell_texts[5]) if len(cell_texts) > 5 and cell_texts[5].isdigit() else 0
+                                            })
                                 
-                                # Parse seasonal performance
+                                # Parse seasonal performance (歷季成績)
                                 elif current_section == 'season':
                                     if len(cell_texts) >= 5 and cell_texts[1] not in ['總成績']:
                                         dist_perf["seasonal_performance"].append({
                                             "season": cell_texts[1],
-                                            "starts": cell_texts[2],
-                                            "win": cell_texts[3],
-                                            "2nd": cell_texts[4],
-                                            "3rd": cell_texts[5],
-                                            "unplaced": cell_texts[6] if len(cell_texts) > 6 else '0'
+                                            "starts": int(cell_texts[2]) if cell_texts[2].isdigit() else 0,
+                                            "win": int(cell_texts[3]) if cell_texts[3].isdigit() else 0,
+                                            "2nd": int(cell_texts[4]) if cell_texts[4].isdigit() else 0,
+                                            "3rd": int(cell_texts[5]) if len(cell_texts) > 5 and cell_texts[5].isdigit() else 0,
+                                            "unplaced": int(cell_texts[6]) if len(cell_texts) > 6 and cell_texts[6].isdigit() else 0
                                         })
+                        
+                        # Calculate overall_total from track performance
+                        total_starts = sum(t.get("starts", 0) for t in dist_perf["track_performance"])
+                        total_wins = sum(t.get("win", 0) for t in dist_perf["track_performance"])
+                        total_2nd = sum(t.get("2nd", 0) for t in dist_perf["track_performance"])
+                        total_3rd = sum(t.get("3rd", 0) for t in dist_perf["track_performance"])
+                        total_unplaced = sum(t.get("unplaced", 0) for t in dist_perf["track_performance"])
+                        
+                        dist_perf["overall_total"] = {
+                            "starts": total_starts,
+                            "win": total_wins,
+                            "2nd": total_2nd,
+                            "3rd": total_3rd,
+                            "unplaced": total_unplaced
+                        }
                         
                         # Save
                         existing = self.db.db["horse_distance_stats"].find_one({
@@ -578,51 +662,91 @@ class HKJCCompleteScraper:
                         })
                         if not existing and (dist_perf["track_performance"] or dist_perf["distance_performance"]):
                             self.db.db["horse_distance_stats"].insert_one(dist_perf)
-                    except:
-                        pass
+                    except Exception as e:
                         pass
                     
                     # Task 3: 晨操紀錄
                     try:
-                        await page.click("text=晨操紀錄", timeout=3000)
+                        # Try direct URL first, then click
+                        workouts_url = f"https://racing.hkjc.com/zh-hk/local/information/horse?horseid={horse_id}#workout"
+                        await page.goto(workouts_url, wait_until="domcontentloaded")
                         await asyncio.sleep(2)
                         
-                        tables = await page.query_selector_all("table.table_bd")
+                        # Also try clicking the tab
+                        try:
+                            await page.click("text=晨操紀錄", timeout=2000)
+                            await asyncio.sleep(2)
+                        except:
+                            pass
                         
+                        tables = await page.query_selector_all("table")
+                        
+                        workout_count = 0
                         for table in tables:
-                            rows = await table.query_selector_all("tr")
+                            table_id = await table.get_attribute("id") or ""
+                            class_name = await table.get_attribute("class") or ""
                             
-                            for row in rows[1:]:
-                                cells = await row.query_selector_all("td")
-                                if len(cells) >= 2:
-                                    workout = {
-                                        "hkjc_horse_id": horse_id,
-                                        "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
-                                        "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
-                                    }
-                                    
-                                    if workout.get("date"):
-                                        self.db.db["horse_workouts"].insert_one(workout)
-                    except:
-                        pass
-                    
-                    # Task 4: 傷患紀錄
-                    try:
-                        await page.click("text=傷患紀錄", timeout=3000)
-                        await asyncio.sleep(2)
-                        
-                        # Find table
-                        tables = await page.query_selector_all("table.table_bd")
-                        
-                        medical_count = 0
-                        for table in tables:
                             rows = await table.query_selector_all("tr")
                             if len(rows) > 1:
                                 # Check header
                                 header = await rows[0].inner_text()
-                                if "傷患" in header or "日期" in header:
-                                    medical_count = len(rows) - 1
+                                
+                                if "晨操" in header or "日期" in header or "時間" in header:
+                                    for row in rows[1:]:
+                                        cells = await row.query_selector_all("td")
+                                        if len(cells) >= 2:
+                                            workout = {
+                                                "hkjc_horse_id": horse_id,
+                                                "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                                "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                            }
+                                            
+                                            if workout.get("date"):
+                                                self.db.db["horse_workouts"].insert_one(workout)
+                                                workout_count += 1
                                     
+                                    if workout_count > 0:
+                                        print(f"      📝 Workouts: {workout_count}")
+                                        break
+                    except Exception as e:
+                        pass  # Silent fail
+                    
+                    # Task 4: 傷患紀錄
+                    try:
+                        # Reload main page and click
+                        await page.goto(f"https://racing.hkjc.com/zh-hk/local/information/horse?horseid={horse_id}", wait_until="domcontentloaded")
+                        await asyncio.sleep(2)
+                        
+                        # Try different tab selectors
+                        tab_selectors = [
+                            "text=傷患紀錄",
+                            "a:has-text('傷患')",
+                            "[role='tab']:has-text('傷患')",
+                        ]
+                        
+                        for selector in tab_selectors:
+                            try:
+                                if await page.is_visible(selector, timeout=1000):
+                                    await page.click(selector, timeout=3000)
+                                    await asyncio.sleep(3)
+                                    break
+                            except:
+                                continue
+                        
+                        # Find table - more flexible matching
+                        tables = await page.query_selector_all("table")
+                        
+                        medical_count = 0
+                        for table in tables:
+                            table_id = await table.get_attribute("id") or ""
+                            class_name = await table.get_attribute("class") or ""
+                            
+                            rows = await table.query_selector_all("tr")
+                            if len(rows) > 1:
+                                # Check header
+                                header = await rows[0].inner_text()
+                                
+                                if "傷患" in header or "日期" in header or "傷勢" in header or "病情" in header:
                                     for row in rows[1:]:
                                         cells = await row.query_selector_all("td")
                                         if len(cells) >= 2:
@@ -631,29 +755,52 @@ class HKJCCompleteScraper:
                                                 "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
                                                 "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
                                             }
-                                            self.db.db["horse_medical"].insert_one(med)
-                                    break
+                                            if med.get("date"):
+                                                self.db.db["horse_medical"].insert_one(med)
+                                                medical_count += 1
+                                    
+                                    if medical_count > 0:
+                                        print(f"      🏥 Medical: {medical_count}")
+                                        break
                         
                     except Exception as e:
                         pass  # Silent fail
                     
                     # Task 5: 搬遷紀錄
                     try:
-                        await page.click("text=搬遷紀錄", timeout=3000)
+                        # Reload and try to click
+                        await page.goto(f"https://racing.hkjc.com/zh-hk/local/information/horse?horseid={horse_id}", wait_until="domcontentloaded")
                         await asyncio.sleep(2)
                         
-                        # Find movement table by id or by header
+                        # Try different tab selectors
+                        tab_selectors = [
+                            "text=搬遷紀錄",
+                            "a:has-text('搬遷')",
+                            "[role='tab']:has-text('搬遷')",
+                        ]
+                        
+                        for selector in tab_selectors:
+                            try:
+                                if await page.is_visible(selector, timeout=1000):
+                                    await page.click(selector, timeout=3000)
+                                    await asyncio.sleep(3)
+                                    break
+                            except:
+                                continue
+                        
+                        # Find movement table - more flexible
                         tables = await page.query_selector_all("table")
                         
+                        move_count = 0
                         for table in tables:
                             table_id = await table.get_attribute("id") or ""
+                            class_name = await table.get_attribute("class") or ""
                             
-                            # Check if this is movement table
                             rows = await table.query_selector_all("tr")
                             if len(rows) > 1:
                                 header = await rows[0].inner_text()
                                 
-                                if "MovementRecord" in table_id or "搬遷" in header:
+                                if "MovementRecord" in table_id or "搬遷" in header or "搬馬" in header:
                                     for row in rows[1:]:
                                         cells = await row.query_selector_all("td")
                                         if len(cells) >= 2:
@@ -662,12 +809,15 @@ class HKJCCompleteScraper:
                                                 "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
                                                 "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
                                             }
-                                            
                                             if move.get("date"):
                                                 self.db.db["horse_movements"].insert_one(move)
-                                    break
-                    except:
-                        pass
+                                                move_count += 1
+                                    
+                                    if move_count > 0:
+                                        print(f"      📦 Movements: {move_count}")
+                                        break
+                    except Exception as e:
+                        pass  # Silent fail
                     
                     # Task 6: 血統簡評
                     try:
