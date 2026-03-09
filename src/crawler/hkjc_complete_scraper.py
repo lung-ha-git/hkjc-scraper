@@ -469,6 +469,132 @@ class HKJCCompleteScraper:
                     except Exception as e:
                         pass  # Tab might not exist or no data
                     
+                    # Task 2: 所跑途程賽績紀錄
+                    try:
+                        await page.click("text=所跑途程賽績紀錄", timeout=3000)
+                        await asyncio.sleep(2)
+                        
+                        tables = await page.query_selector_all("table.horseperformance")
+                        
+                        for table in tables:
+                            rows = await table.query_selector_all("tr")
+                            
+                            for row in rows[1:]:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) >= 3:
+                                    dist_data = {
+                                        "hkjc_horse_id": horse_id,
+                                        "distance": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                        "wins": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                    }
+                                    
+                                    existing = self.db.db["horse_distance_stats"].find_one({
+                                        "hkjc_horse_id": horse_id,
+                                        "distance": dist_data.get("distance")
+                                    })
+                                    if not existing:
+                                        self.db.db["horse_distance_stats"].insert_one(dist_data)
+                    except:
+                        pass
+                    
+                    # Task 3: 晨操紀錄
+                    try:
+                        await page.click("text=晨操紀錄", timeout=3000)
+                        await asyncio.sleep(2)
+                        
+                        tables = await page.query_selector_all("table.table_bd")
+                        
+                        for table in tables:
+                            rows = await table.query_selector_all("tr")
+                            
+                            for row in rows[1:]:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) >= 2:
+                                    workout = {
+                                        "hkjc_horse_id": horse_id,
+                                        "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                        "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                    }
+                                    
+                                    if workout.get("date"):
+                                        self.db.db["horse_workouts"].insert_one(workout)
+                    except:
+                        pass
+                    
+                    # Task 4: 傷患紀錄 (check for no data)
+                    try:
+                        await page.click("text=傷患紀錄", timeout=3000)
+                        await asyncio.sleep(2)
+                        
+                        text = await page.inner_text("body")
+                        
+                        # Check if has data or "沒有"
+                        has_data = "沒有" not in text[:200]
+                        
+                        if has_data:
+                            # Has medical records - need to extract
+                            # This is complex, save count only for now
+                            self.db.db["horse_medical"].insert_one({
+                                "hkjc_horse_id": horse_id,
+                                "has_records": True
+                            })
+                        else:
+                            self.db.db["horse_medical"].insert_one({
+                                "hkjc_horse_id": horse_id,
+                                "has_records": False
+                            })
+                    except:
+                        pass
+                    
+                    # Task 5: 搬遷紀錄
+                    try:
+                        await page.click("text=搬遷紀錄", timeout=3000)
+                        await asyncio.sleep(2)
+                        
+                        table = await page.query_selector("table#MovementRecord")
+                        
+                        if table:
+                            rows = await table.query_selector_all("tr")
+                            
+                            for row in rows[1:]:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) >= 2:
+                                    move = {
+                                        "hkjc_horse_id": horse_id,
+                                        "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                        "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                    }
+                                    
+                                    if move.get("date"):
+                                        self.db.db["horse_movements"].insert_one(move)
+                    except:
+                        pass
+                    
+                    # Task 6: 血統簡評
+                    try:
+                        await page.click("text=血統簡評", timeout=3000)
+                        await asyncio.sleep(2)
+                        
+                        tables = await page.query_selector_all("table.blood")
+                        
+                        for idx, table in enumerate(tables):
+                            rows = await table.query_selector_all("tr")
+                            
+                            for row in rows:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) >= 2:
+                                    pedigree = {
+                                        "hkjc_horse_id": horse_id,
+                                        "table_idx": idx,
+                                        "sire": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                        "dam": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                    }
+                                    
+                                    if pedigree.get("sire"):
+                                        self.db.db["horse_pedigree"].insert_one(pedigree)
+                    except:
+                        pass
+                    
                     print(f"   ✅ {horse_id}: {len(race_urls)} unique races")
                     
                 except Exception as e:
