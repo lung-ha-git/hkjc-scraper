@@ -238,14 +238,16 @@ class HKJCCompleteScraper:
                     await asyncio.sleep(2)
                     
                     text = await page.inner_text("body")
+                    title = await page.title()
                     
                     # Extract basic info
                     horse_data = {"hkjc_horse_id": horse_id}
                     
-                    # Name
-                    name_match = re.search(r'^([^\n(]+)', text)
-                    if name_match:
-                        horse_data["name"] = name_match.group(1).strip()
+                    # Name - get from page title instead
+                    # Title format: "馬名 - 馬匹資料 - 賽馬資訊 - 香港賽馬會"
+                    title_match = re.search(r'^([^-]+)', title)
+                    if title_match:
+                        horse_data["name"] = title_match.group(1).strip()
                     
                     # Trainer
                     trainer_match = re.search(r'練馬師\s*[:：]\s*([^\n]+)', text)
