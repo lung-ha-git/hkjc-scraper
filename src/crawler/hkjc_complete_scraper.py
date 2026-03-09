@@ -521,52 +521,66 @@ class HKJCCompleteScraper:
                     except:
                         pass
                     
-                    # Task 4: 傷患紀錄 (check for no data)
+                    # Task 4: 傷患紀錄
                     try:
                         await page.click("text=傷患紀錄", timeout=3000)
                         await asyncio.sleep(2)
                         
-                        text = await page.inner_text("body")
+                        # Find table
+                        tables = await page.query_selector_all("table.table_bd")
                         
-                        # Check if has data or "沒有"
-                        has_data = "沒有" not in text[:200]
+                        medical_count = 0
+                        for table in tables:
+                            rows = await table.query_selector_all("tr")
+                            if len(rows) > 1:
+                                # Check header
+                                header = await rows[0].inner_text()
+                                if "傷患" in header or "日期" in header:
+                                    medical_count = len(rows) - 1
+                                    
+                                    for row in rows[1:]:
+                                        cells = await row.query_selector_all("td")
+                                        if len(cells) >= 2:
+                                            med = {
+                                                "hkjc_horse_id": horse_id,
+                                                "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                                "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                            }
+                                            self.db.db["horse_medical"].insert_one(med)
+                                    break
                         
-                        if has_data:
-                            # Has medical records - need to extract
-                            # This is complex, save count only for now
-                            self.db.db["horse_medical"].insert_one({
-                                "hkjc_horse_id": horse_id,
-                                "has_records": True
-                            })
-                        else:
-                            self.db.db["horse_medical"].insert_one({
-                                "hkjc_horse_id": horse_id,
-                                "has_records": False
-                            })
-                    except:
-                        pass
+                    except Exception as e:
+                        pass  # Silent fail
                     
                     # Task 5: 搬遷紀錄
                     try:
                         await page.click("text=搬遷紀錄", timeout=3000)
                         await asyncio.sleep(2)
                         
-                        table = await page.query_selector("table#MovementRecord")
+                        # Find movement table by id or by header
+                        tables = await page.query_selector_all("table")
                         
-                        if table:
-                            rows = await table.query_selector_all("tr")
+                        for table in tables:
+                            table_id = await table.get_attribute("id") or ""
                             
-                            for row in rows[1:]:
-                                cells = await row.query_selector_all("td")
-                                if len(cells) >= 2:
-                                    move = {
-                                        "hkjc_horse_id": horse_id,
-                                        "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
-                                        "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
-                                    }
-                                    
-                                    if move.get("date"):
-                                        self.db.db["horse_movements"].insert_one(move)
+                            # Check if this is movement table
+                            rows = await table.query_selector_all("tr")
+                            if len(rows) > 1:
+                                header = await rows[0].inner_text()
+                                
+                                if "MovementRecord" in table_id or "搬遷" in header:
+                                    for row in rows[1:]:
+                                        cells = await row.query_selector_all("td")
+                                        if len(cells) >= 2:
+                                            move = {
+                                                "hkjc_horse_id": horse_id,
+                                                "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                                "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                            }
+                                            
+                                            if move.get("date"):
+                                                self.db.db["horse_movements"].insert_one(move)
+                                    break
                     except:
                         pass
                     
