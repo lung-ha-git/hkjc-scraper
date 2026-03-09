@@ -469,32 +469,51 @@ class HKJCCompleteScraper:
                     except Exception as e:
                         pass  # Tab might not exist or no data
                     
-                    # Task 2: 所跑途程賽績紀錄
+                    # Task 2: 所跑途程賽績紀錄 (完整結構)
                     try:
                         await page.click("text=所跑途程賽績紀錄", timeout=3000)
                         await asyncio.sleep(2)
                         
+                        text = await page.inner_text("body")
+                        
+                        # Initialize data structure
+                        dist_perf = {
+                            "hkjc_horse_id": horse_id,
+                            "track_performance": [],
+                            "distance_performance": {},
+                            "seasonal_performance": [],
+                            "overall_total": {}
+                        }
+                        
+                        # Parse text to extract structured data
+                        # This is complex - need to identify sections
+                        
+                        # For now, save what we can extract from tables
                         tables = await page.query_selector_all("table.horseperformance")
                         
+                        all_rows = []
                         for table in tables:
                             rows = await table.query_selector_all("tr")
-                            
-                            for row in rows[1:]:
+                            for row in rows:
                                 cells = await row.query_selector_all("td")
-                                if len(cells) >= 3:
-                                    dist_data = {
-                                        "hkjc_horse_id": horse_id,
-                                        "distance": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
-                                        "wins": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
-                                    }
-                                    
-                                    existing = self.db.db["horse_distance_stats"].find_one({
-                                        "hkjc_horse_id": horse_id,
-                                        "distance": dist_data.get("distance")
-                                    })
-                                    if not existing:
-                                        self.db.db["horse_distance_stats"].insert_one(dist_data)
+                                cell_texts = []
+                                for c in cells:
+                                    cell_texts.append((await c.inner_text()).strip())
+                                if cell_texts:
+                                    all_rows.append(cell_texts)
+                        
+                        # Try to parse into structure
+                        # Group by sections in the table
+                        
+                        # Save as single document
+                        existing = self.db.db["horse_distance_stats"].find_one({
+                            "hkjc_horse_id": horse_id
+                        })
+                        if not existing and all_rows:
+                            dist_perf["raw_data"] = all_rows
+                            self.db.db["horse_distance_stats"].insert_one(dist_perf)
                     except:
+                        pass
                         pass
                     
                     # Task 3: 晨操紀錄
