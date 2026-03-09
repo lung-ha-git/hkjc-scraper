@@ -432,15 +432,42 @@ class HKJCCompleteScraper:
                                 
                                 race_urls[race_key]["source_horses"].append(horse_id)
                     
-                    # TODO: Click other tabs to get more data (Phase 3.5)
-                    # tabs = [
-                    #     ("馬匹評分/體重/名次", "horse_rating"),
-                    #     ("所跑途程賽績紀錄", "distance_stats"),
-                    #     ("晨操紀錄", "workouts"),
-                    #     ("傷患紀錄", "medical"),
-                    #     ("搬遷紀錄", "movements"),
-                    #     ("血統簡評", "pedigree")
-                    # ]
+                    # Task 1: 馬匹評分/體重/名次
+                    try:
+                        await page.click("text=馬匹評分/體重/名次", timeout=3000)
+                        await asyncio.sleep(2)
+                        
+                        # Find the rating table (same structure as race history)
+                        tables = await page.query_selector_all("table.bigborder")
+                        
+                        for table in tables:
+                            rows = await table.query_selector_all("tr")
+                            
+                            for row in rows[1:]:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) < 3:
+                                    continue
+                                
+                                # Check if this is rating data (has 評分, 體重 columns)
+                                rating_data = {
+                                    "hkjc_horse_id": horse_id,
+                                    "race_no": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
+                                    "position": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                    "date": (await cells[2].inner_text()).strip() if len(cells) > 2 else "",
+                                    "rating": (await cells[8].inner_text()).strip() if len(cells) > 8 else "",
+                                    "weight": (await cells[16].inner_text()).strip() if len(cells) > 16 else "",
+                                }
+                                
+                                # Save if has valid data
+                                if rating_data.get("rating") or rating_data.get("weight"):
+                                    existing = self.db.db["horse_ratings"].find_one({
+                                        "hkjc_horse_id": horse_id,
+                                        "race_no": rating_data.get("race_no")
+                                    })
+                                    if not existing:
+                                        self.db.db["horse_ratings"].insert_one(rating_data)
+                    except Exception as e:
+                        pass  # Tab might not exist or no data
                     
                     print(f"   ✅ {horse_id}: {len(race_urls)} unique races")
                     
