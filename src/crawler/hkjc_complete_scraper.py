@@ -903,28 +903,50 @@ class HKJCCompleteScraper:
                         move_count = 0
                         for table in tables:
                             table_id = await table.get_attribute("id") or ""
-                            class_name = await table.get_attribute("class") or ""
+                            
+                            # STRICT: Only use MovementRecord table
+                            if "MovementRecord" not in table_id:
+                                continue
                             
                             rows = await table.query_selector_all("tr")
-                            if len(rows) > 1:
-                                header = await rows[0].inner_text()
-                                
-                                if "MovementRecord" in table_id or "搬遷" in header or "搬馬" in header:
-                                    for row in rows[1:]:
-                                        cells = await row.query_selector_all("td")
-                                        if len(cells) >= 2:
-                                            move = {
-                                                "hkjc_horse_id": horse_id,
-                                                "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
-                                                "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
-                                            }
-                                            if move.get("date"):
-                                                self.db.db["horse_movements"].insert_one(move)
-                                                move_count += 1
+                            if len(rows) < 2:
+                                continue
+                            
+                            header = await rows[0].inner_text()
+                            # Verify it's the right table with 從, 至, 到達日期 columns
+                            if "從" not in header or "至" not in header or "到達日期" not in header:
+                                continue
+                            
+                            for row in rows[1:]:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) >= 3:
+                                    cell_texts = [(await c.inner_text()).strip() for c in cells]
                                     
-                                    if move_count > 0:
-                                        print(f"      📦 Movements: {move_count}")
-                                        break
+                                    from_loc = cell_texts[0] if len(cell_texts) > 0 else ""
+                                    to_loc = cell_texts[1] if len(cell_texts) > 1 else ""
+                                    arrival_date = cell_texts[2] if len(cell_texts) > 2 else ""
+                                    
+                                    # Skip empty/None/header rows
+                                    if from_loc in ["None", "none", ""] and to_loc in ["None", "none", ""]:
+                                        continue
+                                    if "從" in from_loc or "至" in from_loc or "從" in to_loc or "至" in to_loc:
+                                        continue
+                                    if arrival_date in ["None", "none", ""]:
+                                        continue
+                                    
+                                    move = {
+                                        "hkjc_horse_id": horse_id,
+                                        "from_location": from_loc,
+                                        "to_location": to_loc,
+                                        "arrival_date": arrival_date
+                                    }
+                                    if move.get("from_location") or move.get("to_location"):
+                                        self.db.db["horse_movements"].insert_one(move)
+                                        move_count += 1
+                            
+                            if move_count > 0:
+                                print(f"      📦 Movements: {move_count}")
+                                break
                     except Exception as e:
                         pass  # Silent fail
                     
