@@ -15,6 +15,7 @@ Date: 2026-03-09
 
 import asyncio
 import re
+import time
 from datetime import datetime
 from typing import List, Dict, Set
 from pathlib import Path
@@ -28,14 +29,24 @@ try:
 except ImportError:
     from horse_all_tabs_scraper import HorseAllTabsScraper  # Fallback for direct execution
 
+# Import activity log
+try:
+    from src.utils.scraper_activity_log import get_activity_log
+except ImportError:
+    from scraper_activity_log import get_activity_log
+
 
 class HKJCCompleteScraper:
     """Complete HKJC scraper workflow"""
     
-    def __init__(self, max_concurrent: int = 2, headless: bool = True):
+    def __init__(self, max_concurrent: int = 2, headless: bool = True, resume: bool = True):
         self.max_concurrent = max_concurrent
         self.headless = headless
         self.db = None
+        self.resume = resume
+        
+        # Activity log for tracking progress
+        self.activity_log = get_activity_log()
         
         # Track progress
         self.stats = {
@@ -52,27 +63,51 @@ class HKJCCompleteScraper:
         print("🏇 HKJC COMPLETE SCRAPER")
         print("=" * 70)
         
+        # Show current progress
+        print("\n📊 Current Progress:")
+        self.activity_log.print_summary()
+        
+        # Check if we should resume
+        if self.resume:
+            processed_horses = self.activity_log.get_processed_horses("horse_detail")
+            if processed_horses:
+                print(f"\n🔄 Resume mode: {len(processed_horses)} horses already processed")
+        
         # Connect to DB
         self.db = DatabaseConnection()
         if not self.db.connect():
             print("❌ Cannot connect to MongoDB")
             return
         
+        # Log workflow start
+        self.activity_log.log_start("workflow", race_id="main")
+        
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
             
             try:
                 # Phase 1: Jockeys & Trainers
+                self.activity_log.log_start("phase1_jockeys_trainers")
                 await self.scrape_jockeys_trainers(browser)
+                self.activity_log.log_complete("phase1_jockeys_trainers")
                 
                 # Phase 2: Horse List (二字馬)
+                self.activity_log.log_start("phase2_horse_list")
                 horse_ids = await self.scrape_horse_list(browser)
+                self.activity_log.log_complete("phase2_horse_list", records_count=len(horse_ids))
                 
                 # Phase 3: Horse Details + Race URLs
+                self.activity_log.log_start("phase3_horse_detail")
                 race_urls = await self.scrape_horses_details(browser, horse_ids)
+                self.activity_log.log_complete("phase3_horse_detail", records_count=len(race_urls))
                 
                 # Phase 4: Race Results
+                self.activity_log.log_start("phase4_race_results")
                 await self.scrape_races(browser, race_urls)
+                self.activity_log.log_complete("phase4_race_results", records_count=len(race_urls))
+                
+                # Log workflow complete
+                self.activity_log.log_complete("workflow")
                 
             finally:
                 await browser.close()
@@ -81,6 +116,9 @@ class HKJCCompleteScraper:
         
         # Print summary
         self.print_summary()
+        
+        # Final activity log summary
+        self.activity_log.print_summary()
     
     async def scrape_jockeys_trainers(self, browser):
         """Phase 1: Scrape jockeys and trainers"""
@@ -363,6 +401,13 @@ class HKJCCompleteScraper:
                     )
                     
                     self.stats["horses"] += 1
+                    
+                    # Log successful horse scrape
+                    self.activity_log.log_complete(
+                        phase="horse_detail",
+                        horse_id=horse_id,
+                        records_count=len(race_urls)
+                    )
                     
                     # Extract race URLs from table
                     tables = await page.query_selector_all("table.bigborder")
@@ -917,8 +962,17 @@ class HKJCCompleteScraper:
                 finally:
                     await page.close()
         
-        # Scrape all horses
-        tasks = [scrape_horse(hid) for hid in horse_ids]
+        # Scrape all horses (with resume support)
+        if self.resume:
+            processed = self.activity_log.get_processed_horses("horse_detail")
+            horses_to_scrape = [h for h in horse_ids if h not in processed]
+            skipped = len(horse_ids) - len(horses_to_scrape)
+            if skipped > 0:
+                print(f"   ⏭️  Skipping {skipped} already processed horses (resume mode)")
+        else:
+            horses_to_scrape = horse_ids
+        
+        tasks = [scrape_horse(hid) for hid in horses_to_scrape]
         await asyncio.gather(*tasks, return_exceptions=True)
         
         print(f"   ✅ Total unique race URLs: {len(race_urls)}")
@@ -1135,15 +1189,32 @@ class HKJCCompleteScraper:
                     print(f"   ✅ {race_key}: {len(results)} horses, payout={len(payout)}, incidents={len(incidents)}")
                     self.stats["races"] += 1
                     
+                    # Log successful race scrape
+                    self.activity_log.log_complete(
+                        phase="race_result",
+                        race_id=race_key,
+                        records_count=len(results)
+                    )
+                    
                 except Exception as e:
                     print(f"   ❌ {race_key}: {e}")
                     self.stats["errors"].append({"race": race_key, "error": str(e)})
+                    self.activity_log.log_error(phase="race_result", race_id=race_key, error=str(e))
                 
                 finally:
                     await page.close()
         
-        # Scrape all races
-        tasks = [scrape_race(k, v) for k, v in race_urls.items()]
+        # Scrape all races (with resume support)
+        if self.resume:
+            processed_races = self.activity_log.get_processed_races()
+            races_to_scrape = {k: v for k, v in race_urls.items() if k not in processed_races}
+            skipped = len(race_urls) - len(races_to_scrape)
+            if skipped > 0:
+                print(f"   ⏭️  Skipping {skipped} already processed races (resume mode)")
+        else:
+            races_to_scrape = race_urls
+        
+        tasks = [scrape_race(k, v) for k, v in races_to_scrape.items()]
         await asyncio.gather(*tasks, return_exceptions=True)
     
     async def _extract_payout(self, table, bet_type: str) -> List[Dict]:
@@ -1193,8 +1264,38 @@ class HKJCCompleteScraper:
 
 
 async def main():
-    """Entry point"""
-    scraper = HKJCCompleteScraper(max_concurrent=2, headless=True)
+    """Entry point with command-line options"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="HKJC Complete Scraper")
+    parser.add_argument("--no-resume", action="store_true", help="Start fresh (ignore previous progress)")
+    parser.add_argument("--clear-log", action="store_true", help="Clear activity log before starting")
+    parser.add_argument("--show-log", action="store_true", help="Show activity log and exit")
+    parser.add_argument("-c", "--concurrent", type=int, default=2, help="Max concurrent scrapes (default: 2)")
+    parser.add_argument("--headful", action="store_true", help="Run browser in headful mode (visible)")
+    
+    args = parser.parse_args()
+    
+    # Handle activity log options
+    activity_log = get_activity_log()
+    
+    if args.show_log:
+        activity_log.print_summary()
+        return
+    
+    if args.clear_log:
+        activity_log.clear()
+        print("🗑️  Activity log cleared")
+    
+    # Run scraper
+    resume = not args.no_resume
+    headless = not args.headful
+    
+    scraper = HKJCCompleteScraper(
+        max_concurrent=args.concurrent, 
+        headless=headless,
+        resume=resume
+    )
     await scraper.run()
 
 

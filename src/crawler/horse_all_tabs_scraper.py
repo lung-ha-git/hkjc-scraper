@@ -658,11 +658,24 @@ class HorseAllTabsScraper:
                             # Skip empty rows
                             if not any(cell_texts):
                                 continue
+                            # Skip header-like rows (None, empty, or header keywords)
+                            from_loc = cell_texts[0].strip() if len(cell_texts) > 0 else ""
+                            to_loc = cell_texts[1].strip() if len(cell_texts) > 1 else ""
+                            arrival = cell_texts[2].strip() if len(cell_texts) > 2 else ""
+                            
+                            # Skip if any cell contains "None" or is a header keyword
+                            if from_loc in ["None", "none", ""] and to_loc in ["None", "none", ""]:
+                                continue
+                            if "從" in from_loc or "至" in from_loc or "從" in to_loc or "至" in to_loc:
+                                continue
+                            if arrival in ["None", "none", ""]:
+                                continue
+                            
                             movement = {
                                 "hkjc_horse_id": self.hkjc_horse_id,
-                                "from_location": cell_texts[0] if len(cell_texts) > 0 else "",
-                                "to_location": cell_texts[1] if len(cell_texts) > 1 else "",
-                                "arrival_date": cell_texts[2] if len(cell_texts) > 2 else ""
+                                "from_location": from_loc,
+                                "to_location": to_loc,
+                                "arrival_date": arrival
                             }
                             if movement.get("from_location") or movement.get("to_location"):
                                 movements.append(movement)
