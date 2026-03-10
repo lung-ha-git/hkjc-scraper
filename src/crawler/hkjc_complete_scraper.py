@@ -1223,8 +1223,8 @@ class HKJCCompleteScraper:
                         if "位置" in pt_text and "獨贏" not in pt_text:
                             payout["place"] = await self._extract_payout(pt, "位置")
                         # Quinella
-                        if "孖寶" in pt_text:
-                            payout["quinella"] = await self._extract_payout(pt, "孖寶")
+                        if "連贏" in pt_text:
+                            payout["quinella"] = await self._extract_payout(pt, "連贏")
                         # Quinella Place
                         if "位置Q" in pt_text or "位置孖寶" in pt_text:
                             payout["quinella_place"] = await self._extract_payout(pt, "位置Q")
