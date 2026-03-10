@@ -55,6 +55,7 @@ class HKJCCompleteScraper:
         self.db = None
         self.resume = resume
         self.phase3_only = False  # Will be set by main()
+        self.phase4_only = False  # Will be set by main()
         
         # Activity log for tracking progress
         self.activity_log = get_activity_log()
@@ -73,6 +74,52 @@ class HKJCCompleteScraper:
         print("\n" + "=" * 70)
         print("🏇 HKJC COMPLETE SCRAPER")
         print("=" * 70)
+        
+        # Handle phase4_only mode
+        if self.phase4_only:
+            print("\n🔄 Phase 4 Only Mode - Loading race URLs from database...")
+            self.db = DatabaseConnection()
+            if not self.db.connect():
+                print("❌ Cannot connect to MongoDB")
+                return
+            
+            # Extract race URLs from race_history
+            race_urls = {}
+            for doc in self.db.db.horse_race_history.find({'race_url': {'$exists': True, '$ne': ''}}):
+                race_url = doc.get('race_url', '')
+                if race_url and race_url not in race_urls:
+                    import re
+                    date_match = re.search(r'racedate=(\d+/\d+/\d+)', race_url)
+                    course_match = re.search(r'Racecourse=(\w+)', race_url)
+                    race_no_match = re.search(r'RaceNo=(\d+)', race_url)
+                    
+                    if date_match and course_match and race_no_match:
+                        race_key = f"{date_match.group(1).replace('/', '_')}_{course_match.group(1)}_{race_no_match.group(1)}"
+                        race_urls[race_key] = {
+                            'url': race_url,
+                            'race_date': date_match.group(1),
+                            'course': course_match.group(1),
+                            'race_no': race_no_match.group(1)
+                        }
+            
+            print(f"   📋 Found {len(race_urls)} races from race_history")
+            
+            # Initialize race queue
+            race_queue = get_race_queue()
+            race_queue.connect()
+            race_queue.init_queue(list(race_urls.keys()))
+            
+            # Run Phase 4
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=self.headless)
+                try:
+                    await self.scrape_races(browser, race_urls)
+                finally:
+                    await browser.close()
+            
+            self.db.disconnect()
+            print("\n✅ Phase 4 Complete!")
+            return
         
         # Show current progress
         print("\n📊 Current Progress:")
@@ -1279,28 +1326,71 @@ class HKJCCompleteScraper:
         await asyncio.gather(*tasks, return_exceptions=True)
     
     async def _extract_payout(self, table, bet_type: str) -> List[Dict]:
-        """Extract payout data from a table"""
+        """Extract payout data from a table, filtering by bet type"""
         payout_list = []
         try:
             rows = await table.query_selector_all("tr")
-            for row in rows[1:]:  # Skip header
-                cells = await row.query_selector_all("td")
-                if len(cells) >= 2:
-                    combo = (await cells[0].inner_text()).strip()
-                    div_str = (await cells[1].inner_text()).strip()
-                    
-                    # Parse dividend (remove $ and ,)
-                    div_str = div_str.replace("$", "").replace(",", "")
-                    try:
-                        dividend = float(div_str)
-                    except:
-                        dividend = 0.0
-                    
-                    if combo and dividend > 0:
-                        payout_list.append({
-                            "winning_combination": combo,
-                            "dividend": dividend
-                        })
+            
+            # Find the header row to determine columns
+            header_row = rows[0] if rows else None
+            header_text = await header_row.inner_text() if header_row else ""
+            
+            # Find the column index for the bet type
+            # Header typically has: "投注項目" / "獨贏" / "位置" / etc.
+            cells = await header_row.query_selector_all("th") if header_row else []
+            header_cells = [await c.inner_text() for c in cells]
+            
+            # Also check td cells in header
+            header_tds = await header_row.query_selector_all("td") if header_row else []
+            header_cells += [await c.inner_text() for c in header_tds]
+            
+            # Find column index for this bet type
+            col_idx = -1
+            for i, h in enumerate(header_cells):
+                if bet_type in h:
+                    col_idx = i
+                    break
+            
+            # If we found the column, extract data
+            if col_idx >= 0:
+                for row in rows[1:]:  # Skip header
+                    cells = await row.query_selector_all("td")
+                    if len(cells) > col_idx:
+                        combo = (await cells[0].inner_text()).strip()
+                        div_cell = (await cells[col_idx].inner_text()).strip() if col_idx < len(cells) else ""
+                        
+                        # Parse dividend (remove $ and ,)
+                        div_cell = div_cell.replace("$", "").replace(",", "")
+                        try:
+                            dividend = float(div_cell)
+                        except:
+                            dividend = 0.0
+                        
+                        if combo and dividend > 0:
+                            payout_list.append({
+                                "winning_combination": combo,
+                                "dividend": dividend
+                            })
+            else:
+                # Fallback: if no column found, extract all (original behavior)
+                for row in rows[1:]:  # Skip header
+                    cells = await row.query_selector_all("td")
+                    if len(cells) >= 2:
+                        combo = (await cells[0].inner_text()).strip()
+                        div_str = (await cells[1].inner_text()).strip()
+                        
+                        # Parse dividend (remove $ and ,)
+                        div_str = div_str.replace("$", "").replace(",", "")
+                        try:
+                            dividend = float(div_str)
+                        except:
+                            dividend = 0.0
+                        
+                        if combo and dividend > 0:
+                            payout_list.append({
+                                "winning_combination": combo,
+                                "dividend": dividend
+                            })
         except Exception as e:
             logger.error(f"Error extracting payout for {bet_type}: {e}")
         return payout_list
@@ -1335,6 +1425,7 @@ async def main():
     parser.add_argument("-c", "--concurrent", type=int, default=2, help="Max concurrent scrapes (default: 2)")
     parser.add_argument("--headful", action="store_true", help="Run browser in headful mode (visible)")
     parser.add_argument("--phase3-only", action="store_true", help="Only run Phase 1-3, skip Phase 4")
+    parser.add_argument("--phase4-only", action="store_true", help="Only run Phase 4, skip Phase 1-3")
     
     args = parser.parse_args()
     
@@ -1359,6 +1450,7 @@ async def main():
         resume=resume
     )
     scraper.phase3_only = args.phase3_only
+    scraper.phase4_only = args.phase4_only
     await scraper.run()
 
 
