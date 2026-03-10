@@ -36,7 +36,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
 from src.utils.scraper_activity_log import get_activity_log
-from src.utils.scraping_queue import get_scraping_queue
+from src.utils.scraping_queue import get_scraping_queue, get_race_queue
 from playwright.async_api import async_playwright
 
 # Import activity log
@@ -121,7 +121,19 @@ class HKJCCompleteScraper:
                 # Phase 4: Race Results (skip if phase3_only)
                 if not self.phase3_only:
                     self.activity_log.log_start("phase4_race_results")
+                    
+                    # Initialize race queue
+                    race_queue = get_race_queue()
+                    race_queue.connect()
+                    race_queue.init_queue(list(race_urls.keys()))
+                    print(f"   📋 Initialized race queue with {len(race_urls)} races")
+                    
                     await self.scrape_races(browser, race_urls)
+                    
+                    # Print race queue stats
+                    race_stats = race_queue.get_stats()
+                    print(f"   📋 Race queue stats: {race_stats}")
+                    
                     self.activity_log.log_complete("phase4_race_results", records_count=len(race_urls))
                 else:
                     print("\n⏭️  Phase 4 skipped (--phase3-only mode)")
@@ -1018,6 +1030,14 @@ class HKJCCompleteScraper:
         
         async def scrape_race(race_key: str, race_info: Dict):
             async with semaphore:
+                # Mark race as in progress
+                try:
+                    race_queue = get_race_queue()
+                    race_queue.connect()
+                    race_queue.mark_in_progress(race_key)
+                except:
+                    pass
+                
                 page = await browser.new_page()
                 
                 try:
@@ -1220,6 +1240,18 @@ class HKJCCompleteScraper:
                     print(f"   ✅ {race_key}: {len(results)} horses, payout={len(payout)}, incidents={len(incidents)}")
                     self.stats["races"] += 1
                     
+                    # Update race queue
+                    try:
+                        race_queue = get_race_queue()
+                        race_queue.connect()
+                        race_queue.update_status(race_key, {
+                            "results": len(results),
+                            "payout": len(payout),
+                            "incidents": len(incidents)
+                        })
+                    except:
+                        pass
+                    
                     # Log successful race scrape
                     self.activity_log.log_complete(
                         phase="race_result",
@@ -1231,6 +1263,14 @@ class HKJCCompleteScraper:
                     print(f"   ❌ {race_key}: {e}")
                     self.stats["errors"].append({"race": race_key, "error": str(e)})
                     self.activity_log.log_error(phase="race_result", race_id=race_key, error=str(e))
+                    
+                    # Update race queue as failed
+                    try:
+                        race_queue = get_race_queue()
+                        race_queue.connect()
+                        race_queue.mark_failed(race_key, str(e))
+                    except:
+                        pass
                 
                 finally:
                     await page.close()

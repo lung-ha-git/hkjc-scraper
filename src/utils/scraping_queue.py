@@ -212,3 +212,120 @@ def get_scraping_queue() -> ScrapingQueue:
     if _queue is None:
         _queue = ScrapingQueue()
     return _queue
+
+
+# ============================================================
+# Race Queue - for Phase 4 race results scraping
+# ============================================================
+
+class RaceQueue:
+    """Manages race results scraping queue"""
+    
+    def __init__(self):
+        self.db = None
+    
+    def connect(self):
+        self.db = DatabaseConnection()
+        return self.db.connect()
+    
+    def disconnect(self):
+        if self.db:
+            self.db.disconnect()
+    
+    def init_queue(self, race_keys: List[str]):
+        """Initialize queue with race keys"""
+        if not self.db:
+            self.connect()
+        
+        now = get_now()
+        
+        for race_key in race_keys:
+            existing = self.db.db.race_queue.find_one({"race_key": race_key})
+            
+            if not existing:
+                self.db.db.race_queue.insert_one({
+                    "race_key": race_key,
+                    "status": "pending",
+                    "data_status": {},
+                    "scrape_count": 0,
+                    "last_updated": now,
+                    "created_at": now,
+                    "modified_at": now,
+                    "error": None
+                })
+    
+    def get_pending(self, limit: int = 50) -> List[str]:
+        """Get pending race keys"""
+        if not self.db:
+            self.connect()
+        
+        pending = list(self.db.db.race_queue.find(
+            {"status": "pending"}
+        ).limit(limit))
+        
+        return [p["race_key"] for p in pending]
+    
+    def mark_in_progress(self, race_key: str):
+        """Mark race as in progress"""
+        if not self.db:
+            self.connect()
+        
+        now = get_now()
+        self.db.db.race_queue.update_one(
+            {"race_key": race_key},
+            {"$set": {"status": "in_progress", "modified_at": now}}
+        )
+    
+    def update_status(self, race_key: str, data_counts: Dict):
+        """Update race data status"""
+        if not self.db:
+            self.connect()
+        
+        now = get_now()
+        self.db.db.race_queue.update_one(
+            {"race_key": race_key},
+            {
+                "$set": {
+                    "data_status": data_counts,
+                    "status": "completed",
+                    "scrape_count": {"$inc": 1},
+                    "modified_at": now,
+                    "last_updated": now
+                },
+                "$setOnInsert": {"created_at": now}
+            }
+        )
+    
+    def mark_failed(self, race_key: str, error: str):
+        """Mark race as failed"""
+        if not self.db:
+            self.connect()
+        
+        now = get_now()
+        self.db.db.race_queue.update_one(
+            {"race_key": race_key},
+            {"$set": {"status": "failed", "error": error, "modified_at": now}}
+        )
+    
+    def get_stats(self) -> Dict:
+        """Get race queue statistics"""
+        if not self.db:
+            self.connect()
+        
+        return {
+            "total": self.db.db.race_queue.count_documents({}),
+            "pending": self.db.db.race_queue.count_documents({"status": "pending"}),
+            "completed": self.db.db.race_queue.count_documents({"status": "completed"}),
+            "failed": self.db.db.race_queue.count_documents({"status": "failed"}),
+        }
+
+
+# Singleton for race queue
+_race_queue: Optional[RaceQueue] = None
+
+def get_race_queue() -> RaceQueue:
+    """Get or create race queue singleton"""
+    global _race_queue
+    if _race_queue is None:
+        _race_queue = RaceQueue()
+    return _race_queue
