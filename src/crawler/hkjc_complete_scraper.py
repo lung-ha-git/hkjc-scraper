@@ -1229,8 +1229,8 @@ class HKJCCompleteScraper:
                         if "位置Q" in pt_text or "位置孖寶" in pt_text:
                             payout["quinella_place"] = await self._extract_payout(pt, "位置Q")
                         # Forecast
-                        if "預測" in pt_text:
-                            payout["forecast"] = await self._extract_payout(pt, "預測")
+                        if "二重彩" in pt_text:
+                            payout["forecast"] = await self._extract_payout(pt, "二重彩")
                         # Tierce
                         if "三重彩" in pt_text:
                             payout["tierce"] = await self._extract_payout(pt, "三重彩")
