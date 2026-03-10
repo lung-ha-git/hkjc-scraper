@@ -1235,8 +1235,8 @@ class HKJCCompleteScraper:
                         if "三重彩" in pt_text:
                             payout["tierce"] = await self._extract_payout(pt, "三重彩")
                         # Trio
-                        if "三T" in pt_text:
-                            payout["trio"] = await self._extract_payout(pt, "T")
+                        if "單T" in pt_text:
+                            payout["trio"] = await self._extract_payout(pt, "單T")
                         # First 4
                         if "四連環" in pt_text:
                             payout["first_4"] = await self._extract_payout(pt, "四連環")
