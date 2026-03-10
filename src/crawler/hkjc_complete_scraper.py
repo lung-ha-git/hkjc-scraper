@@ -427,22 +427,12 @@ class HKJCCompleteScraper:
                         records_count=len(race_urls)
                     )
                     
-                    # Update scraping queue with data counts
+                    # Update scraping queue with data counts (will re-count from actual collections)
                     try:
                         queue = get_scraping_queue()
                         queue.connect()
-                        # Count actual data for this horse
-                        data_counts = {
-                            "basic_info": 1 if horse_data.get("name") else 0,
-                            "race_history": self.db.db.horse_race_history.count_documents({"hkjc_horse_id": horse_id}),
-                            "distance_stats": self.db.db.horse_distance_stats.count_documents({"hkjc_horse_id": horse_id}),
-                            "workouts": self.db.db.horse_workouts.count_documents({"hkjc_horse_id": horse_id}),
-                            "medical": self.db.db.horse_medical.count_documents({"hkjc_horse_id": horse_id}),
-                            "movements": self.db.db.horse_movements.count_documents({"hkjc_horse_id": horse_id}),
-                            "pedigree": self.db.db.horse_pedigree.count_documents({"hkjc_horse_id": horse_id}),
-                            "ratings": self.db.db.horse_ratings.count_documents({"hkjc_horse_id": horse_id}),
-                        }
-                        queue.update_data_status(horse_id, data_counts)
+                        # Don't pass data_counts - let it re-count from collections
+                        queue.update_data_status(horse_id)
                     except Exception as e:
                         print(f"   ⚠️  Queue update failed: {e}")
                     

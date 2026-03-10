@@ -80,10 +80,23 @@ class ScrapingQueue:
             }
         )
     
-    def update_data_status(self, horse_id: str, data_counts: Dict[str, int]):
-        """Update data completeness status"""
+    def update_data_status(self, horse_id: str, data_counts: Dict[str, int] = None):
+        """Update data completeness status - re-counts from actual collections"""
         if not self.db:
             self.connect()
+        
+        # If no data_counts provided, re-count from actual collections
+        if data_counts is None:
+            data_counts = {
+                'basic_info': 1 if self.db.db.horses.find_one({'hkjc_horse_id': horse_id}) else 0,
+                'race_history': self.db.db.horse_race_history.count_documents({'hkjc_horse_id': horse_id}),
+                'distance_stats': self.db.db.horse_distance_stats.count_documents({'hkjc_horse_id': horse_id}),
+                'workouts': self.db.db.horse_workouts.count_documents({'hkjc_horse_id': horse_id}),
+                'medical': self.db.db.horse_medical.count_documents({'hkjc_horse_id': horse_id}),
+                'movements': self.db.db.horse_movements.count_documents({'hkjc_horse_id': horse_id}),
+                'pedigree': self.db.db.horse_pedigree.count_documents({'hkjc_horse_id': horse_id}),
+                'ratings': self.db.db.horse_ratings.count_documents({'hkjc_horse_id': horse_id}),
+            }
         
         now = get_now()
         self.db.db.scraping_queue.update_one(
