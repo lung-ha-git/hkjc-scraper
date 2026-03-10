@@ -282,6 +282,14 @@ class HKJCCompleteScraper:
                     # Extract comprehensive horse info
                     horse_data = {"hkjc_horse_id": horse_id}
                     
+                    # Extract horse_code (烙號) from hkjc_horse_id for jersey URL
+                    # e.g., HK_2024_K305 -> K305
+                    parts = horse_id.split("_")
+                    if len(parts) >= 3:
+                        horse_code = parts[2]  # e.g., K305
+                        horse_data["horse_code"] = horse_code
+                        horse_data["jersey_url"] = f"https://racing.hkjc.com/racing/content/Images/RaceColor/{horse_code}.gif"
+                    
                     # Name - get from page title
                     # Title format: "馬名 - 馬匹資料 - 賽馬資訊 - 香港賽馬會"
                     title_match = re.search(r'^([^-]+)', title)
