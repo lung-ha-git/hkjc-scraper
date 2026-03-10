@@ -16,13 +16,27 @@ Date: 2026-03-09
 import asyncio
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Set
+
+def get_now():
+    """Get current UTC timestamp"""
+    return datetime.now(timezone.utc).isoformat()
+
+def add_timestamps(doc: Dict, is_new: bool = True) -> Dict:
+    """Add created_at and modified_at timestamps to a document"""
+    now = get_now()
+    if is_new:
+        doc["created_at"] = now
+    doc["modified_at"] = now
+    return doc
 from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
+from src.utils.scraper_activity_log import get_activity_log
+from src.utils.scraping_queue import get_scraping_queue
 from playwright.async_api import async_playwright
 
 # Import activity log
@@ -40,6 +54,7 @@ class HKJCCompleteScraper:
         self.headless = headless
         self.db = None
         self.resume = resume
+        self.phase3_only = False  # Will be set by main()
         
         # Activity log for tracking progress
         self.activity_log = get_activity_log()
@@ -92,15 +107,24 @@ class HKJCCompleteScraper:
                 horse_ids = await self.scrape_horse_list(browser)
                 self.activity_log.log_complete("phase2_horse_list", records_count=len(horse_ids))
                 
+                # Initialize scraping queue
+                queue = get_scraping_queue()
+                queue.connect()
+                queue.init_queue(horse_ids)
+                print(f"   📋 Initialized scraping queue with {len(horse_ids)} horses")
+                
                 # Phase 3: Horse Details + Race URLs
                 self.activity_log.log_start("phase3_horse_detail")
                 race_urls = await self.scrape_horses_details(browser, horse_ids)
                 self.activity_log.log_complete("phase3_horse_detail", records_count=len(race_urls))
                 
-                # Phase 4: Race Results
-                self.activity_log.log_start("phase4_race_results")
-                await self.scrape_races(browser, race_urls)
-                self.activity_log.log_complete("phase4_race_results", records_count=len(race_urls))
+                # Phase 4: Race Results (skip if phase3_only)
+                if not self.phase3_only:
+                    self.activity_log.log_start("phase4_race_results")
+                    await self.scrape_races(browser, race_urls)
+                    self.activity_log.log_complete("phase4_race_results", records_count=len(race_urls))
+                else:
+                    print("\n⏭️  Phase 4 skipped (--phase3-only mode)")
                 
                 # Log workflow complete
                 self.activity_log.log_complete("workflow")
@@ -237,6 +261,14 @@ class HKJCCompleteScraper:
         
         async def scrape_horse(horse_id: str):
             async with semaphore:
+                # Mark horse as in progress
+                try:
+                    queue = get_scraping_queue()
+                    queue.connect()
+                    queue.mark_in_progress(horse_id)
+                except:
+                    pass
+                
                 page = await browser.new_page()
                 
                 try:
@@ -359,6 +391,7 @@ class HKJCCompleteScraper:
                         horse_data["maternal_grand_sire"] = mgs_text
                     
                     # Save to horses collection
+                    horse_data = add_timestamps(horse_data)
                     self.db.db["horses"].replace_one(
                         {"hkjc_horse_id": horse_id}, 
                         horse_data, 
@@ -373,6 +406,25 @@ class HKJCCompleteScraper:
                         horse_id=horse_id,
                         records_count=len(race_urls)
                     )
+                    
+                    # Update scraping queue with data counts
+                    try:
+                        queue = get_scraping_queue()
+                        queue.connect()
+                        # Count actual data for this horse
+                        data_counts = {
+                            "basic_info": 1 if horse_data.get("name") else 0,
+                            "race_history": self.db.db.horse_race_history.count_documents({"hkjc_horse_id": horse_id}),
+                            "distance_stats": self.db.db.horse_distance_stats.count_documents({"hkjc_horse_id": horse_id}),
+                            "workouts": self.db.db.horse_workouts.count_documents({"hkjc_horse_id": horse_id}),
+                            "medical": self.db.db.horse_medical.count_documents({"hkjc_horse_id": horse_id}),
+                            "movements": self.db.db.horse_movements.count_documents({"hkjc_horse_id": horse_id}),
+                            "pedigree": self.db.db.horse_pedigree.count_documents({"hkjc_horse_id": horse_id}),
+                            "ratings": self.db.db.horse_ratings.count_documents({"hkjc_horse_id": horse_id}),
+                        }
+                        queue.update_data_status(horse_id, data_counts)
+                    except Exception as e:
+                        print(f"   ⚠️  Queue update failed: {e}")
                     
                     # Extract race URLs from table
                     tables = await page.query_selector_all("table.bigborder")
@@ -437,6 +489,7 @@ class HKJCCompleteScraper:
                                     "race_id": race_key
                                 })
                                 if not existing:
+                                    race_data = add_timestamps(race_data)
                                     self.db.db["horse_race_history"].insert_one(race_data)
                                 
                                 if race_key not in race_urls:
@@ -715,6 +768,7 @@ class HKJCCompleteScraper:
                             "hkjc_horse_id": horse_id
                         })
                         if not existing and (dist_perf["track_performance"] or dist_perf["distance_performance"]):
+                            dist_perf = add_timestamps(dist_perf)
                             self.db.db["horse_distance_stats"].insert_one(dist_perf)
                     except Exception as e:
                         pass
@@ -764,6 +818,7 @@ class HKJCCompleteScraper:
                                     }
                                     
                                     if workout.get("date"):
+                                        workout = add_timestamps(workout)
                                         self.db.db["horse_workouts"].insert_one(workout)
                                         workout_count += 1
                             
@@ -817,6 +872,7 @@ class HKJCCompleteScraper:
                                     }
                                     
                                     if med.get("date"):
+                                        med = add_timestamps(med)
                                         self.db.db["horse_medical"].insert_one(med)
                                         medical_count += 1
                             
@@ -877,6 +933,7 @@ class HKJCCompleteScraper:
                                         "arrival_date": arrival_date
                                     }
                                     if move.get("from_location") or move.get("to_location"):
+                                        move = add_timestamps(move)
                                         self.db.db["horse_movements"].insert_one(move)
                                         move_count += 1
                             
@@ -907,6 +964,7 @@ class HKJCCompleteScraper:
                                     }
                                     
                                     if pedigree.get("sire"):
+                                        pedigree = add_timestamps(pedigree)
                                         self.db.db["horse_pedigree"].insert_one(pedigree)
                     except:
                         pass
@@ -932,6 +990,12 @@ class HKJCCompleteScraper:
         
         tasks = [scrape_horse(hid) for hid in horses_to_scrape]
         await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Update queue with final stats
+        queue = get_scraping_queue()
+        queue.connect()
+        queue_stats = queue.get_stats()
+        print(f"   📋 Queue stats: {queue_stats}")
         
         print(f"   ✅ Total unique race URLs: {len(race_urls)}")
         
@@ -1142,6 +1206,7 @@ class HKJCCompleteScraper:
                     race_data["incidents"] = incidents
                     
                     # Save to merged collection
+                    race_data = add_timestamps(race_data)
                     self.db.db["races"].replace_one({"hkjc_race_id": race_key}, race_data, upsert=True)
                     
                     print(f"   ✅ {race_key}: {len(results)} horses, payout={len(payout)}, incidents={len(incidents)}")
@@ -1231,6 +1296,7 @@ async def main():
     parser.add_argument("--show-log", action="store_true", help="Show activity log and exit")
     parser.add_argument("-c", "--concurrent", type=int, default=2, help="Max concurrent scrapes (default: 2)")
     parser.add_argument("--headful", action="store_true", help="Run browser in headful mode (visible)")
+    parser.add_argument("--phase3-only", action="store_true", help="Only run Phase 1-3, skip Phase 4")
     
     args = parser.parse_args()
     
@@ -1254,6 +1320,7 @@ async def main():
         headless=headless,
         resume=resume
     )
+    scraper.phase3_only = args.phase3_only
     await scraper.run()
 
 
