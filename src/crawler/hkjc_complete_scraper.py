@@ -1244,8 +1244,8 @@ class HKJCCompleteScraper:
                         if "四重彩" in pt_text:
                             payout["quartet"] = await self._extract_payout(pt, "四重彩")
                         # Double
-                        if "雙贏" in pt_text:
-                            payout["double"] = await self._extract_payout(pt, "雙贏")
+                        if "孖寶" in pt_text:
+                            payout["double"] = await self._extract_payout(pt, "孖寶")
                     
                     race_data["payout"] = payout
                     
