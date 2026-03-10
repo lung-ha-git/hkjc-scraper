@@ -773,84 +773,67 @@ class HKJCCompleteScraper:
                     except Exception as e:
                         pass  # Silent fail
                     
-                    # Task 4: 傷患紀錄
+                    # Task 4: 傷患紀錄 - Use ovehorse URL with table_bd class
                     try:
-                        # Reload main page and click
-                        await page.goto(f"https://racing.hkjc.com/zh-hk/local/information/horse?horseid={horse_id}", wait_until="domcontentloaded")
+                        # Use ovehorse URL
+                        medical_url = f"https://racing.hkjc.com/zh-hk/local/information/ovehorse?horseid={horse_id}"
+                        await page.goto(medical_url, wait_until="networkidle")
                         await asyncio.sleep(2)
                         
-                        # Try different tab selectors
-                        tab_selectors = [
-                            "text=傷患紀錄",
-                            "a:has-text('傷患')",
-                            "[role='tab']:has-text('傷患')",
-                        ]
-                        
-                        for selector in tab_selectors:
-                            try:
-                                if await page.is_visible(selector, timeout=1000):
-                                    await page.click(selector, timeout=3000)
-                                    await asyncio.sleep(3)
-                                    break
-                            except:
-                                continue
-                        
-                        # Find table - more flexible matching
                         tables = await page.query_selector_all("table")
                         
                         medical_count = 0
                         for table in tables:
-                            table_id = await table.get_attribute("id") or ""
-                            class_name = await table.get_attribute("class") or ""
-                            
+                            table_class = await table.get_attribute("class") or ""
                             rows = await table.query_selector_all("tr")
-                            if len(rows) > 1:
-                                # Check header
-                                header = await rows[0].inner_text()
-                                
-                                if "傷患" in header or "日期" in header or "傷勢" in header or "病情" in header:
-                                    for row in rows[1:]:
-                                        cells = await row.query_selector_all("td")
-                                        if len(cells) >= 2:
-                                            med = {
-                                                "hkjc_horse_id": horse_id,
-                                                "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
-                                                "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
-                                            }
-                                            if med.get("date"):
-                                                self.db.db["horse_medical"].insert_one(med)
-                                                medical_count += 1
+                            
+                            # Must use table class "table_bd"
+                            if "table_bd" not in table_class:
+                                continue
+                            
+                            if len(rows) < 2:
+                                continue
+                            
+                            header = await rows[0].inner_text()
+                            
+                            # Must have medical columns: 日期, 詳情, 通過日期
+                            if "日期" not in header or "詳情" not in header:
+                                continue
+                            
+                            for row in rows[1:]:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) >= 3:
+                                    date_text = (await cells[0].inner_text()).strip()
                                     
-                                    if medical_count > 0:
-                                        print(f"      🏥 Medical: {medical_count}")
-                                        break
-                        
+                                    # Skip header rows
+                                    if not date_text or date_text in ["日期", "None", ""]:
+                                        continue
+                                    
+                                    med = {
+                                        "hkjc_horse_id": horse_id,
+                                        "date": date_text,
+                                        "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                        "pass_date": (await cells[2].inner_text()).strip() if len(cells) > 2 else "",
+                                    }
+                                    
+                                    if med.get("date"):
+                                        self.db.db["horse_medical"].insert_one(med)
+                                        medical_count += 1
+                            
+                            if medical_count > 0:
+                                print(f"      🏥 Medical: {medical_count}")
+                                break
+                    
                     except Exception as e:
                         pass  # Silent fail
                     
-                    # Task 5: 搬遷紀錄
+                    # Task 5: 搬遷紀錄 - Use direct movementrecords URL
                     try:
-                        # Reload and try to click
-                        await page.goto(f"https://racing.hkjc.com/zh-hk/local/information/horse?horseid={horse_id}", wait_until="domcontentloaded")
+                        # Use dedicated movementrecords URL
+                        movement_url = f"https://racing.hkjc.com/zh-hk/local/information/movementrecords?horseid={horse_id}"
+                        await page.goto(movement_url, wait_until="domcontentloaded")
                         await asyncio.sleep(2)
                         
-                        # Try different tab selectors
-                        tab_selectors = [
-                            "text=搬遷紀錄",
-                            "a:has-text('搬遷')",
-                            "[role='tab']:has-text('搬遷')",
-                        ]
-                        
-                        for selector in tab_selectors:
-                            try:
-                                if await page.is_visible(selector, timeout=1000):
-                                    await page.click(selector, timeout=3000)
-                                    await asyncio.sleep(3)
-                                    break
-                            except:
-                                continue
-                        
-                        # Find movement table - more flexible
                         tables = await page.query_selector_all("table")
                         
                         move_count = 0
