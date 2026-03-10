@@ -3,7 +3,7 @@ HKJC Complete Scraper Workflow
 =============================
 Phase 1: Jockeys & Trainers
 Phase 2: Horse List (二字馬)
-Phase 3: Horse Details + Race URLs (uses HorseAllTabsScraper)
+Phase 3: Horse Details + Race URLs
 Phase 4: Race Results
 
 Usage:
@@ -24,10 +24,6 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
 from playwright.async_api import async_playwright
-try:
-    from .horse_all_tabs_scraper import HorseAllTabsScraper
-except ImportError:
-    from horse_all_tabs_scraper import HorseAllTabsScraper  # Fallback for direct execution
 
 # Import activity log
 try:
@@ -189,68 +185,37 @@ class HKJCCompleteScraper:
         
         page = await browser.new_page()
         
-        # Go to selecthorse page and get ALL horses
-        print("🔍 Getting ALL horses from HKJC...")
-        
-        await page.goto("https://racing.hkjc.com/zh-hk/local/information/selecthorse",
-                       wait_until="domcontentloaded")
-        await asyncio.sleep(3)
-        
-        # Method: Click through different name length filters
-        # Or get ALL horse links from the page
-        
-        # First try: Get all horse links directly
-        all_links = await page.query_selector_all("a[href*='horse?horseid=']")
+        # Go to selecthorse pages - get ALL horses (2/3/4字馬)
+        print("🔍 Getting ALL horses from HKJC (2/3/4字馬)...")
         
         horse_ids = []
         seen = set()
         
-        for link in all_links:
-            href = await link.get_attribute("href")
-            match = re.search(r'horseid=([^&/]+)', href or "")
-            
-            if match:
-                horse_id = match.group(1)
-                # Filter out non-HK horse IDs (like HK_2020_XXX)
-                if horse_id.startswith("HK_") and horse_id not in seen:
-                    seen.add(horse_id)
-                    horse_ids.append(horse_id)
-        
-        # If not enough, try clicking filters
-        if len(horse_ids) < 50:
-            print(f"   Found {len(horse_ids)}, trying filters...")
-            
-            # Try to find and click name length filter links (二字馬/三字馬/四字馬)
-            name_lengths = ["二字馬", "三字馬", "四字馬"]
-            
-            for length in name_lengths:
-                try:
-                    await page.goto("https://racing.hkjc.com/zh-hk/local/information/selecthorse",
-                                   wait_until="domcontentloaded")
-                    await asyncio.sleep(2)
+        # Use dedicated URLs for 2/3/4字馬
+        for ordertype in [2, 3, 4]:
+            try:
+                url = f"https://racing.hkjc.com/zh-hk/local/information/selecthorsebychar?ordertype={ordertype}"
+                await page.goto(url, wait_until="domcontentloaded")
+                await asyncio.sleep(2)
+                
+                # Get all horse links
+                links = await page.query_selector_all("a[href*='horse?horseid=']")
+                
+                count = 0
+                for link in links:
+                    href = await link.get_attribute("href")
+                    match = re.search(r'horseid=(HK_\d+_[A-Z]\d+)', href or "")
                     
-                    # Click the filter
-                    filter_link = await page.query_selector(f"text={length}")
-                    if filter_link:
-                        await filter_link.click()
-                        await asyncio.sleep(3)
-                        
-                        # Get links
-                        links = await page.query_selector_all("a[href*='horse?horseid=']")
-                        
-                        for link in links:
-                            href = await link.get_attribute("href")
-                            match = re.search(r'horseid=([^&/]+)', href or "")
-                            
-                            if match:
-                                horse_id = match.group(1)
-                                if horse_id.startswith("HK_") and horse_id not in seen:
-                                    seen.add(horse_id)
-                                    horse_ids.append(horse_id)
-                        
-                        print(f"   {length}: +{len(links)} horses")
-                except Exception as e:
-                    print(f"   Error with {length}: {e}")
+                    if match:
+                        horse_id = match.group(1)
+                        if horse_id not in seen:
+                            seen.add(horse_id)
+                            horse_ids.append(horse_id)
+                            count += 1
+                
+                print(f"   {ordertype}字馬: {count} horses")
+            except Exception as e:
+                print(f"   Error with {ordertype}字馬: {e}")
         
         # Remove duplicates
         horse_ids = list(set(horse_ids))
@@ -496,24 +461,32 @@ class HKJCCompleteScraper:
                         
                         rating_records = []
                         
+                        rating_records = []
+                        
                         for table in tables:
                             rows = await table.query_selector_all("tr")
                             if len(rows) < 10:
                                 continue
                             
-                            # Check if this is the rating table (should have date row, rating row, result row, etc.)
-                            header_row = await rows[0].inner_text()
-                            if "評分" not in header_row and "賽果" not in header_row:
+                            # Check if this is the rating table - look at row 2 for "評分"
+                            # Row structure: row 0=name, row 1=dates, row 2=ratings, row 3=results, etc.
+                            if len(rows) > 2:
+                                row2_text = await rows[2].inner_text()
+                                if "評分" not in row2_text:
+                                    continue
+                            else:
                                 continue
+                            
+                            # Get number of columns (must have more than 1 to have data)
+                            first_data_row = await rows[1].query_selector_all("td")
+                            num_cols = len(first_data_row)
+                            if num_cols <= 1:
+                                continue  # Skip tables without data
                             
                             # Extract columns (each column is a race, each row is a field)
                             # Row 1: dates, Row 2: ratings, Row 3: results, Row 4: weights
                             # Row 5: venue, Row 6: track_type, Row 7: distance, Row 8: course
                             # Row 9: track_condition, Row 10: race_class
-                            
-                            # Get number of columns (races)
-                            first_data_row = await rows[1].query_selector_all("td")
-                            num_cols = len(first_data_row)
                             
                             for col_idx in range(1, num_cols):  # Skip first column (headers)
                                 try:
@@ -597,35 +570,7 @@ class HKJCCompleteScraper:
                     except Exception as e:
                         print(f"      ⚠️  horse_ratings failed: {e}")
                     
-                    # ============================================================
-                    # REUSE HorseAllTabsScraper for all remaining tabs (Task 2-6)
-                    # This ensures consistent parsing logic in one place
-                    # ============================================================
-                    try:
-                        print(f"      📥 Using HorseAllTabsScraper for {horse_id}...")
-                        
-                        # Use HorseAllTabsScraper to get all tab data
-                        tab_scraper = HorseAllTabsScraper(headless=True, delay=2)
-                        
-                        async with tab_scraper:
-                            # Scrape all tabs
-                            tab_data = await tab_scraper.scrape_horse(horse_id)
-                            
-                            # Save all data to MongoDB (this handles all collections)
-                            await tab_scraper.save_to_mongodb(tab_data)
-                            
-                            # Log what was scraped
-                            track_count = len(tab_data.get('distance_stats', {}).get('track_performance', []))
-                            print(f"      ✅ distance_stats: {track_count} track records")
-                            print(f"      ✅ workouts: {len(tab_data.get('workouts', []))}")
-                            print(f"      ✅ medical: {len(tab_data.get('medical', []))}")
-                            print(f"      ✅ movements: {len(tab_data.get('movements', []))}")
-                            print(f"      ✅ overseas: {len(tab_data.get('overseas', []))}")
-                    
-                    except Exception as e:
-                        print(f"      ⚠️  HorseAllTabsScraper failed: {e}")
-                    
-                    # Task 2: 所跑途程賽績紀錄 - DEPRECATED, now using HorseAllTabsScraper
+                    # Task 2: 所跑途程賽績紀錄 - Using direct performance URL
                     # (kept for reference, can be removed later)
                     try:
                         perf_url = f"https://racing.hkjc.com/zh-hk/local/information/performance?horseid={horse_id}"
@@ -774,49 +719,57 @@ class HKJCCompleteScraper:
                     except Exception as e:
                         pass
                     
-                    # Task 3: 晨操紀錄
+                    # Task 3: 晨操紀錄 - Use dedicated trackworkresult URL
                     try:
-                        # Try direct URL first, then click
-                        workouts_url = f"https://racing.hkjc.com/zh-hk/local/information/horse?horseid={horse_id}#workout"
+                        # Use dedicated trackworkresult URL
+                        workouts_url = f"https://racing.hkjc.com/zh-hk/local/information/trackworkresult?horseid={horse_id}"
                         await page.goto(workouts_url, wait_until="domcontentloaded")
                         await asyncio.sleep(2)
-                        
-                        # Also try clicking the tab
-                        try:
-                            await page.click("text=晨操紀錄", timeout=2000)
-                            await asyncio.sleep(2)
-                        except:
-                            pass
                         
                         tables = await page.query_selector_all("table")
                         
                         workout_count = 0
                         for table in tables:
-                            table_id = await table.get_attribute("id") or ""
-                            class_name = await table.get_attribute("class") or ""
+                            table_class = await table.get_attribute("class") or ""
+                            
+                            # STRICT: Only use table with class "table_bd f_tal f_fs13 f_ffChinese"
+                            if "table_bd" not in table_class or "f_tal" not in table_class:
+                                continue
                             
                             rows = await table.query_selector_all("tr")
-                            if len(rows) > 1:
-                                # Check header
-                                header = await rows[0].inner_text()
-                                
-                                if "晨操" in header or "日期" in header or "時間" in header:
-                                    for row in rows[1:]:
-                                        cells = await row.query_selector_all("td")
-                                        if len(cells) >= 2:
-                                            workout = {
-                                                "hkjc_horse_id": horse_id,
-                                                "date": (await cells[0].inner_text()).strip() if len(cells) > 0 else "",
-                                                "details": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
-                                            }
-                                            
-                                            if workout.get("date"):
-                                                self.db.db["horse_workouts"].insert_one(workout)
-                                                workout_count += 1
+                            if len(rows) < 2:
+                                continue
+                            
+                            # Verify header
+                            header = await rows[0].inner_text()
+                            if "日期" not in header or "晨操" not in header:
+                                continue
+                            
+                            for row in rows[1:]:
+                                cells = await row.query_selector_all("td")
+                                if len(cells) >= 2:
+                                    date_text = (await cells[0].inner_text()).strip()
                                     
-                                    if workout_count > 0:
-                                        print(f"      📝 Workouts: {workout_count}")
-                                        break
+                                    # Skip empty/invalid rows
+                                    if not date_text or date_text in ['日期', 'None', '']:
+                                        continue
+                                    
+                                    workout = {
+                                        "hkjc_horse_id": horse_id,
+                                        "date": date_text,
+                                        "workout_type": (await cells[1].inner_text()).strip() if len(cells) > 1 else "",
+                                        "venue": (await cells[2].inner_text()).strip() if len(cells) > 2 else "",
+                                        "details": (await cells[3].inner_text()).strip() if len(cells) > 3 else "",
+                                        "gear": (await cells[4].inner_text()).strip() if len(cells) > 4 else "",
+                                    }
+                                    
+                                    if workout.get("date"):
+                                        self.db.db["horse_workouts"].insert_one(workout)
+                                        workout_count += 1
+                            
+                            if workout_count > 0:
+                                print(f"      📝 Workouts: {workout_count}")
+                                break
                     except Exception as e:
                         pass  # Silent fail
                     
