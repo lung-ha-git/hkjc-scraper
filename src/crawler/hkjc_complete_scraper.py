@@ -1140,6 +1140,7 @@ class HKJCCompleteScraper:
                         for i, h in enumerate(headers):
                             h_clean = h.replace('\n', ' ').replace('\r', '').strip()
                             h_clean = ' '.join(h_clean.split())  # Remove extra whitespace
+                            h_compact = h_clean.replace(' ', '')  # Also create compact version without spaces
                             if "馬號" in h_clean:
                                 col_idx["horse_number"] = i
                             elif "馬名" in h_clean:
@@ -1148,7 +1149,7 @@ class HKJCCompleteScraper:
                                 col_idx["rank"] = i
                             elif "練馬師" in h_clean:
                                 col_idx["trainer"] = i
-                            elif "實際負磅" in h_clean:
+                            elif "實際負磅" in h_compact:
                                 col_idx["actual_weight"] = i
                             elif "體重" in h_clean:
                                 col_idx["declared_weight"] = i
@@ -1158,11 +1159,11 @@ class HKJCCompleteScraper:
                                 col_idx["jockey"] = i
                             elif "檔位" in h_clean:
                                 col_idx["draw"] = i
-                            elif "頭馬距離" in h_clean:
+                            elif "頭馬距離" in h_compact:
                                 col_idx["finish_distance"] = i
-                            elif "沿途走位" in h_clean:
+                            elif "沿途走位" in h_compact:
                                 col_idx["running_position"] = i
-                            elif "完成時間" in h_clean:
+                            elif "完成時間" in h_compact:
                                 col_idx["finish_time"] = i
                         
                         # Extract data rows
