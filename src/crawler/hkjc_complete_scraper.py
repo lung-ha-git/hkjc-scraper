@@ -1257,10 +1257,35 @@ class HKJCCompleteScraper:
                                 cells = await row.query_selector_all("td")
                                 if len(cells) >= 3:
                                     cell_texts = [(await c.inner_text()).strip() for c in cells]
-                                    if cell_texts[0].isdigit():
+                                    rank_raw = cell_texts[0]
+                                    
+                                    # Parse rank: handle digits, WV, 平頭馬
+                                    rank = None
+                                    horse_number = None
+                                    
+                                    if rank_raw.isdigit():
+                                        rank = int(rank_raw)
+                                        horse_number = int(cell_texts[1]) if cell_texts[1].isdigit() else None
+                                    elif rank_raw.upper() == "WV":
+                                        rank = None
+                                        # Try to get horse number
+                                        try:
+                                            import re
+                                            hn_match = re.search(r'(\d+)', cell_texts[1])
+                                            horse_number = int(hn_match.group(1)) if hn_match else None
+                                        except:
+                                            horse_number = None
+                                    elif "平頭馬" in rank_raw:
+                                        import re
+                                        match = re.match(r'^(\d+)', rank_raw)
+                                        rank = int(match.group(1)) if match else rank_raw
+                                        horse_number = int(cell_texts[1]) if cell_texts[1].isdigit() else None
+                                    
+                                    # Only add if we have valid rank or WV
+                                    if rank is not None or rank_raw.upper() == "WV":
                                         incidents.append({
-                                            "rank": int(cell_texts[0]),
-                                            "horse_number": int(cell_texts[1]) if cell_texts[1].isdigit() else 0,
+                                            "rank": rank,
+                                            "horse_number": horse_number,
                                             "horse_name": cell_texts[2] if len(cell_texts) > 2 else "",
                                             "incident_report": cell_texts[3] if len(cell_texts) > 3 else ""
                                         })
