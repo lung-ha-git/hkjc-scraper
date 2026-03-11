@@ -1377,7 +1377,7 @@ class HKJCCompleteScraper:
                     if pool_name == "獨贏":
                         pool_key = "win"
                     elif pool_name == "位置":
-                        pool_key = "quinella_place"
+                        pool_key = "place"
                     elif pool_name == "連贏":
                         pool_key = "quinella"
                     elif pool_name == "位置Q" or pool_name == "位置孖寶":
