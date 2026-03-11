@@ -1186,7 +1186,6 @@ class HKJCCompleteScraper:
                                 # Check for dead heat: "1 平頭馬" or "2 平頭馬"
                                 if "平頭馬" in rank_raw:
                                     # Extract just the number before "平頭馬"
-                                    import re
                                     match = re.match(r'^(\d+)', rank_raw)
                                     if match:
                                         rank = int(match.group(1))
