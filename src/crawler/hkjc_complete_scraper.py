@@ -1228,7 +1228,7 @@ class HKJCCompleteScraper:
                                 "trainer": cell_texts[col_idx.get("trainer", 4)] if col_idx.get("trainer") and col_idx["trainer"] < len(cell_texts) else "",
                                 "actual_weight": int(cell_texts[col_idx.get("actual_weight", 6)]) if col_idx.get("actual_weight") and col_idx["actual_weight"] < len(cell_texts) and cell_texts[col_idx["actual_weight"]].isdigit() else 0,
                                 "declared_weight": int(cell_texts[col_idx.get("declared_weight", 5)]) if col_idx.get("declared_weight") and col_idx["declared_weight"] < len(cell_texts) and cell_texts[col_idx["declared_weight"]].isdigit() else 0,
-                                "win_odds": float(cell_texts[col_idx.get("win_odds", 7)]) if col_idx.get("win_odds") and col_idx["win_odds"] < len(cell_texts) else 0.0,
+                                "win_odds": float(cell_texts[col_idx.get("win_odds", 7)]) if col_idx.get("win_odds") and col_idx["win_odds"] < len(cell_texts) and cell_texts[col_idx["win_odds"]].replace('.','').isdigit() else 0.0,
                                 "jockey": cell_texts[col_idx.get("jockey", 3)] if col_idx.get("jockey") and col_idx["jockey"] < len(cell_texts) else "",
                                 "draw": int(cell_texts[col_idx.get("draw", 8)]) if col_idx.get("draw") and col_idx["draw"] < len(cell_texts) and cell_texts[col_idx["draw"]].isdigit() else 0,
                                 "finish_distance": cell_texts[col_idx.get("finish_distance", 11)] if col_idx.get("finish_distance") and col_idx["finish_distance"] < len(cell_texts) else "-",
