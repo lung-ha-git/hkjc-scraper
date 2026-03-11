@@ -1173,10 +1173,39 @@ class HKJCCompleteScraper:
                             
                             cell_texts = [(await c.inner_text()).strip() for c in cells]
                             
-                            # Check position/rank
-                            rank = cell_texts[col_idx.get("rank", 0)] if col_idx.get("rank", 0) < len(cell_texts) else ""
-                            if not rank or not rank.isdigit():
+                            # Check position/rank - handle WV (withdrawal) and 平頭馬 (dead heat)
+                            rank_raw = cell_texts[col_idx.get("rank", 0)] if col_idx.get("rank", 0) < len(cell_texts) else ""
+                            
+                            # Handle special cases:
+                            # 1. WV = Withdrawal (退出馬匹) - include with rank = null
+                            # 2. {number} 平頭馬 = Dead heat - extract just the number
+                            rank = None
+                            horse_number = None
+                            
+                            if rank_raw:
+                                # Check for dead heat: "1 平頭馬" or "2 平頭馬"
+                                if "平頭馬" in rank_raw:
+                                    # Extract just the number before "平頭馬"
+                                    import re
+                                    match = re.match(r'^(\d+)', rank_raw)
+                                    if match:
+                                        rank = int(match.group(1))
+                                # Check for withdrawal: "WV"
+                                elif rank_raw.upper() == "WV":
+                                    rank = None  # Will be stored as null
+                                # Normal rank - just a number
+                                elif rank_raw.isdigit():
+                                    rank = int(rank_raw)
+                            
+                            # Skip if no valid rank (not digit, not WV, not 平頭馬)
+                            if rank is None and rank_raw.upper() != "WV":
                                 continue
+                            
+                            # Get horse number (may be empty for WV)
+                            if col_idx.get("horse_number") and col_idx["horse_number"] < len(cell_texts):
+                                hn = cell_texts[col_idx["horse_number"]]
+                                if hn.isdigit():
+                                    horse_number = int(hn)
                             
                             # Extract horse_id from link
                             horse_id = ""
@@ -1191,9 +1220,9 @@ class HKJCCompleteScraper:
                                     horse_name = (await link.inner_text()).strip()
                             
                             result = {
-                                "horse_number": int(cell_texts[col_idx.get("horse_number", 1)]) if col_idx.get("horse_number") and col_idx["horse_number"] < len(cell_texts) and cell_texts[col_idx["horse_number"]].isdigit() else 0,
+                                "horse_number": horse_number,
                                 "horse_name": horse_name,
-                                "rank": int(rank),
+                                "rank": rank,
                                 "trainer": cell_texts[col_idx.get("trainer", 4)] if col_idx.get("trainer") and col_idx["trainer"] < len(cell_texts) else "",
                                 "actual_weight": int(cell_texts[col_idx.get("actual_weight", 6)]) if col_idx.get("actual_weight") and col_idx["actual_weight"] < len(cell_texts) and cell_texts[col_idx["actual_weight"]].isdigit() else 0,
                                 "declared_weight": int(cell_texts[col_idx.get("declared_weight", 5)]) if col_idx.get("declared_weight") and col_idx["declared_weight"] < len(cell_texts) and cell_texts[col_idx["declared_weight"]].isdigit() else 0,
