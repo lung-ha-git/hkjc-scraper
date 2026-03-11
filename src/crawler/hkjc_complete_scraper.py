@@ -1361,11 +1361,17 @@ class HKJCCompleteScraper:
                     if pool_name in ["彩池", "勝出組合", "派彩 (HK$)"]:
                         continue
                     
-                    # Handle merged cells - if first cell is empty, use previous pool name
+                    # Handle merged cells - if first cell is empty or row has only 2 cells, use previous pool
                     if not pool_name and current_pool:
                         pool_name = current_pool
                     elif pool_name and pool_name not in ["彩池", "勝出組合", "派彩 (HK$)"]:
                         current_pool = pool_name  # Update current pool
+                    
+                    # If row only has 2 cells, assume it's a continuation (merged cell from previous)
+                    if len(cells) == 2 and current_pool:
+                        pool_name = current_pool
+                        combination = (await cells[0].inner_text()).strip()
+                        payout_str = (await cells[1].inner_text()).strip()
                     
                     # Skip if still no valid pool name
                     if not pool_name or pool_name in ["彩池", "勝出組合", "派彩 (HK$)"]:
