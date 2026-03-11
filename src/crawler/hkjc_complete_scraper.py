@@ -1328,7 +1328,7 @@ class HKJCCompleteScraper:
         return payout_list
     
     async def _extract_all_payouts(self, page) -> Dict:
-        """Extract all payouts from the page - handles the single table format"""
+        """Extract all payouts from the page - handles the single table format with merged cells"""
         payout = {}
         
         try:
@@ -1347,18 +1347,28 @@ class HKJCCompleteScraper:
             
             # Extract all rows
             rows = await payout_table.query_selector_all("tr")
-            current_pool = None
-            pool_data = {}
+            current_pool = None  # Track current pool for merged cells
             
             for row in rows:
                 cells = await row.query_selector_all("td")
-                if len(cells) >= 3:
-                    pool_name = (await cells[0].inner_text()).strip()
-                    combination = (await cells[1].inner_text()).strip()
-                    payout_str = (await cells[2].inner_text()).strip()
+                if len(cells) >= 2:
+                    # Handle merged cells - first cell might be empty
+                    pool_name = (await cells[0].inner_text()).strip() if len(cells) > 0 else ""
+                    combination = (await cells[1].inner_text()).strip() if len(cells) > 1 else ""
+                    payout_str = (await cells[2].inner_text()).strip() if len(cells) > 2 else ""
                     
-                    # Skip header
-                    if pool_name in ["彩池", "勝出組合", "派彩 (HK$)", ""]:
+                    # Skip header row
+                    if pool_name in ["彩池", "勝出組合", "派彩 (HK$)"]:
+                        continue
+                    
+                    # Handle merged cells - if first cell is empty, use previous pool name
+                    if not pool_name and current_pool:
+                        pool_name = current_pool
+                    elif pool_name and pool_name not in ["彩池", "勝出組合", "派彩 (HK$)"]:
+                        current_pool = pool_name  # Update current pool
+                    
+                    # Skip if still no valid pool name
+                    if not pool_name or pool_name in ["彩池", "勝出組合", "派彩 (HK$)"]:
                         continue
                     
                     # Parse payout
