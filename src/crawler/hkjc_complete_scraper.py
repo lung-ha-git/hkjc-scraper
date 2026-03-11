@@ -1211,62 +1211,84 @@ class HKJCCompleteScraper:
                     # ========== Extract PAYOUT ==========
                     payout = {}
                     
-                    # Try to find payout tables
+                    # Try to find payout tables - each bet type has its own table
                     payout_tables = await page.query_selector_all("table")
+                    
+                    # Build a map of table -> what bet types it contains
                     for pt in payout_tables:
                         pt_text = await pt.inner_text()
                         
-                        # Win
-                        if "獨贏" in pt_text:
-                            payout["win"] = await self._extract_payout(pt, "獨贏")
-                        # Quinella Place (位置 → quinella_place)
+                        # Check which bet types this table contains
+                        table_bets = []
+                        if "獨贏" in pt_text and "位置" not in pt_text:
+                            table_bets.append("win")
                         if "位置" in pt_text and "獨贏" not in pt_text:
-                            payout["quinella_place"] = await self._extract_payout(pt, "位置")
-                        # Quinella
+                            table_bets.append("quinella_place")
                         if "連贏" in pt_text:
-                            payout["quinella"] = await self._extract_payout(pt, "連贏")
-                        # Quinella Place (位置Q/位置孖寶 → already handled above)
+                            table_bets.append("quinella")
                         if "位置Q" in pt_text or "位置孖寶" in pt_text:
-                            payout["quinella_place"] = await self._extract_payout(pt, "位置Q")
-                        # Forecast
+                            table_bets.append("quinella_place")
                         if "二重彩" in pt_text:
-                            payout["forecast"] = await self._extract_payout(pt, "二重彩")
-                        # Tierce
+                            table_bets.append("forecast")
                         if "三重彩" in pt_text:
-                            payout["tierce"] = await self._extract_payout(pt, "三重彩")
-                        # Trio
+                            table_bets.append("tierce")
                         if "單T" in pt_text:
-                            payout["trio"] = await self._extract_payout(pt, "單T")
-                        # First 4
+                            table_bets.append("trio")
                         if "四連環" in pt_text:
-                            payout["first_4"] = await self._extract_payout(pt, "四連環")
-                        # Quartet
+                            table_bets.append("first_4")
                         if "四重彩" in pt_text:
-                            payout["quartet"] = await self._extract_payout(pt, "四重彩")
-                        # Double (孖寶) - with 第X口 prefix
+                            table_bets.append("quartet")
                         if "孖寶" in pt_text:
-                            payout["double"] = await self._extract_payout_with_prefix(pt, "孖寶")
-                        # Treble (三寶) - with 第X口 prefix
+                            table_bets.append("double")
                         if "三寶" in pt_text:
-                            payout["treble"] = await self._extract_payout_with_prefix(pt, "三寶")
-                        # Double Trio (孖T) - with 第X口 prefix
-                        if "孖T" in pt_text or "孖-t" in pt_text:
-                            payout["double_trio"] = await self._extract_payout_with_prefix(pt, "孖T")
-                        # Triple Trio (三T)
-                        if "三T" in pt_text or "三-t" in pt_text:
-                            payout["triple_trio"] = await self._extract_payout(pt, "三T")
-                        # Triple Trio Consolation (三T安慰獎)
-                        if "三T(安慰獎)" in pt_text or "三T安慰獎" in pt_text:
-                            payout["triple_trio_consolation"] = await self._extract_payout(pt, "三T")
-                        # Six Up (六環彩)
+                            table_bets.append("treble")
+                        if ("孖T" in pt_text or "孖-t" in pt_text) and "三T" not in pt_text:
+                            table_bets.append("double_trio")
+                        if "三T" in pt_text and "安慰" not in pt_text:
+                            table_bets.append("triple_trio")
+                        if "三T(安慰獎)" in pt_text or "三T安慰" in pt_text:
+                            table_bets.append("triple_trio_consolation")
                         if "六環彩" in pt_text:
-                            payout["six_up"] = await self._extract_payout_six_up(pt)
-                        # Jockey Challenge (騎師王)
+                            table_bets.append("six_up")
                         if "騎師王" in pt_text:
-                            payout["jockey_challenge"] = await self._extract_payout_jockey_trainer(pt, "騎師王")
-                        # Trainer Challenge (練馬師王)
+                            table_bets.append("jockey_challenge")
                         if "練馬師王" in pt_text:
-                            payout["trainer_challenge"] = await self._extract_payout_jockey_trainer(pt, "練馬師王")
+                            table_bets.append("trainer_challenge")
+                        
+                        # Extract payout for each bet type in this table
+                        for bet in table_bets:
+                            if bet == "win":
+                                payout["win"] = await self._extract_payout_simple(pt, "獨贏")
+                            elif bet == "quinella_place":
+                                payout["quinella_place"] = await self._extract_payout_simple(pt, "位置")
+                            elif bet == "quinella":
+                                payout["quinella"] = await self._extract_payout_simple(pt, "連贏")
+                            elif bet == "forecast":
+                                payout["forecast"] = await self._extract_payout_simple(pt, "二重彩")
+                            elif bet == "tierce":
+                                payout["tierce"] = await self._extract_payout_simple(pt, "三重彩")
+                            elif bet == "trio":
+                                payout["trio"] = await self._extract_payout_simple(pt, "單T")
+                            elif bet == "first_4":
+                                payout["first_4"] = await self._extract_payout_simple(pt, "四連環")
+                            elif bet == "quartet":
+                                payout["quartet"] = await self._extract_payout_simple(pt, "四重彩")
+                            elif bet == "double":
+                                payout["double"] = await self._extract_payout_with_prefix(pt, "孖寶")
+                            elif bet == "treble":
+                                payout["treble"] = await self._extract_payout_with_prefix(pt, "三寶")
+                            elif bet == "double_trio":
+                                payout["double_trio"] = await self._extract_payout_with_prefix(pt, "孖T")
+                            elif bet == "triple_trio":
+                                payout["triple_trio"] = await self._extract_payout_simple(pt, "三T")
+                            elif bet == "triple_trio_consolation":
+                                payout["triple_trio_consolation"] = await self._extract_payout_simple(pt, "三T")
+                            elif bet == "six_up":
+                                payout["six_up"] = await self._extract_payout_six_up(pt)
+                            elif bet == "jockey_challenge":
+                                payout["jockey_challenge"] = await self._extract_payout_jockey_trainer(pt, "騎師王")
+                            elif bet == "trainer_challenge":
+                                payout["trainer_challenge"] = await self._extract_payout_jockey_trainer(pt, "練馬師王")
                     
                     race_data["payout"] = payout
                     
@@ -1345,6 +1367,76 @@ class HKJCCompleteScraper:
         
         tasks = [scrape_race(k, v) for k, v in races_to_scrape.items()]
         await asyncio.gather(*tasks, return_exceptions=True)
+    
+    async def _extract_payout_simple(self, table, bet_type: str) -> List[Dict]:
+        """Extract payout data from a table - simple version for standard pools"""
+        payout_list = []
+        try:
+            rows = await table.query_selector_all("tr")
+            
+            # Get header row to find columns
+            header_row = rows[0] if rows else None
+            if not header_row:
+                return payout_list
+            
+            # Get all header cells (both th and td)
+            header_cells = []
+            ths = await header_row.query_selector_all("th")
+            for th in ths:
+                header_cells.append(await th.inner_text())
+            tds = await header_row.query_selector_all("td")
+            for td in tds:
+                header_cells.append(await td.inner_text())
+            
+            # Find the column index for the dividend (usually 2nd column after combination)
+            # Try to find "派彩" or "派彩 (HK$)" in header
+            div_col_idx = -1
+            combo_col_idx = 0  # First column is usually the combination
+            
+            for i, h in enumerate(header_cells):
+                h = h.strip()
+                if "派彩" in h or "HK$" in h or "派彩" in h:
+                    div_col_idx = i
+                    break
+            
+            # If not found, assume 2nd column
+            if div_col_idx == -1:
+                div_col_idx = min(1, len(header_cells) - 1) if header_cells else 1
+            
+            # Extract data from rows
+            for row in rows[1:]:  # Skip header
+                cells = await row.query_selector_all("td")
+                if len(cells) >= 2:
+                    # Get combination (first column)
+                    combo = (await cells[0].inner_text()).strip() if cells else ""
+                    
+                    # Get dividend (second column or div_col_idx)
+                    if div_col_idx < len(cells):
+                        div_str = (await cells[div_col_idx].inner_text()).strip()
+                    elif len(cells) > 1:
+                        div_str = (await cells[1].inner_text()).strip()
+                    else:
+                        continue
+                    
+                    # Skip header text in data
+                    if not combo or combo in ["勝出組合", "派彩 (HK$)", "派彩"]:
+                        continue
+                    
+                    # Parse dividend
+                    div_str = div_str.replace("$", "").replace(",", "").strip()
+                    try:
+                        dividend = float(div_str)
+                    except:
+                        dividend = 0.0
+                    
+                    if combo and dividend > 0:
+                        payout_list.append({
+                            "combination": combo,
+                            "payout": dividend
+                        })
+        except Exception as e:
+            logger.error(f"Error extracting payout for {bet_type}: {e}")
+        return payout_list
     
     async def _extract_payout(self, table, bet_type: str) -> List[Dict]:
         """Extract payout data from a table, filtering by bet type - NEW FORMAT"""
