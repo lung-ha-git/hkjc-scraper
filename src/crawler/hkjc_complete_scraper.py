@@ -1353,8 +1353,11 @@ class HKJCCompleteScraper:
                 cells = await row.query_selector_all("td")
                 if len(cells) >= 2:
                     # Handle merged cells - due to rowspan, some rows have fewer cells
+                    # If row has only 1 cell, skip (probably header or empty)
+                    if len(cells) == 1:
+                        continue
                     # If row has only 2 cells, it's a continuation of previous pool (rowspan)
-                    if len(cells) == 2:
+                    elif len(cells) == 2:
                         # First cell is missing due to rowspan - use previous pool
                         if current_pool:
                             pool_name = current_pool
