@@ -1179,6 +1179,7 @@ class HKJCCompleteScraper:
                             # Handle special cases:
                             # 1. WV = Withdrawal (退出馬匹) - include with rank = null
                             # 2. {number} 平頭馬 = Dead heat - extract just the number
+                            # 3. Other special cases - keep as string
                             rank = None
                             horse_number = None
                             
@@ -1196,8 +1197,11 @@ class HKJCCompleteScraper:
                                 # Normal rank - just a number
                                 elif rank_raw.isdigit():
                                     rank = int(rank_raw)
+                                # Other special cases - keep as string
+                                else:
+                                    rank = rank_raw  # Keep the original string
                             
-                            # Skip if no valid rank (not digit, not WV, not 平頭馬)
+                            # Skip only if rank is completely empty or None (not for special strings)
                             if rank is None and rank_raw.upper() != "WV":
                                 continue
                             
