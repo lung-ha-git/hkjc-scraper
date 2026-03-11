@@ -1251,7 +1251,7 @@ class HKJCCompleteScraper:
                     all_tables = await page.query_selector_all("table")
                     for table in all_tables:
                         table_text = await table.inner_text()
-                        if "競賽事件報告" in table_text or "事故報告" in table_text or "無敵" in table_text:
+                        if "競賽事件" in table_text or "事故報告" in table_text or "無敵" in table_text:
                             rows = await table.query_selector_all("tr")
                             for row in rows[1:]:
                                 cells = await row.query_selector_all("td")
