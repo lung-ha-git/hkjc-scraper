@@ -88,7 +88,6 @@ class HKJCCompleteScraper:
             for doc in self.db.db.horse_race_history.find({'race_url': {'$exists': True, '$ne': ''}}):
                 race_url = doc.get('race_url', '')
                 if race_url and race_url not in race_urls:
-                    import re
                     date_match = re.search(r'racedate=(\d+/\d+/\d+)', race_url)
                     course_match = re.search(r'Racecourse=(\w+)', race_url)
                     race_no_match = re.search(r'RaceNo=(\d+)', race_url)
