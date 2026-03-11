@@ -1352,30 +1352,29 @@ class HKJCCompleteScraper:
             for row in rows:
                 cells = await row.query_selector_all("td")
                 if len(cells) >= 2:
-                    # Handle merged cells - first cell might be empty
-                    pool_name = (await cells[0].inner_text()).strip() if len(cells) > 0 else ""
-                    combination = (await cells[1].inner_text()).strip() if len(cells) > 1 else ""
-                    payout_str = (await cells[2].inner_text()).strip() if len(cells) > 2 else ""
+                    # Handle merged cells - due to rowspan, some rows have fewer cells
+                    # If row has only 2 cells, it's a continuation of previous pool (rowspan)
+                    if len(cells) == 2:
+                        # First cell is missing due to rowspan - use previous pool
+                        if current_pool:
+                            pool_name = current_pool
+                            combination = (await cells[0].inner_text()).strip()
+                            payout_str = (await cells[1].inner_text()).strip()
+                        else:
+                            continue  # No previous pool, skip
+                    else:
+                        # Normal row with 3 cells
+                        pool_name = (await cells[0].inner_text()).strip() if len(cells) > 0 else ""
+                        combination = (await cells[1].inner_text()).strip() if len(cells) > 1 else ""
+                        payout_str = (await cells[2].inner_text()).strip() if len(cells) > 2 else ""
                     
                     # Skip header row
                     if pool_name in ["彩池", "勝出組合", "派彩 (HK$)"]:
                         continue
                     
-                    # Handle merged cells - if first cell is empty or row has only 2 cells, use previous pool
-                    if not pool_name and current_pool:
-                        pool_name = current_pool
-                    elif pool_name and pool_name not in ["彩池", "勝出組合", "派彩 (HK$)"]:
-                        current_pool = pool_name  # Update current pool
-                    
-                    # If row only has 2 cells, assume it's a continuation (merged cell from previous)
-                    if len(cells) == 2 and current_pool:
-                        pool_name = current_pool
-                        combination = (await cells[0].inner_text()).strip()
-                        payout_str = (await cells[1].inner_text()).strip()
-                    
-                    # Skip if still no valid pool name
-                    if not pool_name or pool_name in ["彩池", "勝出組合", "派彩 (HK$)"]:
-                        continue
+                    # Update current pool for next row
+                    if pool_name and pool_name not in ["彩池", "勝出組合", "派彩 (HK$)"]:
+                        current_pool = pool_name
                     
                     # Parse payout
                     payout_str = payout_str.replace("$", "").replace(",", "").strip()
