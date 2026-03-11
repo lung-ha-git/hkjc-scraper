@@ -1238,7 +1238,7 @@ class HKJCCompleteScraper:
                     race_data = add_timestamps(race_data)
                     self.db.db["races"].replace_one({"hkjc_race_id": race_key}, race_data, upsert=True)
                     
-                    print(f"   ✅ {race_key}: {len(results)} horses, payout={len(payout)}, incidents={len(incidents)}")
+                    print(f"   ✅ {race_key}: {len(results)} horses, payout={len(race_data['payout'])}, incidents={len(incidents)}")
                     self.stats["races"] += 1
                     
                     # Update race queue
@@ -1247,7 +1247,7 @@ class HKJCCompleteScraper:
                         race_queue.connect()
                         race_queue.update_status(race_key, {
                             "results": len(results),
-                            "payout": len(payout),
+                            "payout": len(race_data["payout"]),
                             "incidents": len(incidents)
                         })
                     except:
