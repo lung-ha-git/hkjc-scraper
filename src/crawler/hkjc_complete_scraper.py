@@ -1214,8 +1214,9 @@ class HKJCCompleteScraper:
                     
                     # ========== Extract INCIDENTS ==========
                     incidents = []
-                    # Look for incident table or section
-                    for table in payout_tables:
+                    # Look for incident table - find it again since we removed payout_tables
+                    all_tables = await page.query_selector_all("table")
+                    for table in all_tables:
                         table_text = await table.inner_text()
                         if "事故報告" in table_text or "無敵" in table_text:
                             rows = await table.query_selector_all("tr")
