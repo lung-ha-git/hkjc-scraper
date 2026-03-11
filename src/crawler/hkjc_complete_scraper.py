@@ -1138,7 +1138,8 @@ class HKJCCompleteScraper:
                         # Find column indices
                         col_idx = {}
                         for i, h in enumerate(headers):
-                            h_clean = h.strip()
+                            h_clean = h.replace('\n', ' ').replace('\r', '').strip()
+                            h_clean = ' '.join(h_clean.split())  # Remove extra whitespace
                             if "馬號" in h_clean:
                                 col_idx["horse_number"] = i
                             elif "馬名" in h_clean:
