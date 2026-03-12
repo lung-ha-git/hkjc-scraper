@@ -194,26 +194,40 @@ class CompleteHorseScraper:
         return races
     
     async def _extract_distance_stats(self, page: Page) -> Dict:
-        """Extract distance analysis (所跑途程)"""
-        # Click on the distance tab if needed
+        """Extract distance analysis (所跑途程賽績紀錄)
+        
+        Expected format in page:
+        場次	名次	日期	馬場/跑道/賽道	途程	場地狀況	...
+        452	12	19/02/26	沙田草地"A"	2000	好	...
+        """
+        import re
+        
         stats = {}
+        
+        # Find tables with distance data
         tables = await page.query_selector_all("table")
         
-        for table in tables:
-            rows = await table.query_selector_all("tr")
-            if len(rows) > 2 and len(rows) < 20:
-                data = []
-                for row in rows[1:]:
-                    cells = await row.query_selector_all("td")
-                    if len(cells) >= 4:
-                        data.append({
-                            "distance": await cells[0].inner_text(),
-                            "starts": await cells[1].inner_text(),
-                            "wins": await cells[2].inner_text(),
-                            "places": await cells[3].inner_text(),
-                        })
-                if data:
-                    stats["by_distance"] = data
+        for table_idx, table in enumerate(tables):
+            text = await table.inner_text()
+            
+            # Look for table with distance data (contains 4 digits like 1000, 1200, 2000)
+            if re.search(r'\d{4}', text) and ('好' in text or '軟' in text or '快' in text):
+                # Extract distance performance
+                lines = text.split('\n')
+                distances_seen = {}
+                
+                for line in lines:
+                    # Look for patterns like "2000好" (4 digits followed by track condition)
+                    matches = re.findall(r'(\d{4})\s+好', line)
+                    for distance in matches:
+                        if distance not in distances_seen:
+                            distances_seen[distance] = 0
+                        distances_seen[distance] += 1
+                
+                # Convert to format: {distance_1200: {runs: 3}, distance_1600: {runs: 2}}
+                if distances_seen:
+                    for distance, count in distances_seen.items():
+                        stats[f"distance_{distance}"] = {"runs": count}
                     break
         
         return stats
@@ -417,8 +431,8 @@ class CompleteHorseScraper:
                 {"hkjc_horse_id": hkjc_id},
                 {"$set": {
                     "hkjc_horse_id": hkjc_id,
-                    "stats": data["distance_stats"],
-                    "updated_at": data["scraped_at"]
+                    "distance_performance": data["distance_stats"],
+                    "modified_at": data["scraped_at"]
                 }},
                 upsert=True
             )
