@@ -33,6 +33,51 @@ class FixtureScraper:
     def __init__(self, headless: bool = True):
         self.headless = headless
         
+    async def get_race_count_from_racecard(self, date_str: str, venue: str) -> int:
+        """Get actual race count from racecard page"""
+        from playwright.async_api import async_playwright
+        
+        date_formatted = date_str.replace("-", "/")
+        url = f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={date_formatted}&Racecourse={venue}"
+        
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
+                
+                await page.goto(url, wait_until="domcontentloaded", timeout=15000)
+                await asyncio.sleep(2)
+                
+                content = await page.inner_text("body")
+                
+                # Check if racecard has data
+                if "沒有相關資料" in content or len(content) < 800:
+                    await browser.close()
+                    return 0
+                
+                # Count races from content - look for "第X場" or "Race X" patterns
+                race_patterns = re.findall(r'第(\d+)場| Race (\d+)', content)
+                
+                # Also try to find race numbers in links
+                links = await page.query_selector_all("a[href*='RaceNo=']")
+                race_nos = []
+                for link in links:
+                    href = await link.get_attribute("href")
+                    match = re.search(r'RaceNo=(\d+)', href or "")
+                    if match:
+                        race_nos.append(int(match.group(1)))
+                
+                if race_nos:
+                    await browser.close()
+                    return max(race_nos)
+                
+                await browser.close()
+                return 0
+                
+        except Exception as e:
+            logger.warning(f"Error getting race count for {date_str}: {e}")
+            return 0
+    
     async def parse_month(self, year: str, month: str) -> List[Dict]:
         """Parse fixture for a specific month"""
         async with async_playwright() as p:
@@ -80,15 +125,28 @@ class FixtureScraper:
                                 if '谷' in text:
                                     venue = 'HV'
                                 
-                                race_count = max(int(r) for r in race_nums)
+                                # Get approximate race count from fixture
+                                fixture_race_count = max(int(r) for r in race_nums)
+                                
+                                # Verify with racecard page (for published races)
+                                date_str = f"{year}-{current_month:02d}-{day:02d}"
+                                
+                                # Try to get actual count from racecard
+                                actual_count = await self.get_race_count_from_racecard(date_str, venue)
+                                
+                                if actual_count > 0:
+                                    race_count = actual_count
+                                    logger.info(f"  {date_str} ({venue}): {race_count} races (verified)")
+                                else:
+                                    race_count = fixture_race_count
                                 
                                 race_meetings.append({
-                                    'date': f"{year}-{current_month:02d}-{day:02d}",
+                                    'date': date_str,
                                     'venue': venue,
                                     'race_count': race_count,
                                     'source_url': FIXTURE_URL,
                                     'racecard_url': f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={year}/{month}/{day:02d}&Racecourse={venue}",
-                                    'results_url': f"https://racing.hkjc.com/zh-hk/racing/information/English/Racing/LocalResults.aspx?RaceDate={year}-{current_month:02d}-{day:02d}",
+                                    'results_url': f"https://racing.hkjc.com/zh-hk/racing/information/English/Racing/LocalResults.aspx?RaceDate={date_str}",
                                     'scrape_status': 'pending',
                                     'created_at': datetime.now(),
                                     'modified_at': datetime.now()
