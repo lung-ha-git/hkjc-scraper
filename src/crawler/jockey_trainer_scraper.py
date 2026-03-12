@@ -113,47 +113,54 @@ class JockeyTrainerScraper:
             await page.goto(url, wait_until="domcontentloaded")
             await asyncio.sleep(3)
             
+            # Get text for name
             text = await page.inner_text("body")
             lines = text.split('\n')
             
-            # Extract info
+            # Get HTML for stats
+            html = await page.content()
+            
             jockey = {
                 "jockey_id": jockey_id,
                 "url": url,
             }
             
-            # Find name - line 33 or 44 has the name
-            for i, line in enumerate(lines):
-                if i in [33, 44] and line.strip():
-                    jockey["name"] = line.strip()
+            # Find name - line 33 or 44
+            for i in [33, 44]:
+                if i < len(lines) and lines[i].strip():
+                    jockey["name"] = lines[i].strip()
                     break
             
-            # Find stats in lines 58-61 (tab-separated)
-            for i in range(55, 65):
-                if i < len(lines):
-                    line = lines[i]
-                    # Line 58: 國籍 : 澳洲 冠 : 84 總出賽次數 : 412
-                    if '冠' in line and ':' in line:
-                        # Split by tabs or multiple spaces
-                        parts = re.split(r'\t+|\s{2,}', line)
-                        for part in parts:
-                            part = part.strip()
-                            if '冠' in part:
-                                match = re.search(r'(\d+)', part)
-                                if match:
-                                    jockey["wins"] = int(match.group(1))
-                            if '亞' in part:
-                                match = re.search(r'(\d+)', part)
-                                if match:
-                                    jockey["seconds"] = int(match.group(1))
-                            if '季' in part and '殿' not in part:
-                                match = re.search(r'(\d+)', part)
-                                if match:
-                                    jockey["thirds"] = int(match.group(1))
-                            if '總出賽次數' in part or '總出賽' in part:
-                                match = re.search(r'(\d+)', part)
-                                if match:
-                                    jockey["total_rides"] = int(match.group(1))
+            # Parse stats from HTML table
+            # Pattern: <td>國籍</td><td>: 澳洲</td><td ...>冠</td><td>: 84</td>
+            # Find all td elements
+            import re
+            
+            # Extract wins
+            win_match = re.search(r'冠</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            if win_match:
+                jockey["wins"] = int(win_match.group(1))
+            
+            # Extract seconds (亞)
+            sec_match = re.search(r'亞</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            if sec_match:
+                jockey["seconds"] = int(sec_match.group(1))
+            
+            # Extract thirds (季)
+            third_match = re.search(r'季</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            if third_match:
+                jockey["thirds"] = int(third_match.group(1))
+            
+            # Extract total rides
+            rides_match = re.search(r'總出賽次數</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            if rides_match:
+                jockey["total_rides"] = int(rides_match.group(1))
+            
+            # Extract prize money
+            prize_match = re.search(r'所贏獎金</td>\s*<td[^>]*>:\s*\$?([\d,]+)</td>', html)
+            if prize_match:
+                jockey["prize_money"] = prize_match.group(1).replace(",", "")
+                jockey["prize_money_int"] = int(jockey["prize_money"])
             
             jockey["scraped_at"] = datetime.now().isoformat()
             
@@ -179,38 +186,46 @@ class JockeyTrainerScraper:
             text = await page.inner_text("body")
             lines = text.split('\n')
             
+            html = await page.content()
+            
             trainer = {
                 "trainer_id": trainer_id,
                 "url": url,
             }
             
-            # Find name - usually in early lines
-            for i, line in enumerate(lines):
-                if i in [33, 34, 35, 44, 45] and line.strip():
-                    if line.strip() not in ['簡歷', '成績', '練馬師', '其他練馬師', '練馬師榜']:
-                        trainer["name"] = line.strip()
+            # Find name
+            for i in [33, 34, 35, 44, 45]:
+                if i < len(lines) and lines[i].strip():
+                    if lines[i].strip() not in ['簡歷', '成績', '練馬師', '其他練馬師', '練馬師榜']:
+                        trainer["name"] = lines[i].strip()
                         break
             
-            # Find stats - look for 冠, 亞, 季
-            for i in range(40, 60):
-                if i < len(lines):
-                    line = lines[i]
-                    if '冠' in line and ':' in line:
-                        parts = re.split(r'\t+|\s{2,}', line)
-                        for part in parts:
-                            part = part.strip()
-                            if '冠' in part:
-                                match = re.search(r'(\d+)', part)
-                                if match:
-                                    trainer["wins"] = int(match.group(1))
-                            if '亞' in part:
-                                match = re.search(r'(\d+)', part)
-                                if match:
-                                    trainer["seconds"] = int(match.group(1))
-                            if '季' in part and '殿' not in part:
-                                match = re.search(r'(\d+)', part)
-                                if match:
-                                    trainer["thirds"] = int(match.group(1))
+            # Parse stats from HTML
+            # Extract wins
+            win_match = re.search(r'冠</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            if win_match:
+                trainer["wins"] = int(win_match.group(1))
+            
+            # Extract seconds (亞)
+            sec_match = re.search(r'亞</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            if sec_match:
+                trainer["seconds"] = int(sec_match.group(1))
+            
+            # Extract thirds (季)
+            third_match = re.search(r'季</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            if third_match:
+                trainer["thirds"] = int(third_match.group(1))
+            
+            # Extract total horses
+            horses_match = re.search(r'馬房總數</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            if horses_match:
+                trainer["total_horses"] = int(horses_match.group(1))
+            
+            # Extract prize money
+            prize_match = re.search(r'所贏獎金</td>\s*<td[^>]*>:\s*\$?([\d,]+)</td>', html)
+            if prize_match:
+                trainer["prize_money"] = prize_match.group(1).replace(",", "")
+                trainer["prize_money_int"] = int(trainer["prize_money"])
             
             trainer["scraped_at"] = datetime.now().isoformat()
             
