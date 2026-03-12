@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
+from src.crawler.race_results_scraper import RaceResultsScraper
 
 logger = logging.getLogger(__name__)
 
@@ -67,31 +68,72 @@ class QueueWorker:
             )
     
     async def scrape_race_result(self, item: Dict) -> bool:
-        """Scrape race result"""
-        logger.info(f"Scraping race result: {item['race_date']} R{item['race_no']}")
+        """Scrape race result using RaceResultsScraper"""
+        race_date = item["race_date"]  # Format: YYYY-MM-DD
+        race_no = item["race_no"]
+        
+        # Convert date format: YYYY-MM-DD -> YYYY/MM/DD
+        race_date_formatted = race_date.replace("-", "/")
+        
+        # Get venue from item or use default
+        venue = item.get("venue", "ST")
+        
+        logger.info(f"Scraping race result: {race_date} R{race_no}")
         
         try:
-            from playwright.async_api import async_playwright
-            
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page()
+            # Use existing RaceResultsScraper
+            async with RaceResultsScraper(headless=True) as scraper:
+                result = await scraper.scrape_race(race_date_formatted, venue, race_no)
                 
-                url = item["target_url"]
-                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                await asyncio.sleep(3)
-                
-                # TODO: Implement actual scraping logic
-                # For now, just mark as completed
-                
-                await browser.close()
-                
-            logger.info(f"  ✓ Race result scraped")
-            return True
+                if result:
+                    # Save to MongoDB
+                    self._save_race_result(result)
+                    logger.info(f"  ✓ Race {race_no} saved to DB")
+                    return True
+                else:
+                    logger.error(f"  ✗ No data returned from scraper")
+                    return False
             
         except Exception as e:
             logger.error(f"  ✗ Error: {e}")
             return False
+    
+    def _save_race_result(self, result: Dict):
+        """Save race result to MongoDB"""
+        if not result:
+            return
+        
+        race_date = result.get("race_date", "")
+        race_no = result.get("race_no", "")
+        
+        # Build race_id
+        venue = result.get("racecourse", "ST")
+        race_id = f"{race_date.replace('/', '_')}_{venue}_{race_no}"
+        
+        # Build document
+        doc = {
+            "hkjc_race_id": race_id,
+            "race_date": race_date,
+            "venue": venue,
+            "race_no": str(race_no),
+            "race_id_num": result.get("metadata", {}).get("race_id_num"),
+            "class": result.get("metadata", {}).get("class"),
+            "distance": result.get("metadata", {}).get("distance"),
+            "track_condition": result.get("metadata", {}).get("track_condition"),
+            "prize": result.get("metadata", {}).get("prize"),
+            "results": result.get("results", []),
+            "payout": result.get("payouts", {}),
+            "incidents": result.get("incidents", []),
+            "created_at": datetime.now(),
+            "modified_at": datetime.now()
+        }
+        
+        # Upsert to DB
+        self.db.db["races"].update_one(
+            {"hkjc_race_id": race_id},
+            {"$set": doc},
+            upsert=True
+        )
     
     async def scrape_horse_detail(self, item: Dict) -> bool:
         """Scrape horse detail"""
