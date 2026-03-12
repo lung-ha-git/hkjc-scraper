@@ -143,11 +143,11 @@ Process:
 
 | Component | Status |
 |-----------|--------|
-| Fixture Scraper | ✅ Done |
-| Ranking Scraper (Jockey/Trainer) | ✅ Done |
-| Race Card Checker | ✅ Done |
-| Sync Scheduler | 🔄 Pending |
-| Queue Worker | 🔄 Pending |
+| Fixture Scraper | ✅ Done (`src/crawler/fixture_scraper.py`) |
+| Ranking Scraper (Jockey/Trainer) | ✅ Done (`src/crawler/ranking_scraper.py`) |
+| Race Card Checker | ✅ Done (in sync_scheduler) |
+| Sync Scheduler | ✅ Done (`src/scheduler/sync_scheduler.py`) |
+| Queue Worker | ✅ Done (`src/scheduler/queue_worker.py`) |
 
 ## Notes
 
