@@ -59,10 +59,22 @@ class SyncScheduler:
             
             return has_data
     
-    def get_pending_fixtures(self) -> List[Dict]:
-        """Get fixtures that haven't been processed yet"""
+    def get_pending_fixtures(self, days_ahead: int = 14, days_back: int = 7) -> List[Dict]:
+        """Get fixtures that haven't been processed yet
+        
+        Args:
+            days_ahead: Number of days ahead to check (default 14)
+            days_back: Number of past days to check (default 7)
+        """
+        from datetime import date
+        
+        today = date.today().isoformat()
+        future_date = (date.today() + timedelta(days=days_ahead)).isoformat()
+        past_date = (date.today() - timedelta(days=days_back)).isoformat()
+        
         return list(self.db.db["fixtures"].find({
-            "scrape_status": "pending"
+            "scrape_status": "pending",
+            "date": {"$gte": past_date, "$lte": future_date}
         }).sort("date", 1))
     
     def add_race_queue_item(self, fixture: Dict, race_no: int) -> str:
@@ -167,18 +179,63 @@ class SyncScheduler:
     
     async def process_fixture(self, fixture: Dict) -> Dict:
         """Process a single fixture"""
-        date = fixture["date"]
+        from datetime import date
+        
+        date_str = fixture["date"]
         venue = fixture["venue"]
         race_count = fixture["race_count"]
         
-        logger.info(f"Checking {date} ({venue}) - {race_count} races...")
+        logger.info(f"Checking {date_str} ({venue}) - {race_count} races...")
         
-        # Check if racecard is published
-        has_data = await self.check_racecard_published(date, venue)
+        # Determine if this is a past date or future date
+        fixture_date = date.fromisoformat(date_str)
+        is_past = fixture_date < date.today()
+        
+        has_data = False
+        
+        if is_past:
+            # For past dates, check if we already have the races in DB
+            existing_races = self.db.db["races"].count_documents({
+                "race_date": date_str.replace("-", "/")
+            })
+            has_data = existing_races >= race_count
+            logger.info(f"  Past date: {existing_races}/{race_count} races in DB")
+        else:
+            # For future dates, check if racecard is published
+            has_data = await self.check_racecard_published(date_str, venue)
         
         if not has_data:
-            logger.info(f"  No data published yet, skipping")
-            return {"status": "no_data", "race_count": 0}
+            # For past dates with no data in DB, we should scrape them!
+            if is_past and existing_races == 0:
+                logger.info(f"  Past date with no data - will scrape!")
+                # Set has_data to True so we add to queue
+                has_data = True
+            else:
+                logger.info(f"  No data available, skipping")
+                
+                # For past dates with no data, mark as "needs_sync" to retry later
+                if is_past:
+                    self.db.db["fixtures"].update_one(
+                        {"_id": fixture["_id"]},
+                        {"$set": {
+                            "scrape_status": "needs_sync",
+                            "modified_at": datetime.now()
+                        }}
+                    )
+                
+                return {"status": "no_data", "race_count": 0}
+        
+        # Past dates with data in DB - already scraped, skip
+        if is_past and existing_races >= race_count:
+            logger.info(f"  Already scraped ({existing_races} races in DB), skipping")
+            self.db.db["fixtures"].update_one(
+                {"_id": fixture["_id"]},
+                {"$set": {
+                    "scrape_status": "completed",
+                    "modified_at": datetime.now()
+                }}
+            )
+            return {"status": "already_done", "race_count": existing_races}
         
         logger.info(f"  Racecard published! Adding queue items...")
         
