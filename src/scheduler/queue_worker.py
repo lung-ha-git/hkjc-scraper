@@ -1,12 +1,14 @@
 """
 HKJC Queue Worker
 Execute scrape jobs from queue
+
+Note: Jockey/Trainer data is handled by Phase 5 ranking scraper
 """
 
 import asyncio
 import logging
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict
 import sys
 from pathlib import Path
 
@@ -14,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
 from src.crawler.race_results_scraper import RaceResultsScraper
 from src.crawler.horse_detail_scraper import HorseDetailScraper
-from src.crawler.jockey_trainer_scraper import JockeyTrainerScraper
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +56,9 @@ class QueueWorker:
             update["error"] = error
             
         if status == "failed":
-            # Increment retry count
             self.db.db[queue_name].update_one(
                 {"_id": item_id},
-                {
-                    "$inc": {"retry_count": 1},
-                    "$set": update
-                }
+                {"$inc": {"retry_count": 1}, "$set": update}
             )
         else:
             self.db.db[queue_name].update_one(
@@ -71,29 +68,23 @@ class QueueWorker:
     
     async def scrape_race_result(self, item: Dict) -> bool:
         """Scrape race result using RaceResultsScraper"""
-        race_date = item["race_date"]  # Format: YYYY-MM-DD
+        race_date = item["race_date"]
         race_no = item["race_no"]
-        
-        # Convert date format: YYYY-MM-DD -> YYYY/MM/DD
         race_date_formatted = race_date.replace("-", "/")
-        
-        # Get venue from item or use default
         venue = item.get("venue", "ST")
         
         logger.info(f"Scraping race result: {race_date} R{race_no}")
         
         try:
-            # Use existing RaceResultsScraper
             async with RaceResultsScraper(headless=True) as scraper:
                 result = await scraper.scrape_race(race_date_formatted, venue, race_no)
                 
                 if result:
-                    # Save to MongoDB
                     self._save_race_result(result)
                     logger.info(f"  ✓ Race {race_no} saved to DB")
                     return True
                 else:
-                    logger.error(f"  ✗ No data returned from scraper")
+                    logger.error(f"  ✗ No data returned")
                     return False
             
         except Exception as e:
@@ -107,12 +98,9 @@ class QueueWorker:
         
         race_date = result.get("race_date", "")
         race_no = result.get("race_no", "")
-        
-        # Build race_id
         venue = result.get("racecourse", "ST")
         race_id = f"{race_date.replace('/', '_')}_{venue}_{race_no}"
         
-        # Build document
         doc = {
             "hkjc_race_id": race_id,
             "race_date": race_date,
@@ -130,7 +118,6 @@ class QueueWorker:
             "modified_at": datetime.now()
         }
         
-        # Upsert to DB
         self.db.db["races"].update_one(
             {"hkjc_race_id": race_id},
             {"$set": doc},
@@ -148,17 +135,16 @@ class QueueWorker:
         logger.info(f"Scraping horse detail: {horse_id}")
         
         try:
-            async with HorseDetailScraper(headless=True) as scraper:
-                result = await scraper.scrape_horse_detail(horse_id)
-                
-                if result:
-                    # Save to MongoDB - update existing horse record
-                    self._save_horse_detail(horse_id, result)
-                    logger.info(f"  ✓ Horse {horse_id} saved to DB")
-                    return True
-                else:
-                    logger.error(f"  ✗ No data returned from scraper")
-                    return False
+            scraper = HorseDetailScraper(headless=True)
+            result = await scraper.scrape_horse_detail(horse_id)
+            
+            if result:
+                self._save_horse_detail(horse_id, result)
+                logger.info(f"  ✓ Horse {horse_id} saved to DB")
+                return True
+            else:
+                logger.error(f"  ✗ No data returned")
+                return False
             
         except Exception as e:
             logger.error(f"  ✗ Error: {e}")
@@ -169,128 +155,73 @@ class QueueWorker:
         if not data:
             return
         
-        # Update horse record with details
+        update_data = {
+            "modified_at": datetime.now()
+        }
+        
+        # Map scraped data to MongoDB fields
+        field_map = {
+            "name": "name",
+            "country": "country_of_origin",
+            "age": "age",
+            "color": "color",
+            "sex": "sex",
+            "import_type": "import_type",
+            "trainer": "trainer",
+            "owner": "owner",
+            "sire": "sire",
+            "dam": "dam",
+        }
+        
+        for scraper_field, db_field in field_map.items():
+            if scraper_field in data:
+                update_data[db_field] = data[scraper_field]
+        
+        # Handle pedigree
+        if "pedigree" in data and data["pedigree"]:
+            pedigree = data["pedigree"]
+            if "sire" in pedigree:
+                update_data["sire"] = pedigree["sire"]
+            if "dam" in pedigree:
+                update_data["dam"] = pedigree["dam"]
+            if "damsire" in pedigree:
+                update_data["maternal_grand_sire"] = pedigree["damsire"]
+        
+        # Handle stats
+        if "stats" in data and data["stats"]:
+            stats = data["stats"]
+            if "season_prize_money" in stats:
+                update_data["season_prize"] = stats["season_prize_money"]
+            if "total_prize_money" in stats:
+                update_data["total_prize"] = stats["total_prize_money"]
+        
         self.db.db["horses"].update_one(
             {"hkjc_horse_id": horse_id},
-            {"$set": {
-                "name": data.get("name"),
-                "name_cn": data.get("name_cn"),
-                "import_type": data.get("import_type"),
-                "country": data.get("country"),
-                "sex": data.get("sex"),
-                "age": data.get("age"),
-                "color": data.get("color"),
-                "sire": data.get("sire"),
-                "dam": data.get("dam"),
-                "dam_sire": data.get("dam_sire"),
-                "owner": data.get("owner"),
-                "trainer": data.get("trainer"),
-                "modified_at": datetime.now()
-            }},
+            {"$set": update_data},
             upsert=True
         )
     
     async def scrape_jockey_detail(self, item: Dict) -> bool:
-        """Scrape jockey detail using JockeyTrainerScraper"""
+        """Mark jockey as updated - Phase 5 ranking scraper already has data"""
         jockey_id = item.get("jockey_id")
         
         if not jockey_id:
             logger.error(f"  ✗ No jockey_id in item")
             return False
         
-        logger.info(f"Scraping jockey detail: {jockey_id}")
-        
-        try:
-            async with JockeyTrainerScraper(headless=True) as scraper:
-                result = await scraper.scrape_jockey(jockey_id)
-                
-                if result:
-                    self._save_jockey_detail(jockey_id, result)
-                    logger.info(f"  ✓ Jockey {jockey_id} saved to DB")
-                    return True
-                else:
-                    logger.error(f"  ✗ No data returned from scraper")
-                    return False
-            
-        except Exception as e:
-            logger.error(f"  ✗ Error: {e}")
-            return False
-    
-    def _save_jockey_detail(self, jockey_id: str, data: Dict):
-        """Save jockey detail to MongoDB"""
-        if not data:
-            return
-        
-        data["jockey_id"] = jockey_id
-        data["modified_at"] = datetime.now()
-        
-        self.db.db["jockeys"].update_one(
-            {"jockey_id": jockey_id},
-            {"$set": data},
-            upsert=True
-        )
+        logger.info(f"Jockey {jockey_id}: data from Phase 5 ranking scraper")
+        return True
     
     async def scrape_trainer_detail(self, item: Dict) -> bool:
-        """Scrape trainer detail using JockeyTrainerScraper"""
+        """Mark trainer as updated - Phase 5 ranking scraper already has data"""
         trainer_id = item.get("trainer_id")
         
         if not trainer_id:
             logger.error(f"  ✗ No trainer_id in item")
             return False
         
-        logger.info(f"Scraping trainer detail: {trainer_id}")
-        
-        try:
-            async with JockeyTrainerScraper(headless=True) as scraper:
-                result = await scraper.scrape_trainer(trainer_id)
-                
-                if result:
-                    self._save_trainer_detail(trainer_id, result)
-                    logger.info(f"  ✓ Trainer {trainer_id} saved to DB")
-                    return True
-                else:
-                    logger.error(f"  ✗ No data returned from scraper")
-                    return False
-            
-        except Exception as e:
-            logger.error(f"  ✗ Error: {e}")
-            return False
-    
-    def _save_trainer_detail(self, trainer_id: str, data: Dict):
-        """Save trainer detail to MongoDB"""
-        if not data:
-            return
-        
-        data["trainer_id"] = trainer_id
-        data["modified_at"] = datetime.now()
-        
-        self.db.db["trainers"].update_one(
-            {"trainer_id": trainer_id},
-            {"$set": data},
-            upsert=True
-        )
-        
-        try:
-            from playwright.async_api import async_playwright
-            
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page()
-                
-                url = item["target_url"]
-                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                await asyncio.sleep(3)
-                
-                # TODO: Implement actual scraping logic
-                
-                await browser.close()
-                
-            logger.info(f"  ✓ Trainer detail scraped")
-            return True
-            
-        except Exception as e:
-            logger.error(f"  ✗ Error: {e}")
-            return False
+        logger.info(f"Trainer {trainer_id}: data from Phase 5 ranking scraper")
+        return True
     
     async def process_item(self, item: Dict) -> bool:
         """Process a single queue item"""
@@ -323,35 +254,27 @@ class QueueWorker:
         failed = 0
         
         for item in items:
-            # Mark as in_progress
             self.db.db[queue_name].update_one(
                 {"_id": item["_id"]},
                 {"$set": {"status": "in_progress", "modified_at": datetime.now()}}
             )
             
-            # Process
             success = await self.process_item(item)
             
             if success:
                 self.update_item_status(queue_name, item["_id"], "completed")
                 completed += 1
             else:
-                # Check retry count
                 if item.get("retry_count", 0) >= 3:
-                    self.update_item_status(queue_name, item["_id"], "failed", "Max retries exceeded")
+                    self.update_item_status(queue_name, item["_id"], "failed", "Max retries")
                     failed += 1
                 else:
-                    self.update_item_status(queue_name, item["_id"], "pending", "Retry needed")
+                    self.update_item_status(queue_name, item["_id"], "pending", "Retry")
                     failed += 1
             
-            # Small delay between scrapes
             await asyncio.sleep(2)
         
-        return {
-            "checked": len(items),
-            "completed": completed,
-            "failed": failed
-        }
+        return {"checked": len(items), "completed": completed, "failed": failed}
     
     async def run(self):
         """Main worker job"""
@@ -363,7 +286,6 @@ class QueueWorker:
             logger.error("Cannot connect to MongoDB")
             return
         
-        # Process each queue
         queues = ["race_queue", "scrape_queue", "jockey_queue", "trainer_queue"]
         
         total_completed = 0
@@ -373,7 +295,6 @@ class QueueWorker:
             result = await self.process_queue(queue_name)
             total_completed += result["completed"]
             total_failed += result["failed"]
-            
             logger.info(f"{queue_name}: {result}")
         
         logger.info("=" * 60)
@@ -384,17 +305,11 @@ class QueueWorker:
         
         self.disconnect()
         
-        return {
-            "completed": total_completed,
-            "failed": total_failed
-        }
+        return {"completed": total_completed, "failed": total_failed}
 
 
 async def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     
     worker = QueueWorker()
     await worker.run()
