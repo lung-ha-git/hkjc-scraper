@@ -1,0 +1,297 @@
+"""
+HKJC Sync Scheduler
+Daily job: Check fixtures, add queue items for races with published data
+"""
+
+import asyncio
+import logging
+from datetime import datetime, timedelta
+from typing import List, Dict
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from src.database.connection import DatabaseConnection
+
+logger = logging.getLogger(__name__)
+
+
+class SyncScheduler:
+    """Schedule scrape jobs based on fixtures"""
+    
+    def __init__(self):
+        self.db = None
+        
+    def connect(self):
+        """Connect to MongoDB"""
+        self.db = DatabaseConnection()
+        return self.db.connect()
+    
+    def disconnect(self):
+        """Disconnect from MongoDB"""
+        if self.db:
+            self.db.disconnect()
+    
+    async def check_racecard_published(self, date: str, venue: str) -> bool:
+        """Check if racecard has data published"""
+        from playwright.async_api import async_playwright
+        
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            
+            # Format: 2026/03/15
+            date_formatted = date.replace("-", "/")
+            url = f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={date_formatted}&Racecourse={venue}"
+            
+            try:
+                await page.goto(url, wait_until="domcontentloaded", timeout=15000)
+                await asyncio.sleep(2)
+                
+                content = await page.inner_text("body")
+                has_data = "沒有相關資料" not in content and len(content) > 800
+                
+            except Exception as e:
+                logger.warning(f"Error checking {url}: {e}")
+                has_data = False
+            finally:
+                await browser.close()
+            
+            return has_data
+    
+    def get_pending_fixtures(self) -> List[Dict]:
+        """Get fixtures that haven't been processed yet"""
+        return list(self.db.db["fixtures"].find({
+            "scrape_status": "pending"
+        }).sort("date", 1))
+    
+    def add_race_queue_item(self, fixture: Dict, race_no: int) -> str:
+        """Add a race to race_queue"""
+        now = datetime.now()
+        
+        # Scheduled for next day 09:00
+        scheduled_time = (now + timedelta(days=1)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        
+        item = {
+            "type": "race_result",
+            "target_url": f"https://racing.hkjc.com/zh-hk/racing/information/English/Racing/LocalResults.aspx?RaceDate={fixture['date']}",
+            "race_date": fixture['date'],
+            "venue": fixture['venue'],
+            "race_no": race_no,
+            "scheduled_scrape_time": scheduled_time,
+            "status": "pending",
+            "retry_count": 0,
+            "created_at": now,
+            "modified_at": now
+        }
+        
+        result = self.db.db["race_queue"].insert_one(item)
+        return str(result.inserted_id)
+    
+    def add_horse_queue_item(self, fixture: Dict, horse_id: str) -> str:
+        """Add a horse to scrape_queue"""
+        now = datetime.now()
+        
+        scheduled_time = (now + timedelta(days=1)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        
+        item = {
+            "type": "horse_detail",
+            "target_url": f"https://racing.hkjc.com/zh-hk/local/information/horse?horseid={horse_id}",
+            "horse_id": horse_id,
+            "race_date": fixture['date'],
+            "scheduled_scrape_time": scheduled_time,
+            "status": "pending",
+            "retry_count": 0,
+            "created_at": now,
+            "modified_at": now
+        }
+        
+        result = self.db.db["scrape_queue"].insert_one(item)
+        return str(result.inserted_id)
+    
+    def add_jockey_queue_item(self, jockey_id: str) -> str:
+        """Add a jockey to jockey_queue"""
+        now = datetime.now()
+        
+        scheduled_time = (now + timedelta(days=1)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        
+        item = {
+            "type": "jockey_detail",
+            "target_url": f"https://racing.hkjc.com/zh-hk/local/information/jockeyprofile?jockeyid={jockey_id}&season=Current",
+            "jockey_id": jockey_id,
+            "scheduled_scrape_time": scheduled_time,
+            "status": "pending",
+            "retry_count": 0,
+            "created_at": now,
+            "modified_at": now
+        }
+        
+        result = self.db.db["jockey_queue"].insert_one(item)
+        return str(result.inserted_id)
+    
+    def add_trainer_queue_item(self, trainer_id: str) -> str:
+        """Add a trainer to trainer_queue"""
+        now = datetime.now()
+        
+        scheduled_time = (now + timedelta(days=1)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        
+        item = {
+            "type": "trainer_detail",
+            "target_url": f"https://racing.hkjc.com/zh-hk/local/information/trainerprofile?trainerid={trainer_id}&season=Current",
+            "trainer_id": trainer_id,
+            "scheduled_scrape_time": scheduled_time,
+            "status": "pending",
+            "retry_count": 0,
+            "created_at": now,
+            "modified_at": now
+        }
+        
+        result = self.db.db["trainer_queue"].insert_one(item)
+        return str(result.inserted_id)
+    
+    def get_existing_jockeys(self) -> List[str]:
+        """Get list of existing jockey IDs"""
+        return [doc["jockey_id"] for doc in self.db.db["jockeys"].find({}, {"jockey_id": 1})]
+    
+    def get_existing_trainers(self) -> List[str]:
+        """Get list of existing trainer IDs"""
+        return [doc["trainer_id"] for doc in self.db.db["trainers"].find({}, {"trainer_id": 1})]
+    
+    async def process_fixture(self, fixture: Dict) -> Dict:
+        """Process a single fixture"""
+        date = fixture["date"]
+        venue = fixture["venue"]
+        race_count = fixture["race_count"]
+        
+        logger.info(f"Checking {date} ({venue}) - {race_count} races...")
+        
+        # Check if racecard is published
+        has_data = await self.check_racecard_published(date, venue)
+        
+        if not has_data:
+            logger.info(f"  No data published yet, skipping")
+            return {"status": "no_data", "race_count": 0}
+        
+        logger.info(f"  Racecard published! Adding queue items...")
+        
+        # Add race queue items (one per race)
+        race_items = 0
+        for race_no in range(1, race_count + 1):
+            self.add_race_queue_item(fixture, race_no)
+            race_items += 1
+        
+        # Get existing horses from this race's results
+        # Note: We'll get actual horse IDs after race results are scraped
+        # For now, we'll add jockeys and trainers
+        
+        # Add jockey queue items (unique jockeys)
+        jockey_ids = self.get_existing_jockeys()
+        jockey_items = 0
+        for jockey_id in jockey_ids[:10]:  # Limit to top 10 for now
+            # Check if already queued today
+            existing = self.db.db["jockey_queue"].find_one({
+                "jockey_id": jockey_id,
+                "status": "pending"
+            })
+            if not existing:
+                self.add_jockey_queue_item(jockey_id)
+                jockey_items += 1
+        
+        # Add trainer queue items
+        trainer_ids = self.get_existing_trainers()
+        trainer_items = 0
+        for trainer_id in trainer_ids[:10]:
+            existing = self.db.db["trainer_queue"].find_one({
+                "trainer_id": trainer_id,
+                "status": "pending"
+            })
+            if not existing:
+                self.add_trainer_queue_item(trainer_id)
+                trainer_items += 1
+        
+        # Update fixture status
+        self.db.db["fixtures"].update_one(
+            {"_id": fixture["_id"]},
+            {"$set": {
+                "scrape_status": "queued",
+                "modified_at": datetime.now()
+            }}
+        )
+        
+        return {
+            "status": "queued",
+            "race_items": race_items,
+            "jockey_items": jockey_items,
+            "trainer_items": trainer_items
+        }
+    
+    async def run(self):
+        """Main sync job"""
+        logger.info("=" * 60)
+        logger.info("SYNC SCHEDULER STARTING")
+        logger.info("=" * 60)
+        
+        if not self.connect():
+            logger.error("Cannot connect to MongoDB")
+            return
+        
+        # Get pending fixtures
+        fixtures = self.get_pending_fixtures()
+        logger.info(f"Found {len(fixtures)} pending fixtures")
+        
+        # Process each fixture
+        results = []
+        for fixture in fixtures:
+            result = await self.process_fixture(fixture)
+            results.append({
+                "date": fixture["date"],
+                "venue": fixture["venue"],
+                **result
+            })
+            
+            # Small delay between checks
+            await asyncio.sleep(1)
+        
+        # Summary
+        total_races = sum(r.get("race_items", 0) for r in results)
+        total_jockeys = sum(r.get("jockey_items", 0) for r in results)
+        total_trainers = sum(r.get("trainer_items", 0) for r in results)
+        
+        logger.info("=" * 60)
+        logger.info("SYNC SCHEDULER COMPLETE")
+        logger.info("=" * 60)
+        logger.info(f"Fixtures processed: {len(results)}")
+        logger.info(f"Race queue items: {total_races}")
+        logger.info(f"Jockey queue items: {total_jockeys}")
+        logger.info(f"Trainer queue items: {total_trainers}")
+        
+        self.disconnect()
+        
+        return {
+            "fixtures": len(results),
+            "race_items": total_races,
+            "jockey_items": total_jockeys,
+            "trainer_items": total_trainers
+        }
+
+
+async def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    scheduler = SyncScheduler()
+    await scheduler.run()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
