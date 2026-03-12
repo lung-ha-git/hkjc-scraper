@@ -13,6 +13,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
 from src.crawler.race_results_scraper import RaceResultsScraper
+from src.crawler.horse_detail_scraper import HorseDetailScraper
+from src.crawler.jockey_trainer_scraper import JockeyTrainerScraper
 
 logger = logging.getLogger(__name__)
 
@@ -136,64 +138,137 @@ class QueueWorker:
         )
     
     async def scrape_horse_detail(self, item: Dict) -> bool:
-        """Scrape horse detail"""
-        logger.info(f"Scraping horse: {item['horse_id']}")
+        """Scrape horse detail using HorseDetailScraper"""
+        horse_id = item.get("horse_id")
+        
+        if not horse_id:
+            logger.error(f"  ✗ No horse_id in item")
+            return False
+        
+        logger.info(f"Scraping horse detail: {horse_id}")
         
         try:
-            from playwright.async_api import async_playwright
-            
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page()
+            async with HorseDetailScraper(headless=True) as scraper:
+                result = await scraper.scrape_horse_detail(horse_id)
                 
-                url = item["target_url"]
-                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                await asyncio.sleep(3)
-                
-                # TODO: Implement actual scraping logic
-                
-                await browser.close()
-                
-            logger.info(f"  ✓ Horse detail scraped")
-            return True
+                if result:
+                    # Save to MongoDB - update existing horse record
+                    self._save_horse_detail(horse_id, result)
+                    logger.info(f"  ✓ Horse {horse_id} saved to DB")
+                    return True
+                else:
+                    logger.error(f"  ✗ No data returned from scraper")
+                    return False
             
         except Exception as e:
             logger.error(f"  ✗ Error: {e}")
             return False
+    
+    def _save_horse_detail(self, horse_id: str, data: Dict):
+        """Save horse detail to MongoDB"""
+        if not data:
+            return
+        
+        # Update horse record with details
+        self.db.db["horses"].update_one(
+            {"hkjc_horse_id": horse_id},
+            {"$set": {
+                "name": data.get("name"),
+                "name_cn": data.get("name_cn"),
+                "import_type": data.get("import_type"),
+                "country": data.get("country"),
+                "sex": data.get("sex"),
+                "age": data.get("age"),
+                "color": data.get("color"),
+                "sire": data.get("sire"),
+                "dam": data.get("dam"),
+                "dam_sire": data.get("dam_sire"),
+                "owner": data.get("owner"),
+                "trainer": data.get("trainer"),
+                "modified_at": datetime.now()
+            }},
+            upsert=True
+        )
     
     async def scrape_jockey_detail(self, item: Dict) -> bool:
-        """Scrape jockey detail"""
-        logger.info(f"Scraping jockey: {item['jockey_id']}")
+        """Scrape jockey detail using JockeyTrainerScraper"""
+        jockey_id = item.get("jockey_id")
+        
+        if not jockey_id:
+            logger.error(f"  ✗ No jockey_id in item")
+            return False
+        
+        logger.info(f"Scraping jockey detail: {jockey_id}")
         
         try:
-            from playwright.async_api import async_playwright
-            
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                page = await browser.new_page()
+            async with JockeyTrainerScraper(headless=True) as scraper:
+                result = await scraper.scrape_jockey(jockey_id)
                 
-                url = item["target_url"]
-                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                await asyncio.sleep(3)
-                
-                # Get the page content
-                content = await page.inner_text("body")
-                
-                # Parse jockey stats from content
-                # For now, just mark as completed
-                
-                await browser.close()
-                
-            logger.info(f"  ✓ Jockey detail scraped")
-            return True
+                if result:
+                    self._save_jockey_detail(jockey_id, result)
+                    logger.info(f"  ✓ Jockey {jockey_id} saved to DB")
+                    return True
+                else:
+                    logger.error(f"  ✗ No data returned from scraper")
+                    return False
             
         except Exception as e:
             logger.error(f"  ✗ Error: {e}")
             return False
     
+    def _save_jockey_detail(self, jockey_id: str, data: Dict):
+        """Save jockey detail to MongoDB"""
+        if not data:
+            return
+        
+        data["jockey_id"] = jockey_id
+        data["modified_at"] = datetime.now()
+        
+        self.db.db["jockeys"].update_one(
+            {"jockey_id": jockey_id},
+            {"$set": data},
+            upsert=True
+        )
+    
     async def scrape_trainer_detail(self, item: Dict) -> bool:
-        """Scrape trainer detail"""
-        logger.info(f"Scraping trainer: {item['trainer_id']}")
+        """Scrape trainer detail using JockeyTrainerScraper"""
+        trainer_id = item.get("trainer_id")
+        
+        if not trainer_id:
+            logger.error(f"  ✗ No trainer_id in item")
+            return False
+        
+        logger.info(f"Scraping trainer detail: {trainer_id}")
+        
+        try:
+            async with JockeyTrainerScraper(headless=True) as scraper:
+                result = await scraper.scrape_trainer(trainer_id)
+                
+                if result:
+                    self._save_trainer_detail(trainer_id, result)
+                    logger.info(f"  ✓ Trainer {trainer_id} saved to DB")
+                    return True
+                else:
+                    logger.error(f"  ✗ No data returned from scraper")
+                    return False
+            
+        except Exception as e:
+            logger.error(f"  ✗ Error: {e}")
+            return False
+    
+    def _save_trainer_detail(self, trainer_id: str, data: Dict):
+        """Save trainer detail to MongoDB"""
+        if not data:
+            return
+        
+        data["trainer_id"] = trainer_id
+        data["modified_at"] = datetime.now()
+        
+        self.db.db["trainers"].update_one(
+            {"trainer_id": trainer_id},
+            {"$set": data},
+            upsert=True
+        )
         
         try:
             from playwright.async_api import async_playwright
