@@ -1,7 +1,7 @@
 """
 HKJC Horse Detail Scraper
 Scrape individual horse detail pages
-URL pattern: https://racing.hkjc.com/zh-hk/local/information/horses/horse-detail?horse_id=XXX
+URL pattern: https://racing.hkjc.com/zh-hk/local/information/horse?horseid=XXX
 """
 
 import asyncio
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class HorseDetailScraper:
     """Scraper for individual horse detail pages"""
     
-    BASE_URL = "https://racing.hkjc.com/zh-hk/local/information/horses/horse-detail"
+    BASE_URL = "https://racing.hkjc.com/zh-hk/local/information/horse"
     
     def __init__(self, headless: bool = True, delay: int = 3):
         self.headless = headless
@@ -34,7 +34,7 @@ class HorseDetailScraper:
         Returns:
             Dict with horse details or None
         """
-        url = f"{self.BASE_URL}?horse_id={horse_id}"
+        url = f"{self.BASE_URL}?horseid={horse_id}"
         
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
