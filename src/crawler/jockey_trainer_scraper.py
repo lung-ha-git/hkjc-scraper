@@ -114,6 +114,7 @@ class JockeyTrainerScraper:
             await asyncio.sleep(3)
             
             text = await page.inner_text("body")
+            lines = text.split('\n')
             
             # Extract info
             jockey = {
@@ -121,34 +122,38 @@ class JockeyTrainerScraper:
                 "url": url,
             }
             
-            # Name (usually at top)
-            name_match = re.search(r'^([^\n]+)', text)
-            if name_match:
-                jockey["name"] = name_match.group(1).strip()
+            # Find name - line 33 or 44 has the name
+            for i, line in enumerate(lines):
+                if i in [33, 44] and line.strip():
+                    jockey["name"] = line.strip()
+                    break
             
-            # Age
-            age_match = re.search(r'年齡[:：]\s*(\d+)', text)
-            if age_match:
-                jockey["age"] = int(age_match.group(1))
-            
-            # Nationality
-            nat_match = re.search(r'國籍\s*[:：]\s*([^\n]+)', text)
-            if nat_match:
-                jockey["nationality"] = nat_match.group(1).strip()
-            
-            # Current season stats
-            season_match = re.search(r'(\d+)/(\d+)\s*馬季.*?(\d+)\s*場.*?(\d+)\s*冠.*?(\d+)\s*亞.*?(\d+)\s*季', text, re.DOTALL)
-            if season_match:
-                jockey["season"] = f"{season_match.group(1)}/{season_match.group(2)}"
-                jockey["total_rides"] = int(season_match.group(3))
-                jockey["wins"] = int(season_match.group(4))
-                jockey["seconds"] = int(season_match.group(5))
-                jockey["thirds"] = int(season_match.group(6))
-            
-            # Total wins in HK
-            total_match = re.search(r'在港累積頭馬.*?(\d+)', text)
-            if total_match:
-                jockey["total_wins_hk"] = int(total_match.group(1))
+            # Find stats in lines 58-61 (tab-separated)
+            for i in range(55, 65):
+                if i < len(lines):
+                    line = lines[i]
+                    # Line 58: 國籍 : 澳洲 冠 : 84 總出賽次數 : 412
+                    if '冠' in line and ':' in line:
+                        # Split by tabs or multiple spaces
+                        parts = re.split(r'\t+|\s{2,}', line)
+                        for part in parts:
+                            part = part.strip()
+                            if '冠' in part:
+                                match = re.search(r'(\d+)', part)
+                                if match:
+                                    jockey["wins"] = int(match.group(1))
+                            if '亞' in part:
+                                match = re.search(r'(\d+)', part)
+                                if match:
+                                    jockey["seconds"] = int(match.group(1))
+                            if '季' in part and '殿' not in part:
+                                match = re.search(r'(\d+)', part)
+                                if match:
+                                    jockey["thirds"] = int(match.group(1))
+                            if '總出賽次數' in part or '總出賽' in part:
+                                match = re.search(r'(\d+)', part)
+                                if match:
+                                    jockey["total_rides"] = int(match.group(1))
             
             jockey["scraped_at"] = datetime.now().isoformat()
             
@@ -157,6 +162,7 @@ class JockeyTrainerScraper:
             
         except Exception as e:
             await context.close()
+            return {"jockey_id": jockey_id, "error": str(e)}
             return {"jockey_id": jockey_id, "error": str(e)}
     
     async def scrape_trainer(self, trainer_id: str) -> Dict:
@@ -171,25 +177,40 @@ class JockeyTrainerScraper:
             await asyncio.sleep(3)
             
             text = await page.inner_text("body")
+            lines = text.split('\n')
             
             trainer = {
                 "trainer_id": trainer_id,
                 "url": url,
             }
             
-            # Name
-            name_match = re.search(r'^([^\n]+)', text)
-            if name_match:
-                trainer["name"] = name_match.group(1).strip()
+            # Find name - usually in early lines
+            for i, line in enumerate(lines):
+                if i in [33, 34, 35, 44, 45] and line.strip():
+                    if line.strip() not in ['簡歷', '成績', '練馬師', '其他練馬師', '練馬師榜']:
+                        trainer["name"] = line.strip()
+                        break
             
-            # Stats
-            stats_match = re.search(r'(\d+)/(\d+)\s*馬季.*?(\d+)\s*場.*?(\d+)\s*冠.*?(\d+)\s*亞.*?(\d+)\s*季', text, re.DOTALL)
-            if stats_match:
-                trainer["season"] = f"{stats_match.group(1)}/{stats_match.group(2)}"
-                trainer["total_runs"] = int(stats_match.group(3))
-                trainer["wins"] = int(stats_match.group(4))
-                trainer["seconds"] = int(stats_match.group(5))
-                trainer["thirds"] = int(stats_match.group(6))
+            # Find stats - look for 冠, 亞, 季
+            for i in range(40, 60):
+                if i < len(lines):
+                    line = lines[i]
+                    if '冠' in line and ':' in line:
+                        parts = re.split(r'\t+|\s{2,}', line)
+                        for part in parts:
+                            part = part.strip()
+                            if '冠' in part:
+                                match = re.search(r'(\d+)', part)
+                                if match:
+                                    trainer["wins"] = int(match.group(1))
+                            if '亞' in part:
+                                match = re.search(r'(\d+)', part)
+                                if match:
+                                    trainer["seconds"] = int(match.group(1))
+                            if '季' in part and '殿' not in part:
+                                match = re.search(r'(\d+)', part)
+                                if match:
+                                    trainer["thirds"] = int(match.group(1))
             
             trainer["scraped_at"] = datetime.now().isoformat()
             
