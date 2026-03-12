@@ -193,16 +193,28 @@ class CompleteHorseScraper:
         
         return races
     
-    async def _extract_distance_stats(self, page: Page) -> Dict:
+    async def _extract_distance_stats(self, page: Page) -> List[Dict]:
         """Extract distance analysis (所跑途程賽績紀錄)
         
-        Expected format in page:
-        場次	名次	日期	馬場/跑道/賽道	途程	場地狀況	...
-        452	12	19/02/26	沙田草地"A"	2000	好	...
+        Returns:
+            List of dicts aggregated by track + distance:
+            [
+                {
+                    "course_type": "沙田草地",
+                    "distance": "1400米",
+                    "total_runs": 3,
+                    "first": 0,
+                    "second": 0,
+                    "third": 1,
+                    "others": 2
+                },
+                ...
+            ]
         """
         import re
         
-        stats = {}
+        # Aggregate data by course_type + distance
+        aggregate = {}
         
         # Find tables with distance data
         tables = await page.query_selector_all("table")
@@ -210,27 +222,62 @@ class CompleteHorseScraper:
         for table_idx, table in enumerate(tables):
             text = await table.inner_text()
             
-            # Look for table with distance data (contains 4 digits like 1000, 1200, 2000)
+            # Look for table with distance data
             if re.search(r'\d{4}', text) and ('好' in text or '軟' in text or '快' in text):
-                # Extract distance performance
                 lines = text.split('\n')
-                distances_seen = {}
                 
                 for line in lines:
-                    # Look for patterns like "2000好" (4 digits followed by track condition)
-                    matches = re.findall(r'(\d{4})\s+好', line)
-                    for distance in matches:
-                        if distance not in distances_seen:
-                            distances_seen[distance] = 0
-                        distances_seen[distance] += 1
-                
-                # Convert to format: {distance_1200: {runs: 3}, distance_1600: {runs: 2}}
-                if distances_seen:
-                    for distance, count in distances_seen.items():
-                        stats[f"distance_{distance}"] = {"runs": count}
-                    break
+                    parts = line.split('\t')
+                    
+                    if len(parts) >= 6:
+                        try:
+                            position = parts[1].strip()
+                            
+                            # Skip header lines
+                            if not position.isdigit():
+                                continue
+                            
+                            # Extract course type
+                            course_match = re.search(r'(沙田|跑馬地)(草地|泥地)?', line)
+                            course_type = course_match.group(0) if course_match else "未知"
+                            
+                            # Extract distance
+                            dist_match = re.search(r'(\d{4})\s+(好|快地|軟|快)', line)
+                            if not dist_match:
+                                continue
+                            distance = dist_match.group(1)
+                            
+                            # Create key
+                            key = f"{course_type}_{distance}"
+                            
+                            if key not in aggregate:
+                                aggregate[key] = {
+                                    "course_type": course_type,
+                                    "distance": f"{distance}米",
+                                    "total_runs": 0,
+                                    "first": 0,
+                                    "second": 0,
+                                    "third": 0,
+                                    "others": 0
+                                }
+                            
+                            # Update counts
+                            aggregate[key]["total_runs"] += 1
+                            
+                            pos = int(position)
+                            if pos == 1:
+                                aggregate[key]["first"] += 1
+                            elif pos == 2:
+                                aggregate[key]["second"] += 1
+                            elif pos == 3:
+                                aggregate[key]["third"] += 1
+                            else:
+                                aggregate[key]["others"] += 1
+                                
+                        except (ValueError, IndexError):
+                            continue
         
-        return stats
+        return list(aggregate.values())
     
     async def _extract_workouts(self, page: Page) -> List[Dict]:
         """Extract workout records"""
