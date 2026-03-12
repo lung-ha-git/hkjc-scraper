@@ -102,79 +102,29 @@ class JockeyTrainerScraper:
         
         return trainers
     
-    async def scrape_jockey(self, jockey_id: str) -> Dict:
-        """Scrape detailed info for a single jockey"""
-        url = f"https://racing.hkjc.com/zh-hk/local/information/jockeyprofile?jockeyid={jockey_id}&season=Current"
+    async def _scrape_profile(self, profile_type: str, profile_id: str) -> Dict:
+        """Common method to scrape jockey or trainer profile
         
-        context = await self.browser.new_context()
-        page = await context.new_page()
-        
-        try:
-            await page.goto(url, wait_until="domcontentloaded")
-            await asyncio.sleep(3)
+        Args:
+            profile_type: 'jockey' or 'trainer'
+            profile_id: The jockey/trainer ID
             
-            # Get text for name
-            text = await page.inner_text("body")
-            lines = text.split('\n')
-            
-            # Get HTML for stats
-            html = await page.content()
-            
-            jockey = {
-                "jockey_id": jockey_id,
-                "url": url,
-            }
-            
-            # Find name - line 33 or 44
-            for i in [33, 44]:
-                if i < len(lines) and lines[i].strip():
-                    jockey["name"] = lines[i].strip()
-                    break
-            
-            # Parse stats from HTML table
-            # Pattern: <td>國籍</td><td>: 澳洲</td><td ...>冠</td><td>: 84</td>
-            # Find all td elements
-            import re
-            
-            # Extract wins
-            win_match = re.search(r'冠</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
-            if win_match:
-                jockey["wins"] = int(win_match.group(1))
-            
-            # Extract seconds (亞)
-            sec_match = re.search(r'亞</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
-            if sec_match:
-                jockey["seconds"] = int(sec_match.group(1))
-            
-            # Extract thirds (季)
-            third_match = re.search(r'季</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
-            if third_match:
-                jockey["thirds"] = int(third_match.group(1))
-            
-            # Extract total rides
-            rides_match = re.search(r'總出賽次數</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
-            if rides_match:
-                jockey["total_rides"] = int(rides_match.group(1))
-            
-            # Extract prize money
-            prize_match = re.search(r'所贏獎金</td>\s*<td[^>]*>:\s*\$?([\d,]+)</td>', html)
-            if prize_match:
-                jockey["prize_money"] = prize_match.group(1).replace(",", "")
-                jockey["prize_money_int"] = int(jockey["prize_money"])
-            
-            jockey["scraped_at"] = datetime.now().isoformat()
-            
-            await context.close()
-            return jockey
-            
-        except Exception as e:
-            await context.close()
-            return {"jockey_id": jockey_id, "error": str(e)}
-            return {"jockey_id": jockey_id, "error": str(e)}
-    
-    async def scrape_trainer(self, trainer_id: str) -> Dict:
-        """Scrape detailed info for a single trainer"""
-        url = f"https://racing.hkjc.com/zh-hk/local/information/trainerprofile?trainerid={trainer_id}&season=Current"
+        Returns:
+            Dict with profile data
+        """
+        # Build URL based on type
+        if profile_type == "jockey":
+            url = f"https://racing.hkjc.com/zh-hk/local/information/jockeyprofile?jockeyid={profile_id}&season=Current"
+            id_field = "jockey_id"
+            name_indices = [33, 44]
+            skip_names = []
+            total_field = "total_rides"
+        else:  # trainer
+            url = f"https://racing.hkjc.com/zh-hk/local/information/trainerprofile?trainerid={profile_id}&season=Current"
+            id_field = "trainer_id"
+            name_indices = [33, 34, 35, 44, 45]
+            skip_names = ['簡歷', '成績', '練馬師', '其他練馬師', '練馬師榜']
+            total_field = "total_horses"
         
         context = await self.browser.new_context()
         page = await context.new_page()
@@ -185,56 +135,70 @@ class JockeyTrainerScraper:
             
             text = await page.inner_text("body")
             lines = text.split('\n')
-            
             html = await page.content()
             
-            trainer = {
-                "trainer_id": trainer_id,
+            profile = {
+                id_field: profile_id,
                 "url": url,
             }
             
             # Find name
-            for i in [33, 34, 35, 44, 45]:
+            for i in name_indices:
                 if i < len(lines) and lines[i].strip():
-                    if lines[i].strip() not in ['簡歷', '成績', '練馬師', '其他練馬師', '練馬師榜']:
-                        trainer["name"] = lines[i].strip()
-                        break
+                    if skip_names and lines[i].strip() in skip_names:
+                        continue
+                    profile["name"] = lines[i].strip()
+                    break
             
-            # Parse stats from HTML
-            # Extract wins
+            # Extract stats from HTML (same for both)
+            import re
+            
+            # Wins
             win_match = re.search(r'冠</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
             if win_match:
-                trainer["wins"] = int(win_match.group(1))
+                profile["wins"] = int(win_match.group(1))
             
-            # Extract seconds (亞)
+            # Seconds
             sec_match = re.search(r'亞</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
             if sec_match:
-                trainer["seconds"] = int(sec_match.group(1))
+                profile["seconds"] = int(sec_match.group(1))
             
-            # Extract thirds (季)
+            # Thirds
             third_match = re.search(r'季</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
             if third_match:
-                trainer["thirds"] = int(third_match.group(1))
+                profile["thirds"] = int(third_match.group(1))
             
-            # Extract total horses
-            horses_match = re.search(r'馬房總數</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
-            if horses_match:
-                trainer["total_horses"] = int(horses_match.group(1))
+            # Total
+            if profile_type == "jockey":
+                total_match = re.search(r'總出賽次數</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
+            else:
+                total_match = re.search(r'馬房總數</td>\s*<td[^>]*>:\s*(\d+)</td>', html)
             
-            # Extract prize money
+            if total_match:
+                profile[total_field] = int(total_match.group(1))
+            
+            # Prize money
             prize_match = re.search(r'所贏獎金</td>\s*<td[^>]*>:\s*\$?([\d,]+)</td>', html)
             if prize_match:
-                trainer["prize_money"] = prize_match.group(1).replace(",", "")
-                trainer["prize_money_int"] = int(trainer["prize_money"])
+                profile["prize_money"] = prize_match.group(1)
+                profile["prize_money_int"] = int(prize_match.group(1).replace(",", ""))
             
-            trainer["scraped_at"] = datetime.now().isoformat()
+            profile["scraped_at"] = datetime.now().isoformat()
             
             await context.close()
-            return trainer
+            return profile
             
         except Exception as e:
             await context.close()
-            return {"trainer_id": trainer_id, "error": str(e)}
+            return {id_field: profile_id, "error": str(e)}
+    
+    async def scrape_jockey(self, jockey_id: str) -> Dict:
+        """Scrape detailed info for a single jockey"""
+        return await self._scrape_profile("jockey", jockey_id)
+    
+    async def scrape_trainer(self, trainer_id: str) -> Dict:
+        """Scrape detailed info for a single trainer"""
+        return await self._scrape_profile("trainer", trainer_id)
     
     async def scrape_all_jockeys(self) -> List[Dict]:
         """Scrape all jockeys from main pages"""
