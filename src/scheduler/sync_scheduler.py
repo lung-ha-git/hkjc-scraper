@@ -177,6 +177,10 @@ class SyncScheduler:
         """Get list of existing trainer IDs"""
         return [doc["trainer_id"] for doc in self.db.db["trainers"].find({}, {"trainer_id": 1})]
     
+    def get_existing_horses(self) -> List[str]:
+        """Get list of existing horse IDs"""
+        return [doc["hkjc_horse_id"] for doc in self.db.db["horses"].find({}, {"hkjc_horse_id": 1})]
+    
     async def process_fixture(self, fixture: Dict) -> Dict:
         """Process a single fixture"""
         from datetime import date
@@ -245,9 +249,18 @@ class SyncScheduler:
             self.add_race_queue_item(fixture, race_no)
             race_items += 1
         
-        # Get existing horses from this race's results
-        # Note: We'll get actual horse IDs after race results are scraped
-        # For now, we'll add jockeys and trainers
+        # Get existing horses and add to scrape queue
+        horse_ids = self.get_existing_horses()
+        horse_items = 0
+        for horse_id in horse_ids[:20]:  # Limit to 20 for now
+            # Check if already queued recently
+            existing = self.db.db["scrape_queue"].find_one({
+                "horse_id": horse_id,
+                "status": "pending"
+            })
+            if not existing:
+                self.add_horse_queue_item(fixture, horse_id)
+                horse_items += 1
         
         # Add jockey queue items (unique jockeys)
         jockey_ids = self.get_existing_jockeys()
@@ -286,6 +299,7 @@ class SyncScheduler:
         return {
             "status": "queued",
             "race_items": race_items,
+            "horse_items": horse_items,
             "jockey_items": jockey_items,
             "trainer_items": trainer_items
         }
@@ -319,6 +333,7 @@ class SyncScheduler:
         
         # Summary
         total_races = sum(r.get("race_items", 0) for r in results)
+        total_horses = sum(r.get("horse_items", 0) for r in results)
         total_jockeys = sum(r.get("jockey_items", 0) for r in results)
         total_trainers = sum(r.get("trainer_items", 0) for r in results)
         
@@ -327,6 +342,7 @@ class SyncScheduler:
         logger.info("=" * 60)
         logger.info(f"Fixtures processed: {len(results)}")
         logger.info(f"Race queue items: {total_races}")
+        logger.info(f"Horse queue items: {total_horses}")
         logger.info(f"Jockey queue items: {total_jockeys}")
         logger.info(f"Trainer queue items: {total_trainers}")
         
@@ -335,6 +351,7 @@ class SyncScheduler:
         return {
             "fixtures": len(results),
             "race_items": total_races,
+            "horse_items": total_horses,
             "jockey_items": total_jockeys,
             "trainer_items": total_trainers
         }
