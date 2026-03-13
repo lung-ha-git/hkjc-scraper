@@ -14,8 +14,15 @@ logger = logging.getLogger(__name__)
 class DatabaseConnection:
     """MongoDB connection manager"""
     
-    def __init__(self, connection_string: str = "mongodb://localhost:27017/", 
-                 db_name: str = "hkjc_racing"):
+    def __init__(self, connection_string: str = None, 
+                 db_name: str = None):
+        # Load from config if not specified
+        if connection_string is None:
+            from config.settings import MONGODB_URI
+            connection_string = MONGODB_URI
+        if db_name is None:
+            from config.settings import MONGODB_DB_NAME
+            db_name = MONGODB_DB_NAME
         self.connection_string = connection_string
         self.db_name = db_name
         self.client: Optional[MongoClient] = None

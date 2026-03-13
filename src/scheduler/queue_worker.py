@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
 from src.crawler.race_results_scraper import RaceResultsScraper
-from src.crawler.horse_detail_scraper import HorseDetailScraper
+from src.crawler.complete_horse_scraper import CompleteHorseScraper
 
 logger = logging.getLogger(__name__)
 
@@ -125,21 +125,21 @@ class QueueWorker:
         )
     
     async def scrape_horse_detail(self, item: Dict) -> bool:
-        """Scrape horse detail using HorseDetailScraper"""
+        """Scrape horse detail using CompleteHorseScraper"""
         horse_id = item.get("horse_id")
         
         if not horse_id:
             logger.error(f"  ✗ No horse_id in item")
             return False
         
-        logger.info(f"Scraping horse detail: {horse_id}")
+        logger.info(f"Scraping horse detail (complete): {horse_id}")
         
         try:
-            scraper = HorseDetailScraper(headless=True)
-            result = await scraper.scrape_horse_detail(horse_id)
+            scraper = CompleteHorseScraper(headless=True)
+            result = await scraper.scrape_horse_complete(horse_id)
             
             if result:
-                self._save_horse_detail(horse_id, result)
+                self._save_horse_complete(horse_id, result)
                 logger.info(f"  ✓ Horse {horse_id} saved to DB")
                 return True
             else:
@@ -200,6 +200,98 @@ class QueueWorker:
             {"$set": update_data},
             upsert=True
         )
+    
+    def _save_horse_complete(self, horse_id: str, data: Dict):
+        """Save complete horse detail to MongoDB (all tabs) - using upsert for safety"""
+        if not data:
+            return
+        
+        now = datetime.now()
+        
+        # 1. Update basic horse info (always upsert)
+        basic = data.get("basic_info", {})
+        basic_update = {
+            "modified_at": now,
+            "name": basic.get("name"),
+            "country": basic.get("country"),
+            "age": basic.get("age"),
+            "sex": basic.get("sex"),
+            "color": basic.get("color"),
+            "trainer": basic.get("trainer"),
+            "owner": basic.get("owner"),
+            "current_rating": basic.get("current_rating"),
+            "initial_rating": basic.get("initial_rating"),
+            "season_prize": basic.get("season_prize"),
+            "total_prize": basic.get("total_prize"),
+            "sire": basic.get("sire"),
+            "dam": basic.get("dam"),
+            "maternal_grand_sire": basic.get("damsire"),
+            "scrape_source": "complete_scraper",  # Mark source
+            "last_scrape_at": now,
+        }
+        
+        self.db.db["horses"].update_one(
+            {"hkjc_horse_id": horse_id},
+            {"$set": basic_update},
+            upsert=True
+        )
+        
+        # Helper function for safe upsert (only update if valid data exists)
+        def safe_upsert(collection_name: str, horse_id: str, data_list: List[Dict], data_timestamp: str):
+            """Only upsert if data is valid (not empty, not None)"""
+            if not data_list:
+                return 0
+            
+            # Check if we have meaningful data (not all None)
+            valid_count = 0
+            for item in data_list:
+                # Skip items with mostly None values
+                non_none = sum(1 for v in item.values() if v is not None and v != '')
+                if non_none > 2:  # At least 3 meaningful fields
+                    # Remove _id if exists (to avoid duplicate key error on upsert)
+                    item_clean = {k: v for k, v in item.items() if k != '_id'}
+                    
+                    # Use race_date as unique key for race_history, otherwise use timestamp
+                    if "race_date" in item:
+                        unique_key = {"hkjc_horse_id": horse_id, "race_date": item["race_date"]}
+                    else:
+                        unique_key = {"hkjc_horse_id": horse_id, "scrape_at": data_timestamp}
+                    
+                    self.db.db[collection_name].update_one(
+                        unique_key,
+                        {"$set": item_clean},
+                        upsert=True
+                    )
+                    valid_count += 1
+            return valid_count
+        
+        scrape_at = data.get("scraped_at")
+        
+        # 2. Save race history (upsert, not delete)
+        race_history = data.get("race_history", [])
+        race_count = safe_upsert("horse_race_history", horse_id, race_history, scrape_at)
+        
+        # 3. Save distance stats
+        distance_stats = data.get("distance_stats", [])
+        dist_count = safe_upsert("horse_distance_stats", horse_id, distance_stats, scrape_at)
+        
+        # 4. Save workouts
+        workouts = data.get("workouts", [])
+        workout_count = safe_upsert("horse_workouts", horse_id, workouts, scrape_at)
+        
+        # 5. Save medical records
+        medical = data.get("medical", [])
+        medical_count = safe_upsert("horse_medical", horse_id, medical, scrape_at)
+        
+        # 6. Save movements
+        movements = data.get("movements", [])
+        move_count = safe_upsert("horse_movements", horse_id, movements, scrape_at)
+        
+        # 7. Save overseas records
+        overseas = data.get("overseas", [])
+        overseas_count = safe_upsert("horse_overseas", horse_id, overseas, scrape_at)
+        
+        logger.info(f"  ✓ Horse {horse_id} complete data saved: {race_count} races, {dist_count} distances, {workout_count} workouts, {medical_count} medical, {move_count} movements, {overseas_count} overseas")
     
     async def scrape_jockey_detail(self, item: Dict) -> bool:
         """Mark jockey as updated - Phase 5 ranking scraper already has data"""
