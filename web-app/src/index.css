@@ -1,0 +1,334 @@
+:root {
+  --primary: #1a1a2e;
+  --secondary: #16213e;
+  --accent: #e94560;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
+  --text: #eee;
+  --text-muted: #aaa;
+  --border: #333;
+  --success: #4ade80;
+}
+
+body {
+  background: var(--primary);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--secondary);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header .date {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Race Tabs */
+.race-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+
+.race-tab {
+  padding: 12px 20px;
+  background: var(--secondary);
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.race-tab:hover {
+  background: #2a2a4e;
+}
+
+.race-tab.active {
+  background: var(--accent);
+  color: white;
+}
+
+/* Main Layout */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Race Card */
+.race-card {
+  background: var(--secondary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.race-header {
+  padding: 16px;
+  background: linear-gradient(135deg, #2a2a4e 0%, #1a1a2e 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.race-header h2 {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.race-info {
+  display: flex;
+  gap: 16px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.race-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.race-table th,
+.race-table td {
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.race-table th {
+  background: rgba(0,0,0,0.2);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.race-table .rank {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.rank-1 { color: var(--gold); }
+.rank-2 { color: var(--silver); }
+.rank-3 { color: var(--bronze); }
+
+/* Horse Jersey Number */
+.horse-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  font-size: 0.85rem;
+}
+
+.horse-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jersey-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.jersey-image {
+  width: 28px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.jersey-image-small {
+  width: 20px;
+  height: 14px;
+  object-fit: contain;
+  margin-right: 4px;
+}
+
+.jersey-image-large {
+  width: 48px;
+  height: 32px;
+  object-fit: contain;
+  margin-right: 8px;
+  border-radius: 4px;
+}
+
+.pred-with-number {
+  display: flex;
+  align-items: center;
+}
+
+.pred-number {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-left: 4px;
+}
+
+/* Prediction Panel */
+.prediction-panel {
+  background: var(--secondary);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.prediction-panel h3 {
+  font-size: 1rem;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prediction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prediction-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+}
+
+.prediction-item.top-4 {
+  border-left: 3px solid var(--success);
+}
+
+.prediction-rank {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+.prediction-rank.rank-1 { background: var(--gold); color: #000; }
+.prediction-rank.rank-2 { background: var(--silver); color: #000; }
+.prediction-rank.rank-3 { background: var(--bronze); color: #000; }
+.prediction-rank.rank-4 { background: #4ade80; color: #000; }
+
+.prediction-details {
+  flex: 1;
+}
+
+.prediction-name {
+  font-weight: 600;
+}
+
+.prediction-jockey {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.prediction-prob {
+  font-size: 0.9rem;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* Weights Panel */
+.weights-panel {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.weights-panel h4 {
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.weight-slider {
+  margin-bottom: 12px;
+}
+
+.weight-slider label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.weight-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.btn {
+  padding: 10px 20px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--text-muted);
+}
+
+/* Horse details */
+.horse-detail {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

@@ -231,7 +231,11 @@ class WeightedScorer:
             # Calculate score
             score = 0
             for feature, weight in weights.items():
-                if feature in features:
+                if feature == 'randomness':
+                    # Add random noise (simulates unpredictability factor)
+                    import random
+                    score += weight * random.uniform(-1, 1) * 5  # -5 to +5 range
+                elif feature in features:
                     score += weight * features[feature]
             
             results.append({
@@ -329,6 +333,7 @@ DEFAULT_WEIGHTS = {
     'dist_wins': 1,
     'jt_win_rate': 1,
     'draw': -1,                 # Higher draw is usually worse
+    'randomness': 3,            # Random factor - adds unpredictability
 }
 
 
