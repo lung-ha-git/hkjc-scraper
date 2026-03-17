@@ -7,7 +7,7 @@ Note: Jockey/Trainer data is handled by Phase 5 ranking scraper
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict
 import sys
 from pathlib import Path
@@ -44,6 +44,97 @@ class QueueWorker:
             "status": "pending",
             "scheduled_scrape_time": {"$lte": now}
         }).limit(limit))
+    
+    def claim_next_job(self, queue_name: str) -> Dict:
+        """
+        Atomically claim the next available job to prevent race conditions.
+        Uses findOneAndUpdate to ensure only one worker grabs a job.
+        """
+        now = datetime.now()
+        
+        # Find and atomically update status to "in_progress"
+        result = self.db.db[queue_name].find_one_and_update(
+            {
+                "status": "pending",
+                "scheduled_scrape_time": {"$lte": now}
+            },
+            {
+                "$set": {
+                    "status": "in_progress",
+                    "modified_at": now,
+                    "claimed_at": now
+                },
+                "$inc": {"claim_count": 1}
+            },
+            sort=[("priority", 1), ("scheduled_scrape_time", 1)],  # Priority first, then by time
+            return_document=True
+        )
+        
+        if result:
+            logger.info(f"Claimed job: {result.get('type')} - {result.get('_id')}")
+        
+        return result
+    
+    def add_job(
+        self,
+        queue_name: str,
+        job_type: str,
+        job_data: Dict,
+        priority: int = 0,
+        scheduled_scrape_time: datetime = None
+    ) -> bool:
+        """
+        Add a job to the queue with deduplication.
+        Prevents duplicate jobs based on type + identifiers.
+        """
+        now = datetime.now()
+        
+        # Build unique key based on job type
+        query = {"type": job_type}
+        
+        if job_type == "race_result":
+            query["race_date"] = job_data.get("race_date")
+            query["venue"] = job_data.get("venue", "ST")
+            query["race_no"] = job_data.get("race_no")
+        elif job_type == "horse_detail":
+            query["horse_id"] = job_data.get("horse_id")
+        elif job_type == "jockey_detail":
+            query["jockey_id"] = job_data.get("jockey_id")
+        elif job_type == "trainer_detail":
+            query["trainer_id"] = job_data.get("trainer_id")
+        
+        # Check if job already exists (pending or in_progress)
+        existing = self.db.db[queue_name].find_one({
+            "$or": [
+                {"status": {"$in": ["pending", "in_progress"]}, **query},
+                {"status": "completed", **query, "modified_at": {"$gte": now - timedelta(hours=24)}}  # Recent completions
+            ]
+        })
+        
+        if existing:
+            if existing.get("status") in ["pending", "in_progress"]:
+                logger.info(f"Job already exists: {job_type} - {query}")
+                return False
+            elif existing.get("status") == "completed":
+                logger.info(f"Job completed recently, will re-queue: {job_type} - {query}")
+        
+        # Create new job
+        job_doc = {
+            **query,
+            "type": job_type,
+            "data": job_data,
+            "priority": priority,
+            "status": "pending",
+            "scheduled_scrape_time": scheduled_scrape_time or now,
+            "created_at": now,
+            "modified_at": now,
+            "retry_count": 0,
+            "claim_count": 0
+        }
+        
+        self.db.db[queue_name].insert_one(job_doc)
+        logger.info(f"Added job: {job_type} - {query}")
+        return True
     
     def update_item_status(self, queue_name: str, item_id: str, status: str, error: str = None):
         """Update item status"""
@@ -333,24 +424,25 @@ class QueueWorker:
         
         return await scraper(item)
     
-    async def process_queue(self, queue_name: str) -> Dict:
-        """Process all pending items in a queue"""
-        items = self.get_pending_items(queue_name)
-        
-        if not items:
-            return {"checked": 0, "completed": 0, "failed": 0}
-        
-        logger.info(f"Processing {len(items)} items from {queue_name}...")
-        
+    async def process_queue(self, queue_name: str, max_items: int = 50) -> Dict:
+        """
+        Process pending items in a queue using atomic job claiming.
+        This prevents race conditions when multiple workers run simultaneously.
+        """
         completed = 0
         failed = 0
+        processed = 0
         
-        for item in items:
-            self.db.db[queue_name].update_one(
-                {"_id": item["_id"]},
-                {"$set": {"status": "in_progress", "modified_at": datetime.now()}}
-            )
+        logger.info(f"Processing up to {max_items} items from {queue_name}...")
+        
+        for _ in range(max_items):
+            # Atomically claim the next available job
+            item = self.claim_next_job(queue_name)
             
+            if not item:
+                break  # No more pending jobs
+            
+            processed += 1
             success = await self.process_item(item)
             
             if success:
@@ -364,9 +456,9 @@ class QueueWorker:
                     self.update_item_status(queue_name, item["_id"], "pending", "Retry")
                     failed += 1
             
-            await asyncio.sleep(2)
+            await asyncio.sleep(2)  # Rate limiting between jobs
         
-        return {"checked": len(items), "completed": completed, "failed": failed}
+        return {"checked": processed, "completed": completed, "failed": failed}
     
     async def run(self):
         """Main worker job"""
