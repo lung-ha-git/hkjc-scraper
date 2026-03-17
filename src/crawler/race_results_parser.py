@@ -204,7 +204,7 @@ class RaceResultsParser:
                                 result["horse_name"] = name_match.group(1)
                             
                             results.append(result)
-                        except:
+                        except Exception:
                             pass
         
         return results

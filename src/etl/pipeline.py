@@ -62,7 +62,7 @@ class ETLPipeline:
             try:
                 dt = datetime.strptime(str(date_str), fmt)
                 return dt.strftime("%Y-%m-%d")
-            except:
+            except ValueError:
                 continue
         return date_str
     
@@ -85,7 +85,7 @@ class ETLPipeline:
         """Convert position to integer"""
         try:
             return int(pos) if pos else 0
-        except:
+        except (ValueError, TypeError):
             return 0
     
     def load_races(self, races: List[Dict]) -> int:

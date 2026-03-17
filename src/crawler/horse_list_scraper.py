@@ -155,7 +155,7 @@ class HorseListScraper:
                         await asyncio.sleep(2)
                         print(f"Clicked: {selector}")
                         break
-                except:
+                except Exception:
                     continue
             
             # Get filtered horse links

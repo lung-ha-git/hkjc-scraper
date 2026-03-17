@@ -116,7 +116,7 @@ class HKJCPreciseScraper:
             await page.click(f"text={tab_text}", timeout=5000)
             await asyncio.sleep(self.delay)
             return True
-        except:
+        except Exception:
             return False
     
     async def _scrape_race_history_precise(self, page: Page) -> List[Dict]:

@@ -324,7 +324,7 @@ class HKJCCompleteScraper:
                     queue = get_scraping_queue()
                     queue.connect()
                     queue.mark_in_progress(horse_id)
-                except:
+                except Exception:
                     pass
                 
                 page = await browser.new_page()
@@ -625,28 +625,28 @@ class HKJCCompleteScraper:
                                     distance_str = (await distance_cells[col_idx].inner_text()).strip() if col_idx < len(distance_cells) else "0"
                                     try:
                                         distance = int(distance_str)
-                                    except:
+                                    except ValueError:
                                         distance = 0
                                     
                                     # Parse race class
                                     class_str = (await class_cells[col_idx].inner_text()).strip() if col_idx < len(class_cells) else ""
                                     try:
                                         race_class = int(class_str)
-                                    except:
+                                    except ValueError:
                                         race_class = 0
                                     
                                     # Parse horse weight
                                     weight_str = (await weight_cells[col_idx].inner_text()).strip() if col_idx < len(weight_cells) else "0"
                                     try:
                                         horse_weight = int(weight_str)
-                                    except:
+                                    except ValueError:
                                         horse_weight = 0
                                     
                                     # Parse rating
                                     rating_str = (await rating_cells[col_idx].inner_text()).strip() if col_idx < len(rating_cells) else "0"
                                     try:
                                         rating = int(rating_str)
-                                    except:
+                                    except ValueError:
                                         rating = 0
                                     
                                     record = {
@@ -1022,7 +1022,7 @@ class HKJCCompleteScraper:
                                     if pedigree.get("sire"):
                                         pedigree = add_timestamps(pedigree)
                                         self.db.db["horse_pedigree"].insert_one(pedigree)
-                    except:
+                    except Exception:
                         pass
                     
                     print(f"   ✅ {horse_id}: {len(race_urls)} unique races")
@@ -1071,7 +1071,7 @@ class HKJCCompleteScraper:
                     race_queue = get_race_queue()
                     race_queue.connect()
                     race_queue.mark_in_progress(race_key)
-                except:
+                except Exception:
                     pass
                 
                 page = await browser.new_page()
@@ -1273,7 +1273,7 @@ class HKJCCompleteScraper:
                                             import re
                                             hn_match = re.search(r'(\d+)', cell_texts[1])
                                             horse_number = int(hn_match.group(1)) if hn_match else None
-                                        except:
+                                        except (ValueError, AttributeError):
                                             horse_number = None
                                     elif "平頭馬" in rank_raw:
                                         import re
@@ -1308,7 +1308,7 @@ class HKJCCompleteScraper:
                             "payout": len(race_data["payout"]),
                             "incidents": len(incidents)
                         })
-                    except:
+                    except Exception:
                         pass
                     
                     # Log successful race scrape
@@ -1328,7 +1328,7 @@ class HKJCCompleteScraper:
                         race_queue = get_race_queue()
                         race_queue.connect()
                         race_queue.mark_failed(race_key, str(e))
-                    except:
+                    except Exception:
                         pass
                 
                 finally:
@@ -1365,7 +1365,7 @@ class HKJCCompleteScraper:
                     payout_str = payout_str.replace("$", "").replace(",", "").strip()
                     try:
                         payout = float(payout_str)
-                    except:
+                    except ValueError:
                         payout = 0.0
                     
                     # Skip header rows
@@ -1441,7 +1441,7 @@ class HKJCCompleteScraper:
                     payout_str = payout_str.replace("$", "").replace(",", "").strip()
                     try:
                         payout_val = float(payout_str)
-                    except:
+                    except ValueError:
                         payout_val = 0.0
                     
                     # Skip invalid
@@ -1534,7 +1534,7 @@ class HKJCCompleteScraper:
                         div_cell = div_cell.replace("$", "").replace(",", "")
                         try:
                             dividend = float(div_cell)
-                        except:
+                        except ValueError:
                             dividend = 0.0
                         
                         if combo and dividend > 0:
@@ -1553,7 +1553,7 @@ class HKJCCompleteScraper:
                         div_str = div_str.replace("$", "").replace(",", "")
                         try:
                             dividend = float(div_str)
-                        except:
+                        except ValueError:
                             dividend = 0.0
                         
                         if combo and dividend > 0:
@@ -1581,7 +1581,7 @@ class HKJCCompleteScraper:
                     div_str = div_str.replace("$", "").replace(",", "")
                     try:
                         dividend = float(div_str)
-                    except:
+                    except ValueError:
                         dividend = 0.0
                     
                     if combo and dividend > 0:
@@ -1609,7 +1609,7 @@ class HKJCCompleteScraper:
                     div_str = div_str.replace("$", "").replace(",", "")
                     try:
                         dividend = float(div_str)
-                    except:
+                    except ValueError:
                         dividend = 0.0
                     
                     if combo and dividend > 0:

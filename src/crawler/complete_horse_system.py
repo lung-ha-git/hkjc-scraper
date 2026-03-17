@@ -137,7 +137,7 @@ class CompleteHorseSystem:
                         if any(k in text for k in keywords):
                             if text not in tabs:
                                 tabs.append(text)
-                except:
+                except Exception:
                     continue
         
         return tabs
@@ -156,7 +156,7 @@ class CompleteHorseSystem:
                 if await page.is_visible(selector, timeout=1000):
                     await page.click(selector)
                     return True
-            except:
+            except Exception:
                 continue
         
         # Manual search
@@ -167,7 +167,7 @@ class CompleteHorseSystem:
                 if tab_name in text:
                     await elem.click()
                     return True
-            except:
+            except Exception:
                 continue
         
         return False

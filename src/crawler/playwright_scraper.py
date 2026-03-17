@@ -182,7 +182,7 @@ class HKJCPlaywrightScraper:
                         }
                         trainers.append(trainer)
                         rank += 1
-                    except:
+                    except Exception:
                         continue
         except Exception as e:
             logger.error(f"Error extracting trainers: {e}")

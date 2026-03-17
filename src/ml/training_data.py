@@ -50,7 +50,7 @@ class TrainingDataBuilder:
             end_dt = datetime.strptime(end_date, "%Y-%m-%d")
             start_str_db = start_dt.strftime("%Y/%m/%d")
             end_str_db = end_dt.strftime("%Y/%m/%d")
-        except:
+        except ValueError:
             start_str_db = start_date
             end_str_db = end_date
         
@@ -129,7 +129,7 @@ class TrainingDataBuilder:
                 rank_str = runner.get("rank") or runner.get("position", "0")
                 try:
                     rank = int(rank_str) if rank_str else 0
-                except:
+                except ValueError:
                     rank = 0
                 
                 label = 1 if rank == 1 else 0
@@ -186,7 +186,7 @@ class TrainingDataBuilder:
             end_dt = datetime.strptime(end_date, "%Y-%m-%d")
             start_str_db = start_dt.strftime("%Y/%m/%d")
             end_str_db = end_dt.strftime("%Y/%m/%d")
-        except:
+        except ValueError:
             start_str_db = start_date
             end_str_db = end_date
         
@@ -265,7 +265,7 @@ class TrainingDataBuilder:
                 rank_str = runner.get("rank") or runner.get("position", "0")
                 try:
                     rank = int(rank_str) if rank_str else 0
-                except:
+                except ValueError:
                     rank = 0
                 
                 label = 1 if rank <= 3 else 0

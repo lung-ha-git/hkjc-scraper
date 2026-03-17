@@ -64,7 +64,7 @@ class WeightedScorer:
                 horse_name = r.get('horse_name', '')
                 try:
                     rank = int(r.get('rank', 0)) if r.get('rank') else 0
-                except:
+                except Exception:
                     rank = 0
                 
                 if jockey and trainer:
@@ -91,7 +91,7 @@ class WeightedScorer:
                     self.race_history[hid] = []
                 try:
                     rank = int(rh.get('position', 0)) if rh.get('position') else 0
-                except:
+                except Exception:
                     rank = 0
                 self.race_history[hid].append({
                     'date': rh.get('date', ''),
@@ -303,7 +303,7 @@ class WeightedScorer:
                     for runner in race.get('results', []):
                         try:
                             rank = int(runner.get('rank', 0)) if runner.get('rank') else 0
-                        except:
+                        except Exception:
                             rank = 0
                         if rank == 1:
                             if runner.get('horse_name') == predicted_winner:

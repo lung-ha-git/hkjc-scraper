@@ -428,7 +428,7 @@ class FeatureEngineer:
             # Handle "01" format
             try:
                 return int(str(pos).strip())
-            except:
+            except Exception:
                 return 0
     
     def _get_distance_features(self, distance_stats: List, race_distance: int, venue: str) -> Dict:
@@ -515,7 +515,7 @@ class FeatureEngineer:
         try:
             # race_date might be YYYY-MM-DD or YYYY/MM/DD
             race_dt = datetime.strptime(race_date.replace("/", "-"), "%Y-%m-%d")
-        except:
+        except Exception:
             race_dt = datetime.now()
         
         history = list(self.db.db["horse_race_history"].find({
@@ -552,7 +552,7 @@ class FeatureEngineer:
         
         try:
             race_dt = datetime.strptime(race_date.replace("/", "-"), "%Y-%m-%d")
-        except:
+        except Exception:
             return 999
         
         last_race = self.db.db["horse_race_history"].find_one(
@@ -568,7 +568,7 @@ class FeatureEngineer:
             # Handle date formats like "08/03/26"
             last_dt = datetime.strptime(last_date.replace("/", "-"), "%d/%m/%y")
             return (race_dt - last_dt).days
-        except:
+        except Exception:
             return 999
     
     def _get_current_season(self) -> str:

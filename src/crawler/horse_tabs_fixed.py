@@ -121,7 +121,7 @@ class HorseTabsFixedScraper:
                         await loc.click()
                         await asyncio.sleep(self.delay)
                         return True
-                except:
+                except Exception:
                     continue
             
             return False
@@ -134,7 +134,7 @@ class HorseTabsFixedScraper:
         try:
             text_content = await page.inner_text("body")
             return tab_text in text_content
-        except:
+        except Exception:
             return False
     
     async def _scrape_workouts_fixed(self, page: Page) -> int:

@@ -25,7 +25,7 @@ except ImportError:
 
 try:
     from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-except:
+except ImportError:
     pass
 
 from src.ml.training_data import TrainingDataBuilder
@@ -194,7 +194,7 @@ class ModelTrainer:
         try:
             y_prob = model.predict_proba(X_test)[:, 1]
             auc = roc_auc_score(y_test, y_prob)
-        except:
+        except (AttributeError, ValueError):
             y_prob = None
             auc = 0
         

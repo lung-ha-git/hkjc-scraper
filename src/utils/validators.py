@@ -59,7 +59,7 @@ class DataValidator:
                 dist = int(distance)
                 if not (self.MIN_DISTANCE <= dist <= self.MAX_DISTANCE):
                     self.warnings.append(f"Unusual distance: {dist}m (expected {self.MIN_DISTANCE}-{self.MAX_DISTANCE})")
-            except:
+            except ValueError:
                 self.errors.append(f"Invalid distance: {distance}")
         
         # Validate track condition
@@ -89,7 +89,7 @@ class DataValidator:
             try:
                 datetime.strptime(str(date_str), fmt)
                 return True
-            except:
+            except ValueError:
                 continue
         return False
     
@@ -114,7 +114,7 @@ class DataValidator:
                 pos = int(position)
                 if pos < 1 or pos > 20:
                     self.warnings.append(f"{prefix}: Unusual position: {pos}")
-            except:
+            except ValueError:
                 # Could be "DNF", "DQ", etc.
                 if position not in ["DNF", "DQ", "WR", "UR"]:
                     self.warnings.append(f"{prefix}: Unknown position code: {position}")
@@ -142,7 +142,7 @@ class DataValidator:
                 age_int = int(age)
                 if age_int < 2 or age_int > 15:
                     self.warnings.append(f"Unusual age: {age_int}")
-            except:
+            except ValueError:
                 self.errors.append(f"Invalid age: {age}")
         
         return len(self.errors) == 0, self.errors, self.warnings
@@ -162,7 +162,7 @@ class DataValidator:
                 rate = float(win_rate)
                 if rate < 0 or rate > 1:
                     self.errors.append(f"Invalid win rate: {rate} (must be 0-1)")
-            except:
+            except ValueError:
                 self.errors.append(f"Invalid win rate format: {win_rate}")
         
         return len(self.errors) == 0, self.errors, self.warnings
@@ -199,7 +199,7 @@ def validate_numeric(value: Any, min_val: float = None, max_val: float = None) -
             return None
         
         return num
-    except:
+    except (ValueError, TypeError):
         return None
 
 
