@@ -98,6 +98,11 @@ class CompleteHorseScraper:
                 result["jersey"] = await self._extract_jersey(page)
                 print(f"   ✅ Jersey info extracted")
                 
+                # 9. Rating Result Weight (評分/體重/名次) - Separate page
+                print("\n📈 9. Extracting Rating/Weight History...")
+                result["ratings"] = await self._extract_rating_weight_history(page, hkjc_horse_id)
+                print(f"   ✅ {len(result.get('ratings', []))} rating records")
+                
                 # Save to MongoDB
                 await self._save_to_mongodb(result)
                 
@@ -390,6 +395,150 @@ class CompleteHorseScraper:
         
         return jersey
     
+    async def _extract_rating_weight_history(self, page: Page, hkjc_horse_id: str) -> List[Dict]:
+        """
+        Extract rating/weight history from separate page.
+        URL: https://racing.hkjc.com/zh-hk/local/information/ratingresultweight?horseid=HK_xxx
+        
+        This page has transposed table format:
+        - Each column = one race
+        - Rows contain: date, rating, result, weight, venue, track_type, distance, course, condition, class
+        """
+        ratings = []
+        MIN_ROWS_FOR_RATING_TABLE = 10
+        
+        try:
+            # Navigate to rating result weight page
+            rating_url = f"https://racing.hkjc.com/zh-hk/local/information/ratingresultweight?horseid={hkjc_horse_id}"
+            logger.info(f"      Fetching rating history: {rating_url}")
+            await page.goto(rating_url, wait_until="domcontentloaded")
+            await asyncio.sleep(self.delay)
+            
+            tables = await page.query_selector_all("table")
+            
+            for table in tables:
+                rows = await table.query_selector_all("tr")
+                if len(rows) < MIN_ROWS_FOR_RATING_TABLE:
+                    continue
+                
+                # Check if this is the rating table - look at row 2 for "評分"
+                if len(rows) > 2:
+                    row2_text = await rows[2].inner_text()
+                    if "評分" not in row2_text:
+                        continue
+                else:
+                    continue
+                
+                # Get number of columns (data columns, skip first header column)
+                first_data_row = await rows[1].query_selector_all("td")
+                num_cols = len(first_data_row)
+                if num_cols <= 1:
+                    continue
+                
+                logger.info(f"      Found rating table with {num_cols} columns")
+                
+                # Pre-fetch all cells for efficiency (outside loop)
+                date_cells = await rows[1].query_selector_all("td")
+                rating_cells = await rows[2].query_selector_all("td")
+                result_cells = await rows[3].query_selector_all("td")
+                weight_cells = await rows[4].query_selector_all("td")
+                venue_cells = await rows[5].query_selector_all("td")
+                track_type_cells = await rows[6].query_selector_all("td")
+                distance_cells = await rows[7].query_selector_all("td")
+                course_cells = await rows[8].query_selector_all("td")
+                condition_cells = await rows[9].query_selector_all("td")
+                class_cells = await rows[10].query_selector_all("td")
+                
+                # Extract columns (each column is a race)
+                for col_idx in range(1, num_cols):
+                    try:
+                        # Extract date
+                        date = (await date_cells[col_idx].inner_text()).strip() if col_idx < len(date_cells) else ""
+                        if not date:
+                            continue
+                        
+                        # Parse date format: "11/02/2026" -> "2026-02-11"
+                        date_parts = date.split("/")
+                        if len(date_parts) == 3:
+                            formatted_date = f"{date_parts[2]}-{date_parts[1]}-{date_parts[0]}"
+                        else:
+                            formatted_date = date
+                        
+                        # Parse rating
+                        rating_str = (await rating_cells[col_idx].inner_text()).strip() if col_idx < len(rating_cells) else "0"
+                        try:
+                            rating = int(rating_str)
+                        except ValueError:
+                            rating = 0
+                        
+                        # Parse result (position)
+                        result = (await result_cells[col_idx].inner_text()).strip() if col_idx < len(result_cells) else ""
+                        
+                        # Parse weight
+                        weight_str = (await weight_cells[col_idx].inner_text()).strip() if col_idx < len(weight_cells) else "0"
+                        try:
+                            weight = int(weight_str)
+                        except ValueError:
+                            weight = 0
+                        
+                        # Parse venue
+                        venue = (await venue_cells[col_idx].inner_text()).strip() if col_idx < len(venue_cells) else ""
+                        
+                        # Parse track type
+                        track_type = (await track_type_cells[col_idx].inner_text()).strip() if col_idx < len(track_type_cells) else ""
+                        
+                        # Parse distance
+                        dist_str = (await distance_cells[col_idx].inner_text()).strip() if col_idx < len(distance_cells) else "0"
+                        try:
+                            distance = int(dist_str)
+                        except ValueError:
+                            distance = 0
+                        
+                        # Parse course
+                        course = (await course_cells[col_idx].inner_text()).strip() if col_idx < len(course_cells) else ""
+                        
+                        # Parse track condition
+                        condition = (await condition_cells[col_idx].inner_text()).strip() if col_idx < len(condition_cells) else ""
+                        
+                        # Parse race class
+                        class_str = (await class_cells[col_idx].inner_text()).strip() if col_idx < len(class_cells) else ""
+                        try:
+                            race_class = int(class_str) if class_str.isdigit() else 0
+                        except ValueError:
+                            race_class = 0
+                        
+                        record = {
+                            "hkjc_horse_id": hkjc_horse_id,
+                            "date": formatted_date,
+                            "rating": rating,
+                            "result": result,
+                            "weight": weight,
+                            "venue": venue,
+                            "track_type": track_type,
+                            "distance": distance,
+                            "course": course,
+                            "track_condition": condition,
+                            "race_class": race_class
+                        }
+                        ratings.append(record)
+                        
+                    except Exception as e:
+                        logger.warning(f"Error extracting rating column {col_idx}: {e}")
+                        continue
+            
+            # Go back to main horse page for next extraction
+            try:
+                main_url = f"https://racing.hkjc.com/zh-hk/local/information/horse?horseid={hkjc_horse_id}"
+                await page.goto(main_url, wait_until="domcontentloaded")
+                await asyncio.sleep(self.delay)
+            except Exception as e:
+                logger.warning(f"Failed to navigate back to main horse page: {e}")
+            
+        except Exception as e:
+            logger.warning(f"Error extracting rating weight history: {e}")
+        
+        return ratings
+    
     async def _save_to_mongodb(self, data: Dict):
         """Save all data to appropriate collections"""
         print("\n💾 Saving to MongoDB...")
@@ -497,6 +646,14 @@ class CompleteHorseScraper:
                 upsert=True
             )
             print("   ✅ Jersey info saved")
+        
+        # 9. Save ratings (評分/體重/名次歷史)
+        if data.get("ratings"):
+            self.db.db["horse_ratings"].delete_many({"hkjc_horse_id": hkjc_id})
+            for rating in data["ratings"]:
+                rating["scraped_at"] = data["scraped_at"]
+            self.db.db["horse_ratings"].insert_many(data["ratings"])
+            print(f"   ✅ {len(data['ratings'])} rating records saved")
         
         self.db.disconnect()
         print("\n✅ All data saved successfully!")
