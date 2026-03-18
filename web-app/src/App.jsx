@@ -125,8 +125,16 @@ function App() {
     
     for (const entry of entries) {
       try {
-        const res = await axios.get(`/api/horses/by-name/${encodeURIComponent(entry.horse_name)}`);
-        if (res.data) {
+        // Try by horse_id first (e.g., K290)
+        let res;
+        if (entry.horse_id) {
+          res = await axios.get(`/api/horses/by-id/${entry.horse_id}`);
+        }
+        // Fallback to name
+        if (!res?.data) {
+          res = await axios.get(`/api/horses/by-name/${encodeURIComponent(entry.horse_name)}`);
+        }
+        if (res?.data) {
           details[entry.horse_name] = res.data;
         }
       } catch (e) {
@@ -141,7 +149,9 @@ function App() {
     
     const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
     
-    const results = entries.map((entry, idx) => {
+    // Calculate total score for percentage
+    let totalScore = 0;
+    const results = entries.map((entry) => {
       let score = 50 + Math.random() * 50;
       score += (Math.random() - 0.5) * weights.randomness * 10;
       
@@ -150,6 +160,8 @@ function App() {
         score += (8 - entry.draw) * weights.draw * 2;
       }
 
+      totalScore += score;
+
       return {
         horse_no: entry.horse_no,
         horse_name: entry.horse_name,
@@ -157,14 +169,17 @@ function App() {
         trainer_name: entry.trainer_name,
         draw: entry.draw,
         score,
-        predicted_rank: idx + 1
+        predicted_rank: 0
       };
     });
 
     results.sort((a, b) => b.score - a.score);
     
-    // 更新排名
-    results.forEach((r, i) => r.predicted_rank = i + 1);
+    // Calculate win probability percentage
+    results.forEach((r, i) => {
+      r.predicted_rank = i + 1;
+      r.win_prob = totalScore > 0 ? Math.round((r.score / totalScore) * 100) : 0;
+    });
     setPredictions(results);
   };
 
@@ -335,7 +350,7 @@ function App() {
                     <div className="prediction-jockey">{pred.jockey_name}</div>
                   </div>
                   <div className="prediction-prob">
-                    {Math.max(5, 40 - idx * 10)}%
+                    {pred.win_prob || 0}%
                   </div>
                 </div>
               );

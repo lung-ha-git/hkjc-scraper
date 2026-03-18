@@ -136,3 +136,16 @@ app.get('/api/horses/by-name/:name', async (req, res) => {
   if (!horse) return res.status(404).json({error: 'Not found'});
   res.json({name: horse.name, jersey_url: horse.jersey_url, current_rating: horse.current_rating});
 });
+
+// Get horse by horse_id (e.g., K290)
+app.get('/api/horses/by-id/:horseId', async (req, res) => {
+  const { horseId } = req.params;
+  const horse = await db.collection('horses').findOne({ hkjc_horse_id: horseId });
+  if (!horse) return res.status(404).json({error: 'Not found'});
+  res.json({
+    name: horse.name, 
+    jersey_url: horse.jersey_url, 
+    current_rating: horse.current_rating,
+    hkjc_horse_id: horse.hkjc_horse_id
+  });
+});
