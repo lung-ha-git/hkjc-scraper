@@ -188,20 +188,11 @@ body {
 /* Main Layout */
 .main-layout {
   display: grid;
-  grid-template-columns: 200px 1fr 320px;
+  grid-template-columns: 1fr 320px;
   gap: 16px;
 }
 
-@media (max-width: 1200px) {
-  .main-layout {
-    grid-template-columns: 1fr 300px;
-  }
-  .fixtures-view {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .main-layout {
     grid-template-columns: 1fr;
   }
@@ -284,6 +275,13 @@ body {
   color: white;
   font-size: 0.7rem;
   flex-shrink: 0;
+}
+
+.jersey-icon {
+  width: 24px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 2px;
 }
 
 .predicted-rank {

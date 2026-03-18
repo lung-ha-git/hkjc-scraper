@@ -62,7 +62,7 @@ function App() {
 
   useEffect(() => {
     if (selectedFixture) {
-      setSelectedRaceNo(null); // Reset race selection when fixture changes
+      setSelectedRaceNo(null);
       fetchRacecards();
     }
   }, [selectedFixture]);
@@ -70,16 +70,11 @@ function App() {
   const fetchFixtures = async () => {
     try {
       const res = await axios.get('/api/fixtures?mode=upcoming');
-      // Remove duplicates by date
-      const unique = [];
-      const seen = new Set();
-      for (const f of res.data || []) {
-        if (!seen.has(f.date)) {
-          seen.add(f.date);
-          unique.push(f);
-        }
+      // Get first upcoming race
+      if (res.data && res.data.length > 0) {
+        setFixtures([res.data[0]]);
+        setSelectedFixture(res.data[0]);
       }
-      setFixtures(unique);
       setLoading(false);
     } catch (error) {
       console.log('Error fetching fixtures:', error);
@@ -184,10 +179,6 @@ function App() {
     setSelectedRaceNo(raceNo);
   };
 
-  const handleFixtureClick = (fixture) => {
-    setSelectedFixture(fixture);
-  };
-
   const savePrediction = async () => {
     if (!selectedFixture || !selectedRaceNo || predictions.length === 0) return;
     
@@ -230,31 +221,14 @@ function App() {
     <div className="app">
       <header className="header">
         <h1>🏇 HKJC AI 預測</h1>
+        {selectedFixture && (
+          <span className="date">
+            {selectedFixture.date} - {selectedFixture.venue === 'ST' ? '沙田' : '跑馬地'}
+          </span>
+        )}
       </header>
 
       <div className="main-layout">
-        {/* 左側：賽程列表 */}
-        <div className="fixtures-view">
-          <div className="fixtures-list">
-            <h2>賽程</h2>
-            {fixtures.length === 0 ? (
-              <div className="no-data">暫無賽程數據</div>
-            ) : (
-              fixtures.slice(0, 5).map((fixture, idx) => (
-                <div 
-                  key={idx} 
-                  className={`fixture-item ${selectedFixture?.date === fixture.date ? 'active' : ''}`}
-                  onClick={() => handleFixtureClick(fixture)}
-                >
-                  <div className="fixture-date">{fixture.date}</div>
-                  <div className="fixture-venue">{fixture.venue === 'ST' ? '沙田' : '跑馬地'}</div>
-                  <div className="fixture-races">{fixture.race_count || 8} 場</div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
         {/* 中間：排位表 */}
         <div className="race-card">
           {selectedFixture && racecardData && selectedRaceNo && (
