@@ -307,6 +307,14 @@ class RaceCardScraper:
             logger.error("Cannot connect to MongoDB")
             return False
         
+        # Build suffix -> full hkjc_horse_id map for fast lookup
+        suffix_map = {}
+        for h in db.db["horses"].find({}, {"hkjc_horse_id": 1}):
+            fid = h.get("hkjc_horse_id", "")
+            parts = fid.split("_")
+            if len(parts) == 3:
+                suffix_map[parts[2]] = fid
+        
         total_horses = 0
         
         for card in racecards:
@@ -349,11 +357,16 @@ class RaceCardScraper:
                 horse["race_date"] = race_date
                 horse["venue"] = venue
                 horse["race_no"] = race_no
+                
+                # Enrich: add full hkjc_horse_id if available
+                partial_id = horse.get("horse_id", "")
+                if partial_id and partial_id in suffix_map:
+                    horse["hkjc_horse_id"] = suffix_map[partial_id]
             
             if horses:
                 # Upsert each horse entry (not delete + insert) - delta change safe
                 for horse in horses:
-                    # Use race_id + horse_id (HKJC ID) for stable upsert key
+                    # Use race_id + horse_id for stable upsert key
                     horse_id = horse.get("horse_id") or horse.get("horse_name")
                     db.db["racecard_entries"].update_one(
                         {"race_id": race_id, "horse_id": horse_id},
