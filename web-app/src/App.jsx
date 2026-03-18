@@ -125,20 +125,17 @@ function App() {
     
     for (const entry of entries) {
       try {
-        // Try by horse_id first (e.g., K290)
-        let res;
-        if (entry.horse_id) {
-          res = await axios.get(`/api/horses/by-id/${entry.horse_id}`);
-        }
-        // Fallback to name
-        if (!res?.data) {
-          res = await axios.get(`/api/horses/by-name/${encodeURIComponent(entry.horse_name)}`);
-        }
-        if (res?.data) {
+        // Use horse name to fetch jersey
+        const name = entry.horse_name.trim();
+        const res = await axios.get(`/api/horses/by-name/${encodeURIComponent(name)}`);
+        if (res.data) {
           details[entry.horse_name] = res.data;
+          console.log(`Got jersey for ${entry.horse_name}:`, res.data.jersey_url);
+        } else {
+          console.log(`No horse found for: ${entry.horse_name}`);
         }
       } catch (e) {
-        // Horse not found
+        console.log(`Error fetching ${entry.horse_name}:`, e.message);
       }
     }
     setHorseDetails(details);
