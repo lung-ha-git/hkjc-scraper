@@ -1,6 +1,9 @@
 """
 Pipeline: Sync Fixtures
 Sync race meeting calendar from HKJC
+
+IMPORTANT: All fixtures use "date" field (not "race_date").
+The field "date" is the canonical date string like "2026-03-18".
 """
 
 import asyncio
@@ -48,21 +51,24 @@ async def sync_fixtures(months: List[tuple] = None) -> int:
             fixtures = await scraper.parse_month(year, month)
             
             for fixture in fixtures:
-                # Upsert fixture
                 race_date = fixture.get("race_date")
                 venue = fixture.get("venue")
                 
                 fixture_doc = {
-                    "race_date": race_date,
+                    "date": race_date,  # Canonical field: "date"
                     "venue": venue,
                     "race_count": fixture.get("race_count", 8),
                     "first_race_time": fixture.get("first_race_time"),
                     "race_meeting": fixture.get("race_meeting"),
-                    "updated_at": datetime.now().isoformat()
+                    "scrape_status": "pending",
+                    "updated_at": datetime.now().isoformat(),
+                    "racecard_url": fixture.get("racecard_url"),
+                    "results_url": fixture.get("results_url"),
                 }
                 
+                # Upsert by date + venue (not race_date)
                 db.db["fixtures"].update_one(
-                    {"race_date": race_date, "venue": venue},
+                    {"date": race_date, "venue": venue},
                     {"$set": fixture_doc},
                     upsert=True
                 )
@@ -77,59 +83,6 @@ async def sync_fixtures(months: List[tuple] = None) -> int:
         db.disconnect()
     
     return total_synced
-
-
-def get_next_race_day() -> Dict:
-    """Get next upcoming race day from fixtures"""
-    db = DatabaseConnection()
-    if not db.connect():
-        return None
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    
-    fixture = db.db["fixtures"].find_one(
-        {"race_date": {"$gte": today}},
-        sort=[("race_date", 1)]
-    )
-    
-    db.disconnect()
-    return fixture
-
-
-def get_past_race_days(days: int = 7) -> List[Dict]:
-    """Get past race days from fixtures"""
-    db = DatabaseConnection()
-    if not db.connect():
-        return []
-    
-    today = datetime.now()
-    start_date = (today - timedelta(days=days)).strftime("%Y-%m-%d")
-    
-    fixtures = list(db.db["fixtures"].find(
-        {"race_date": {"$gte": start_date, "$lt": today.strftime("%Y-%m-%d")}},
-        sort=[("race_date", -1)]
-    ))
-    
-    db.disconnect()
-    return fixtures
-
-
-def get_past_fixtures(days_back: int = 30) -> List[Dict]:
-    """Get past race days from fixtures"""
-    db = DatabaseConnection()
-    if not db.connect():
-        return []
-    
-    today = datetime.now()
-    start_date = (today - timedelta(days=days_back)).strftime("%Y-%m-%d")
-    
-    fixtures = list(db.db["fixtures"].find(
-        {"date": {"$gte": start_date, "$lt": today.strftime("%Y-%m-%d")}},
-        sort=[("date", -1)]
-    ))
-    
-    db.disconnect()
-    return fixtures
 
 
 def get_next_fixture() -> Dict:
@@ -147,6 +100,24 @@ def get_next_fixture() -> Dict:
     
     db.disconnect()
     return fixture
+
+
+def get_past_fixtures(days_back: int = 30) -> List[Dict]:
+    """Get past race days from fixtures (most recent first)"""
+    db = DatabaseConnection()
+    if not db.connect():
+        return []
+    
+    today = datetime.now()
+    start_date = (today - timedelta(days=days_back)).strftime("%Y-%m-%d")
+    
+    fixtures = list(db.db["fixtures"].find(
+        {"date": {"$gte": start_date, "$lt": today.strftime("%Y-%m-%d")}},
+        sort=[("date", -1)]
+    ))
+    
+    db.disconnect()
+    return fixtures
 
 
 def get_past_fixture() -> Dict:

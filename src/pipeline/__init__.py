@@ -8,8 +8,6 @@ from .fixtures import (
     get_next_fixture,
     get_past_fixture,
     get_past_fixtures,
-    get_next_race_day, 
-    get_past_race_days
 )
 from .racecards import scrape_next_racecards, scrape_race_day
 from .history import sync_past_race_results, get_race_gaps
@@ -21,8 +19,6 @@ __all__ = [
     "get_next_fixture", 
     "get_past_fixture",
     "get_past_fixtures",
-    "get_next_race_day", 
-    "get_past_race_days",
     "scrape_next_racecards",
     "scrape_race_day",
     "sync_past_race_results",
