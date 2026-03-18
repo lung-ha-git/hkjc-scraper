@@ -115,8 +115,9 @@ function App() {
   const calculatePredictions = () => {
     if (!selectedFixture || !selectedRaceNo) return;
     
-    // Call ML prediction API
-    fetch(`/api/predict?race_date=${selectedFixture.date}&race_no=${selectedRaceNo}&venue=${selectedFixture.venue}`)
+    // Call ML prediction API with weights
+    const weightsStr = encodeURIComponent(JSON.stringify(weights));
+    fetch(`/api/predict?race_date=${selectedFixture.date}&race_no=${selectedRaceNo}&venue=${selectedFixture.venue}&weights=${weightsStr}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.predictions) {
@@ -126,6 +127,8 @@ function App() {
             const entry = entries.find(e => e.horse_name === pred.horse_name);
             return {
               ...pred,
+              jockey_name: pred.jockey || entry?.jockey_name || '',
+              trainer_name: pred.trainer || entry?.trainer_name || '',
               horse_no: entry?.horse_no || 0,
               jersey_url: entry?.jersey_url || null,
               rating_change: entry?.rating_change || null,
@@ -343,21 +346,20 @@ function App() {
               const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
               return (
                 <div key={idx} className="prediction-item top-4">
-                  <div 
-                    className={`prediction-rank rank-${pred.predicted_rank}`}
-                    style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
-                  >
+                  <div className={`predicted-rank rank-${pred.predicted_rank}`}>
                     {pred.predicted_rank}
                   </div>
+                  <div 
+                    className="horse-number"
+                    style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
+                  >
+                    {pred.horse_no}
+                  </div>
                   <div className="prediction-details">
-                    <div className="prediction-name">
+                    <div className="horse-name-cell">
                       {jersey.type === 'image' ? (
                         <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
-                      ) : (
-                        <div className="jersey-placeholder" style={{ backgroundColor: jersey.value }}>
-                          {pred.horse_no}
-                        </div>
-                      )}
+                      ) : null}
                       {pred.horse_name}
                     </div>
                     <div className="prediction-jockey">{pred.jockey_name}</div>

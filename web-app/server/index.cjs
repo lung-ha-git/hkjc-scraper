@@ -158,7 +158,7 @@ app.get('/api/horses/by-id/:horseId', async (req, res) => {
 
 // ML Prediction using WeightedScorer
 app.get('/api/predict', async (req, res) => {
-  const { race_date, race_no, venue } = req.query;
+  const { race_date, race_no, venue, weights } = req.query;
   
   if (!race_date || !race_no) {
     return res.status(400).json({error: 'race_date and race_no required'});
@@ -177,9 +177,15 @@ app.get('/api/predict', async (req, res) => {
     const racecard = racecardsData.racecards?.find(rc => rc.race_no === parseInt(race_no));
     const distance = racecard?.distance || 1200;
     
+    // Parse weights if provided
+    let parsedWeights = null;
+    if (weights) {
+      parsedWeights = JSON.parse(weights);
+    }
+    
     // Call Python script
     const { execSync } = require('child_process');
-    const inputData = JSON.stringify({ entries, distance, venue });
+    const inputData = JSON.stringify({ entries, distance, venue, weights: parsedWeights });
     
     const result = execSync(
       `echo '${inputData.replace(/'/g, "\\'")}' | python3 /Users/fatlung/.openclaw/workspace-main/hkjc_project/predict_race.py`,

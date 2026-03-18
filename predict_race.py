@@ -24,10 +24,13 @@ logging.getLogger().setLevel(logging.CRITICAL)
 from src.ml.weighted_scorer import WeightedScorer, DEFAULT_WEIGHTS
 
 
-def predict(entries, distance, venue):
+def predict(entries, distance, venue, custom_weights=None):
     """Predict race results"""
     scorer = WeightedScorer()
     scorer.load_data()
+    
+    # Use custom weights if provided, otherwise use defaults
+    weights = custom_weights if custom_weights else DEFAULT_WEIGHTS
     
     predictions = []
     for entry in entries:
@@ -43,7 +46,7 @@ def predict(entries, distance, venue):
         features['draw_dist'] = entry.get('draw', 0) * distance
         
         score = 0
-        for feature, weight in DEFAULT_WEIGHTS.items():
+        for feature, weight in weights.items():
             if feature in features:
                 score += weight * features[feature]
         
@@ -69,7 +72,8 @@ if __name__ == "__main__":
     entries = data.get('entries', [])
     distance = data.get('distance', 1200)
     venue = data.get('venue', 'ST')
+    weights = data.get('weights', None)  # Custom weights from UI
     
-    predictions = predict(entries, distance, venue)
+    predictions = predict(entries, distance, venue, weights)
     # Print ONLY JSON
     sys.stdout.write(json.dumps({"predictions": predictions}, ensure_ascii=False))

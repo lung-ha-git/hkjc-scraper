@@ -390,19 +390,25 @@ body {
 }
 
 .prediction-rank {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
   font-weight: bold;
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .prediction-rank.rank-1 { background: var(--gold); color: #000; }
 .prediction-rank.rank-2 { background: var(--silver); color: #000; }
 .prediction-rank.rank-3 { background: var(--bronze); color: #000; }
 .prediction-rank.rank-4 { background: #4ade80; color: #000; }
+.prediction-rank.rank-5, 
+.prediction-rank.rank-6,
+.prediction-rank.rank-7,
+.prediction-rank.rank-8 { background: #666; color: #fff; }
 
 .prediction-details {
   flex: 1;
