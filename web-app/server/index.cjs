@@ -155,3 +155,40 @@ app.get('/api/horses/by-id/:horseId', async (req, res) => {
     hkjc_horse_id: horse.hkjc_horse_id
   });
 });
+
+// ML Prediction using WeightedScorer
+app.get('/api/predict', async (req, res) => {
+  const { race_date, race_no, venue } = req.query;
+  
+  if (!race_date || !race_no) {
+    return res.status(400).json({error: 'race_date and race_no required'});
+  }
+  
+  try {
+    // Get racecard data
+    const racecardsRes = await fetch(`http://localhost:${PORT}/api/racecards?date=${race_date}&venue=${venue}`);
+    const racecardsData = await racecardsRes.json();
+    
+    const entries = racecardsData.entries?.filter(e => e.race_no === parseInt(race_no)) || [];
+    if (entries.length === 0) {
+      return res.json({ predictions: [] });
+    }
+    
+    const racecard = racecardsData.racecards?.find(rc => rc.race_no === parseInt(race_no));
+    const distance = racecard?.distance || 1200;
+    
+    // Call Python script
+    const { execSync } = require('child_process');
+    const inputData = JSON.stringify({ entries, distance, venue });
+    
+    const result = execSync(
+      `echo '${inputData.replace(/'/g, "\\'")}' | python3 /Users/fatlung/.openclaw/workspace-main/hkjc_project/predict_race.py`,
+      { encoding: 'utf8', timeout: 30000 }
+    );
+    
+    res.json(JSON.parse(result));
+  } catch (error) {
+    console.error('Prediction error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});

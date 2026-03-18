@@ -43,7 +43,7 @@ class WeightedScorer:
         
     def load_data(self):
         """Load all necessary data from MongoDB"""
-        print("Loading data...")
+        # print("Loading data...")
         self.db = DatabaseConnection()
         self.db.connect()
         
@@ -103,7 +103,7 @@ class WeightedScorer:
         for hid in self.race_history:
             self.race_history[hid].sort(key=lambda x: x.get('date', ''), reverse=True)
         
-        print(f"Loaded {len(self.races)} races")
+        # print(f"Loaded {len(self.races)} races")
     
     def get_horse_features(self, horse_name, jockey_name, trainer_name, race_distance, race_venue):
         """Get features for a horse in a specific race context"""

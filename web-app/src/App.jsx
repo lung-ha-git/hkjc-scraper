@@ -113,25 +113,46 @@ function App() {
   };
 
   const calculatePredictions = () => {
+    if (!selectedFixture || !selectedRaceNo) return;
+    
+    // Call ML prediction API
+    fetch(`/api/predict?race_date=${selectedFixture.date}&race_no=${selectedRaceNo}&venue=${selectedFixture.venue}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.predictions) {
+          // Add jersey_url from racecard data
+          const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
+          const results = data.predictions.map(pred => {
+            const entry = entries.find(e => e.horse_name === pred.horse_name);
+            return {
+              ...pred,
+              jersey_url: entry?.jersey_url || null,
+              rating_change: entry?.rating_change || null,
+              recent_form: entry?.recent_form || null
+            };
+          });
+          setPredictions(results);
+        }
+      })
+      .catch(err => {
+        console.error('Prediction error:', err);
+        // Fallback to simple calculation
+        calculateLocalPredictions();
+      });
+  };
+
+  // Fallback simple calculation
+  const calculateLocalPredictions = () => {
     if (!racecardData || !selectedRaceNo) return;
     
-    // Get entries sorted by horse_no
     const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
     entries.sort((a, b) => a.horse_no - b.horse_no);
     
-    // Calculate total score for percentage
-    let totalScore = 0;
     const results = entries.map((entry) => {
       let score = 50;
-      
-      // 檔位影響 (負分 = 高檔位不利)
-      // draw 1 = 最好, draw 8 = 最差
       if (entry.draw) {
         score += (entry.draw - 8) * weights.draw * 2;
       }
-
-      totalScore += score;
-
       return {
         horse_no: entry.horse_no,
         horse_name: entry.horse_name,
@@ -140,20 +161,12 @@ function App() {
         draw: entry.draw,
         jersey_url: entry.jersey_url || null,
         score,
-        win_prob: 0,
         predicted_rank: 0
       };
     });
 
-    // Sort by score for ranking
     const sortedResults = [...results].sort((a, b) => b.score - a.score);
-    
-    // Assign ranks
-    sortedResults.forEach((r, i) => {
-      r.predicted_rank = i + 1;
-    });
-    
-    // Keep original order but add rank info
+    sortedResults.forEach((r, i) => r.predicted_rank = i + 1);
     setPredictions(results);
   };
 
