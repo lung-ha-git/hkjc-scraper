@@ -6,8 +6,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables - default to dev
+load_dotenv("/Users/fatlung/.openclaw/workspace-main/hkjc_project/config/.env.dev")
 
 # Base paths
 BASE_DIR = Path(__file__).resolve().parent.parent

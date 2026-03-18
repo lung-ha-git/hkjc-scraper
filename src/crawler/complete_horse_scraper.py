@@ -407,12 +407,15 @@ class CompleteHorseScraper:
         ratings = []
         MIN_ROWS_FOR_RATING_TABLE = 10
         
+        # Store the main horse URL before navigation
+        main_horse_url = page.url
+        
         try:
             # Navigate to rating result weight page
             rating_url = f"https://racing.hkjc.com/zh-hk/local/information/ratingresultweight?horseid={hkjc_horse_id}"
             logger.info(f"      Fetching rating history: {rating_url}")
-            await page.goto(rating_url, wait_until="domcontentloaded")
-            await asyncio.sleep(self.delay)
+            await page.goto(rating_url, wait_until="networkidle", timeout=30000)
+            await page.wait_for_timeout(self.delay * 1000)
             
             tables = await page.query_selector_all("table")
             
