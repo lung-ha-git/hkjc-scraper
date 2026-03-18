@@ -120,17 +120,21 @@ function App() {
       .then(res => res.json())
       .then(data => {
         if (data && data.predictions) {
-          // Add jersey_url from racecard data
+          // Add jersey_url, horse_no from racecard data
           const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
           const results = data.predictions.map(pred => {
             const entry = entries.find(e => e.horse_name === pred.horse_name);
             return {
               ...pred,
+              horse_no: entry?.horse_no || 0,
               jersey_url: entry?.jersey_url || null,
               rating_change: entry?.rating_change || null,
               recent_form: entry?.recent_form || null
             };
           });
+          
+          // Sort by horse_no for display in table
+          results.sort((a, b) => a.horse_no - b.horse_no);
           setPredictions(results);
         }
       })
@@ -160,13 +164,18 @@ function App() {
         trainer_name: entry.trainer_name,
         draw: entry.draw,
         jersey_url: entry.jersey_url || null,
+        rating_change: entry.rating_change || null,
+        recent_form: entry.recent_form || null,
         score,
         predicted_rank: 0
       };
     });
 
+    // Sort by score and assign ranks
     const sortedResults = [...results].sort((a, b) => b.score - a.score);
     sortedResults.forEach((r, i) => r.predicted_rank = i + 1);
+    
+    // Keep sorted by horse_no but add rank info
     setPredictions(results);
   };
 
@@ -326,6 +335,7 @@ function App() {
           <div className="prediction-list">
             {predictions
               .sort((a,b) => a.predicted_rank - b.predicted_rank)
+              .slice(0, 4)
               .map((pred, idx) => {
               const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
               return (
