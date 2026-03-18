@@ -45,6 +45,7 @@ function App() {
   const [selectedRaceNo, setSelectedRaceNo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState([]);
+  const [weightsMap, setWeightsMap] = useState({}); // Store weights per race
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
 
   useEffect(() => {
@@ -139,6 +140,10 @@ function App() {
           // Sort by horse_no for display in table
           results.sort((a, b) => a.horse_no - b.horse_no);
           setPredictions(results);
+          
+          // Save weights for this race
+          const raceKey = `${selectedFixture.date}-${selectedFixture.venue}-${selectedRaceNo}`;
+          setWeightsMap(prev => ({ ...prev, [raceKey]: weights }));
         }
       })
       .catch(err => {
@@ -190,6 +195,13 @@ function App() {
   };
 
   const handleRaceTabClick = (raceNo) => {
+    // Load weights for this race, or use default
+    const raceKey = `${selectedFixture?.date}-${selectedFixture?.venue}-${raceNo}`;
+    if (weightsMap[raceKey]) {
+      setWeights(weightsMap[raceKey]);
+    } else {
+      setWeights(DEFAULT_WEIGHTS);
+    }
     setSelectedRaceNo(raceNo);
   };
 
@@ -394,7 +406,8 @@ function App() {
                 className="btn btn-secondary"
                 onClick={() => {
                   setWeights(DEFAULT_WEIGHTS);
-                  calculatePredictions();
+                  // Calculate with default weights for current race
+                  setTimeout(() => calculatePredictions(), 0);
                 }}
               >
                 重置
