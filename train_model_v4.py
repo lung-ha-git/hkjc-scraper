@@ -20,7 +20,7 @@ def load_data():
     races = list(db.db['races'].find({}).sort('race_date', 1))
     
     horses = {h.get('name', ''): h for h in db.db['horses'].find({})}
-    horses.update({h.get('hkjc_horse_id'): h for h in db.db['horses'].find({})}
+    horses.update({h.get('hkjc_horse_id'): h for h in db.db['horses'].find({})})
     jockeys = {j.get('name', ''): j for j in db.db['jockeys'].find({})}
     trainers = {t.get('name', ''): t for t in db.db['trainers'].find({})}
     distance_stats = {ds.get('hkjc_horse_id'): ds for ds in db.db['horse_distance_stats'].find({})}
@@ -225,6 +225,8 @@ def train_and_evaluate(df):
 
 
 if __name__ == '__main__':
+    import pickle
+    
     print('Loading data...')
     db, races, horses, jockeys, trainers, distance_stats = load_data()
     
@@ -238,3 +240,8 @@ if __name__ == '__main__':
     print('\nTop Features:')
     for f, i in sorted(zip(features, model.feature_importances_), key=lambda x: -x[1])[:10]:
         print(f'  {f:25s}: {i:.4f}')
+    
+    # Save model
+    with open('xgb_model.pkl', 'wb') as f:
+        pickle.dump({'model': model, 'features': features}, f)
+    print('\nModel saved to xgb_model.pkl')

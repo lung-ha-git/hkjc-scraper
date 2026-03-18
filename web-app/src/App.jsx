@@ -9,35 +9,6 @@ const JERSEY_COLORS = [
   '#F8B500', '#82E0AA', '#F1948A', '#7DCEA0'
 ];
 
-// AI 預測因子 - 繁體中文
-const DEFAULT_WEIGHTS = {
-  hj_win_rate: 10,
-  career_place_rate: 5,
-  jockey_win_rate: 3,
-  trainer_win_rate: 2,
-  dist_win_rate: 2,
-  recent3_avg_rank: 3,
-  current_rating: 1,
-  dist_wins: 1,
-  jt_win_rate: 1,
-  draw: -1
-};
-
-const MODEL_VERSION = "v1.0.0";
-
-const WEIGHT_LABELS = {
-  hj_win_rate: '馬騎師組合勝率',
-  jockey_win_rate: '騎師勝率',
-  trainer_win_rate: '練馬師勝率',
-  career_place_rate: '生涯位置率',
-  dist_win_rate: '途程勝率',
-  recent3_avg_rank: '近3場平均排名',
-  current_rating: '評分',
-  dist_wins: '途程勝利次數',
-  jt_win_rate: '騎師練馬師組合勝率',
-  draw: '檔位'
-};
-
 function App() {
   const [fixtures, setFixtures] = useState([]);
   const [selectedFixture, setSelectedFixture] = useState(null);
@@ -45,8 +16,6 @@ function App() {
   const [selectedRaceNo, setSelectedRaceNo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState([]);
-  const [weightsMap, setWeightsMap] = useState({}); // Store weights per race
-  const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
 
   useEffect(() => {
     fetchFixtures();
@@ -116,9 +85,8 @@ function App() {
   const calculatePredictions = () => {
     if (!selectedFixture || !selectedRaceNo) return;
     
-    // Call ML prediction API with weights
-    const weightsStr = encodeURIComponent(JSON.stringify(weights));
-    fetch(`/api/predict?race_date=${selectedFixture.date}&race_no=${selectedRaceNo}&venue=${selectedFixture.venue}&weights=${weightsStr}`)
+    // Call XGBoost ML prediction API
+    fetch(`/api/predict?race_date=${selectedFixture.date}&race_no=${selectedRaceNo}&venue=${selectedFixture.venue}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.predictions) {
@@ -140,68 +108,14 @@ function App() {
           // Sort by horse_no for display in table
           results.sort((a, b) => a.horse_no - b.horse_no);
           setPredictions(results);
-          
-          // Save weights for this race
-          const raceKey = `${selectedFixture.date}-${selectedFixture.venue}-${selectedRaceNo}`;
-          setWeightsMap(prev => ({ ...prev, [raceKey]: weights }));
         }
       })
       .catch(err => {
         console.error('Prediction error:', err);
-        // Fallback to simple calculation
-        calculateLocalPredictions();
       });
   };
 
-  // Fallback simple calculation
-  const calculateLocalPredictions = () => {
-    if (!racecardData || !selectedRaceNo) return;
-    
-    const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
-    entries.sort((a, b) => a.horse_no - b.horse_no);
-    
-    const results = entries.map((entry) => {
-      let score = 50;
-      if (entry.draw) {
-        score += (entry.draw - 8) * weights.draw * 2;
-      }
-      return {
-        horse_no: entry.horse_no,
-        horse_name: entry.horse_name,
-        jockey_name: entry.jockey_name,
-        trainer_name: entry.trainer_name,
-        draw: entry.draw,
-        jersey_url: entry.jersey_url || null,
-        rating_change: entry.rating_change || null,
-        recent_form: entry.recent_form || null,
-        score,
-        predicted_rank: 0
-      };
-    });
-
-    // Sort by score and assign ranks
-    const sortedResults = [...results].sort((a, b) => b.score - a.score);
-    sortedResults.forEach((r, i) => r.predicted_rank = i + 1);
-    
-    // Keep sorted by horse_no but add rank info
-    setPredictions(results);
-  };
-
-  const handleWeightChange = (key, value) => {
-    setWeights(prev => ({
-      ...prev,
-      [key]: parseFloat(value)
-    }));
-  };
-
   const handleRaceTabClick = (raceNo) => {
-    // Load weights for this race, or use default
-    const raceKey = `${selectedFixture?.date}-${selectedFixture?.venue}-${raceNo}`;
-    if (weightsMap[raceKey]) {
-      setWeights(weightsMap[raceKey]);
-    } else {
-      setWeights(DEFAULT_WEIGHTS);
-    }
     setSelectedRaceNo(raceNo);
   };
 
@@ -214,8 +128,7 @@ function App() {
         race_no: selectedRaceNo,
         venue: selectedFixture.venue,
         predictions: predictions,
-        weights: weights,
-        model_version: MODEL_VERSION,
+        model_version: 'xgb_v1',
         created_at: new Date().toISOString()
       });
     } catch (error) {
@@ -353,7 +266,6 @@ function App() {
           <div className="prediction-list">
             {predictions
               .sort((a,b) => a.predicted_rank - b.predicted_rank)
-              .slice(0, 4)
               .map((pred, idx) => {
               const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
               return (
@@ -379,47 +291,6 @@ function App() {
                 </div>
               );
             })}
-          </div>
-
-          <div className="weights-panel">
-            <h4>⚙️ 因子權重調整</h4>
-            
-            {Object.entries(weights).map(([key, value]) => (
-              <div key={key} className="weight-slider">
-                <label>
-                  <span>{WEIGHT_LABELS[key] || key}</span>
-                  <span>{value}</span>
-                </label>
-                <input
-                  type="range"
-                  min={-5}
-                  max={20}
-                  step={0.5}
-                  value={value}
-                  onChange={(e) => handleWeightChange(key, e.target.value)}
-                />
-              </div>
-            ))}
-            
-            <div className="btn-group">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => {
-                  setWeights(DEFAULT_WEIGHTS);
-                  // Calculate with default weights for current race
-                  setTimeout(() => calculatePredictions(), 0);
-                }}
-              >
-                重置
-              </button>
-              
-              <button 
-                className="btn"
-                onClick={() => calculatePredictions()}
-              >
-                預測
-              </button>
-            </div>
           </div>
         </div>
       </div>
