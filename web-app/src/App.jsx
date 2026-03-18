@@ -281,7 +281,10 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {predictions.map((pred) => {
+                  {predictions
+                    .slice()
+                    .sort((a, b) => a.horse_no - b.horse_no)
+                    .map((pred) => {
                     const entry = currentEntries.find(e => e.horse_no === pred.horse_no);
                     const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
                     return (
