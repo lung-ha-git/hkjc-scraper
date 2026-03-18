@@ -125,8 +125,9 @@ function App() {
       let score = 50;
       
       // 檔位影響 (負分 = 高檔位不利)
+      // draw 1 = 最好, draw 8 = 最差
       if (entry.draw) {
-        score += (8 - entry.draw) * weights.draw * 2;
+        score += (entry.draw - 8) * weights.draw * 2;
       }
 
       totalScore += score;
