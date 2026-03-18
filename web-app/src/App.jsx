@@ -11,17 +11,17 @@ const JERSEY_COLORS = [
 
 // AI 預測因子 - 繁體中文
 const DEFAULT_WEIGHTS = {
-  hj_win_rate: 10,         // 練馬師勝率
-  career_place_rate: 5,    // 生涯位置率
-  jockey_win_rate: 3,     // 騎師勝率
-  trainer_win_rate: 2,    // 練馬師勝率
-  dist_win_rate: 2,       // 途程勝率
-  recent3_avg_rank: 3,    // 最近3場平均排名
-  current_rating: 1,      // 現時評分
-  dist_wins: 1,          // 途程勝利次數
-  jt_win_rate: 1,        // 騎師練馬師組合勝率
-  draw: -1,               // 檔位
-  randomness: 5           // 隨機因素
+  hj_win_rate: 10,
+  career_place_rate: 5,
+  jockey_win_rate: 3,
+  trainer_win_rate: 2,
+  dist_win_rate: 2,
+  recent3_avg_rank: 3,
+  current_rating: 1,
+  dist_wins: 1,
+  jt_win_rate: 1,
+  draw: -1,
+  randomness: 5
 };
 
 const WEIGHT_LABELS = {
@@ -47,7 +47,6 @@ function App() {
   const [predictions, setPredictions] = useState([]);
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
   const [horseDetails, setHorseDetails] = useState({});
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     fetchFixtures();
@@ -61,6 +60,7 @@ function App() {
 
   useEffect(() => {
     if (selectedFixture) {
+      setSelectedRaceNo(null); // Reset race selection when fixture changes
       fetchRacecards();
     }
   }, [selectedFixture]);
@@ -68,7 +68,16 @@ function App() {
   const fetchFixtures = async () => {
     try {
       const res = await axios.get('/api/fixtures?mode=upcoming');
-      setFixtures(res.data || []);
+      // Remove duplicates by date
+      const unique = [];
+      const seen = new Set();
+      for (const f of res.data || []) {
+        if (!seen.has(f.date)) {
+          seen.add(f.date);
+          unique.push(f);
+        }
+      }
+      setFixtures(unique);
       setLoading(false);
     } catch (error) {
       console.log('Error fetching fixtures:', error);
@@ -90,13 +99,19 @@ function App() {
     }
   };
 
-  // 計算 AI 預測
+  // Calculate predictions when weights or race changes
   useEffect(() => {
     if (racecardData && selectedRaceNo) {
       calculatePredictions();
-      fetchHorseDetails();
     }
   }, [racecardData, selectedRaceNo, weights]);
+
+  // Fetch horse details when race changes
+  useEffect(() => {
+    if (racecardData && selectedRaceNo) {
+      fetchHorseDetails();
+    }
+  }, [racecardData, selectedRaceNo]);
 
   const fetchHorseDetails = async () => {
     if (!racecardData || !selectedRaceNo) return;
@@ -154,29 +169,14 @@ function App() {
       ...prev,
       [key]: parseFloat(value)
     }));
-    setSaved(false);
   };
 
   const handleRaceTabClick = (raceNo) => {
     setSelectedRaceNo(raceNo);
-    setSaved(false);
   };
 
-  const savePrediction = async () => {
-    if (!selectedFixture || !selectedRaceNo) return;
-    
-    try {
-      await axios.post('/api/predictions', {
-        race_date: selectedFixture.date,
-        race_no: selectedRaceNo,
-        venue: selectedFixture.venue,
-        predictions: predictions,
-        weights: weights
-      });
-      setSaved(true);
-    } catch (error) {
-      console.error('Error saving prediction:', error);
-    }
+  const handleFixtureClick = (fixture) => {
+    setSelectedFixture(fixture);
   };
 
   // 獲取馬匹 Icon
@@ -217,7 +217,7 @@ function App() {
                 <div 
                   key={idx} 
                   className={`fixture-item ${selectedFixture?.date === fixture.date ? 'active' : ''}`}
-                  onClick={() => setSelectedFixture(fixture)}
+                  onClick={() => handleFixtureClick(fixture)}
                 >
                   <div className="fixture-date">{fixture.date}</div>
                   <div className="fixture-venue">{fixture.venue === 'ST' ? '沙田' : '跑馬地'}</div>
@@ -228,9 +228,9 @@ function App() {
           </div>
         </div>
 
-        {/* 中間：賽果/排位表 */}
+        {/* 中間：排位表 */}
         <div className="race-card">
-          {selectedFixture && racecardData && (
+          {selectedFixture && racecardData && selectedRaceNo && (
             <>
               <div className="race-header">
                 <h2>{selectedFixture.date} - {selectedFixture.venue === 'ST' ? '沙田' : '跑馬地'}</h2>
@@ -309,6 +309,9 @@ function App() {
               </table>
             </>
           )}
+          {selectedFixture && !racecardData && (
+            <div className="loading">載入排位表中...</div>
+          )}
         </div>
 
         {/* 右側：AI 預測控制面板 */}
@@ -363,14 +366,6 @@ function App() {
               onClick={() => setWeights(DEFAULT_WEIGHTS)}
             >
               重置權重
-            </button>
-
-            <button 
-              className={`btn btn-save ${saved ? 'saved' : ''}`}
-              onClick={savePrediction}
-              disabled={saved}
-            >
-              {saved ? '✅ 已儲存' : '💾 儲存預測'}
             </button>
           </div>
         </div>
