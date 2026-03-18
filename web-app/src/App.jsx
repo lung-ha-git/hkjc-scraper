@@ -24,6 +24,8 @@ const DEFAULT_WEIGHTS = {
   randomness: 5
 };
 
+const MODEL_VERSION = "v1.0.0";
+
 const WEIGHT_LABELS = {
   hj_win_rate: '練馬師勝率',
   career_place_rate: '生涯位置率',
@@ -106,6 +108,13 @@ function App() {
     }
   }, [racecardData, selectedRaceNo, weights]);
 
+  // Auto-save prediction to MongoDB when predictions change
+  useEffect(() => {
+    if (predictions.length > 0 && selectedFixture && selectedRaceNo) {
+      savePrediction();
+    }
+  }, [predictions]);
+
   // Fetch horse details when race changes
   useEffect(() => {
     if (racecardData && selectedRaceNo) {
@@ -177,6 +186,24 @@ function App() {
 
   const handleFixtureClick = (fixture) => {
     setSelectedFixture(fixture);
+  };
+
+  const savePrediction = async () => {
+    if (!selectedFixture || !selectedRaceNo || predictions.length === 0) return;
+    
+    try {
+      await axios.post('/api/predictions', {
+        race_date: selectedFixture.date,
+        race_no: selectedRaceNo,
+        venue: selectedFixture.venue,
+        predictions: predictions,
+        weights: weights,
+        model_version: MODEL_VERSION,
+        created_at: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error saving prediction:', error);
+    }
   };
 
   // 獲取馬匹 Icon

@@ -110,7 +110,7 @@ app.listen(PORT, () => console.log('Server:', PORT));
 // Save AI prediction
 app.post('/api/predictions', async (req, res) => {
   try {
-    const { race_date, race_no, venue, predictions, weights } = req.body;
+    const { race_date, race_no, venue, predictions, weights, model_version, created_at } = req.body;
     
     const doc = {
       race_date,
@@ -118,11 +118,12 @@ app.post('/api/predictions', async (req, res) => {
       venue,
       predictions, // Array of { horse_no, horse_name, score, predicted_rank }
       weights,     // Object of factor weights
-      created_at: new Date().toISOString()
+      model_version: model_version || 'v1.0.0',
+      created_at: created_at || new Date().toISOString()
     };
     
     await db.collection('predictions').insertOne(doc);
-    res.json({ success: true, id: doc._id });
+    res.json({ success: true });
   } catch (error) {
     console.error('Error saving prediction:', error);
     res.status(500).json({ error: error.message });
