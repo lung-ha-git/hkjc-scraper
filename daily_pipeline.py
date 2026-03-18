@@ -359,6 +359,7 @@ class HistoricalOptimizationPipeline:
             logger.info(f"   抓取场次: {race_date} {venue} 第 {race_no} 场")
             
             if self.dry_run:
+                scraped_count += 1  # Count in dry-run too
                 continue
             
             # Scrape race result
