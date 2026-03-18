@@ -93,12 +93,12 @@ function App() {
     }
   };
 
-  // Calculate predictions when weights or race changes
+  // Calculate predictions when race changes
   useEffect(() => {
     if (racecardData && selectedRaceNo) {
       calculatePredictions();
     }
-  }, [racecardData, selectedRaceNo, weights]);
+  }, [racecardData, selectedRaceNo]);
 
   // Auto-save prediction to MongoDB when predictions change
   useEffect(() => {
@@ -389,12 +389,21 @@ function App() {
               </div>
             ))}
             
-            <button 
-              className="btn"
-              onClick={() => setWeights(DEFAULT_WEIGHTS)}
-            >
-              重置權重
-            </button>
+            <div className="btn-group">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setWeights(DEFAULT_WEIGHTS)}
+              >
+                重置
+              </button>
+              
+              <button 
+                className="btn"
+                onClick={() => calculatePredictions()}
+              >
+                預測
+              </button>
+            </div>
           </div>
         </div>
       </div>

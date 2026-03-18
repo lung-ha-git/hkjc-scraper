@@ -465,12 +465,22 @@ body {
   color: white;
   cursor: pointer;
   font-size: 0.9rem;
-  width: 100%;
-  margin-top: 8px;
+  flex: 1;
+  margin: 4px;
+}
+
+.btn-secondary {
+  background: #666;
 }
 
 .btn:hover {
   opacity: 0.9;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .btn-save {
