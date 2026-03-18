@@ -198,6 +198,19 @@ body {
   }
 }
 
+/* Responsive table - hide columns on mobile */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
 /* Race Card */
 .race-card {
   background: var(--secondary);

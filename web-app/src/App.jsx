@@ -198,11 +198,14 @@ function App() {
               <table className="race-table">
                 <thead>
                   <tr>
+                    <th>預測</th>
                     <th>馬號</th>
                     <th>馬匹</th>
-                    <th>騎師</th>
-                    <th>練馬師</th>
-                    <th>檔位</th>
+                    <th className="desktop-only">騎師</th>
+                    <th className="desktop-only">練馬師</th>
+                    <th className="desktop-only">檔位</th>
+                    <th className="desktop-only">評分</th>
+                    <th className="desktop-only">近績</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -214,6 +217,11 @@ function App() {
                     const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
                     return (
                       <tr key={pred.horse_no}>
+                        <td>
+                          <div className={`predicted-rank rank-${pred.predicted_rank}`}>
+                            {pred.predicted_rank}
+                          </div>
+                        </td>
                         <td>
                           <div 
                             className="horse-number"
@@ -234,9 +242,11 @@ function App() {
                             <span>{pred.horse_name}</span>
                           </div>
                         </td>
-                        <td>{pred.jockey_name}</td>
-                        <td>{pred.trainer_name}</td>
-                        <td>{pred.draw}</td>
+                        <td className="desktop-only">{pred.jockey_name}</td>
+                        <td className="desktop-only">{pred.trainer_name}</td>
+                        <td className="desktop-only">{pred.draw}</td>
+                        <td className="desktop-only">{entry?.rating_change > 0 ? `+${entry?.rating_change}` : entry?.rating_change || '-'}</td>
+                        <td className="desktop-only">{entry?.recent_form || '-'}</td>
                       </tr>
                     );
                   })}
