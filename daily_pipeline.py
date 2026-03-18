@@ -33,6 +33,7 @@ from src.pipeline.fixtures import sync_fixtures, get_next_fixture, get_past_fixt
 from src.pipeline.racecards import scrape_next_racecards, scrape_race_day
 from src.pipeline.history import sync_past_race_results, get_race_gaps
 from src.pipeline.deep_sync import sync_single_horse, get_horses_needing_sync
+from src.pipeline.completeness import completeness_check_and_sync
 
 # ============================================================================
 # LOGGING SETUP
@@ -552,8 +553,19 @@ def main():
     parser.add_argument(
         "--part",
         type=int,
-        choices=[1, 2],
-        help="只运行指定部分 (1=未来比赛, 2=历史优化)"
+        choices=[1, 2, 3],
+        help="只运行指定部分 (1=未来比赛, 2=历史优化, 3=马匹资料完整性检查)"
+    )
+    parser.add_argument(
+        "--days-back",
+        type=int,
+        default=30,
+        help="Part 3: 检查过去多少日的赛事的马匹完整性 (default 30)"
+    )
+    parser.add_argument(
+        "--skip-sync",
+        action="store_true",
+        help="Part 3: 只检查不加入同步队列"
     )
     
     args = parser.parse_args()
@@ -577,6 +589,16 @@ def main():
             skip_training=args.skip_training
         )
         success = history.run() and success
+    
+    # Part 3: Horse data completeness check
+    if args.part is None or args.part == 3:
+        logger.info(f"\n🐴 Starting Part 3 (days_back={args.days_back}, skip_sync={args.skip_sync})")
+        part3_results = asyncio.run(completeness_check_and_sync(
+            days_back=args.days_back,
+            dry_run=args.dry_run,
+            skip_sync=args.skip_sync,
+        ))
+        logger.info(f"Part 3 results: {part3_results}")
     
     # Final summary
     logger.info("\n" + "=" * 70)
