@@ -198,14 +198,11 @@ function App() {
               <table className="race-table">
                 <thead>
                   <tr>
-                    <th>預測</th>
                     <th>馬號</th>
                     <th>馬匹</th>
                     <th>騎師</th>
                     <th>練馬師</th>
                     <th>檔位</th>
-                    <th>評分</th>
-                    <th>近績</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -217,11 +214,6 @@ function App() {
                     const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
                     return (
                       <tr key={pred.horse_no}>
-                        <td>
-                          <div className={`predicted-rank rank-${pred.predicted_rank}`}>
-                            {pred.predicted_rank}
-                          </div>
-                        </td>
                         <td>
                           <div 
                             className="horse-number"
@@ -245,8 +237,6 @@ function App() {
                         <td>{pred.jockey_name}</td>
                         <td>{pred.trainer_name}</td>
                         <td>{pred.draw}</td>
-                        <td>{entry?.rating_change > 0 ? `+${entry.rating_change}` : entry?.rating_change || '-'}</td>
-                        <td>{entry?.recent_form || '-'}</td>
                       </tr>
                     );
                   })}
