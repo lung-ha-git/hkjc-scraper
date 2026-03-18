@@ -60,10 +60,16 @@ app.get('/api/racecards', async (req, res) => {
     .sort({ race_no: 1 })
     .toArray();
   
-  // Also get horse entries
+  // Get horse entries
   const entries = await db.collection('racecard_entries')
     .find(query)
     .toArray();
+  
+  // Add jersey_url to each entry
+  for (const entry of entries) {
+    const horse = await db.collection('horses').findOne({ name: entry.horse_name });
+    entry.jersey_url = horse?.jersey_url || null;
+  }
   
   res.json({ racecards, entries });
 });

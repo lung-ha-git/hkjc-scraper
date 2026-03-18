@@ -20,8 +20,7 @@ const DEFAULT_WEIGHTS = {
   current_rating: 1,
   dist_wins: 1,
   jt_win_rate: 1,
-  draw: -1,
-  randomness: 0  // 設為0，避免經常變動
+  draw: -1
 };
 
 const MODEL_VERSION = "v1.0.0";
@@ -36,8 +35,7 @@ const WEIGHT_LABELS = {
   current_rating: '現時評分',
   dist_wins: '途程勝利次數',
   jt_win_rate: '騎師練馬師組合勝率',
-  draw: '檔位',
-  randomness: '隨機因素'
+  draw: '檔位'
 };
 
 function App() {
@@ -48,7 +46,6 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState([]);
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
-  const [horseDetails, setHorseDetails] = useState({});
 
   useEffect(() => {
     fetchFixtures();
@@ -110,38 +107,9 @@ function App() {
     }
   }, [predictions]);
 
-  // Fetch horse details when race changes
-  useEffect(() => {
-    if (racecardData && selectedRaceNo) {
-      fetchHorseDetails();
-    }
-  }, [racecardData, selectedRaceNo]);
-
   const fetchHorseDetails = async () => {
-    if (!racecardData || !selectedRaceNo) return;
-    
-    const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
-    const details = {};
-    
-    for (const entry of entries) {
-      try {
-        // Use horse_id first (e.g., K290), fallback to name
-        let res = null;
-        if (entry.horse_id) {
-          res = await axios.get(`/api/horses/by-id/${entry.horse_id}`);
-        }
-        if (!res?.data) {
-          const name = entry.horse_name.trim();
-          res = await axios.get(`/api/horses/by-name/${encodeURIComponent(name)}`);
-        }
-        if (res?.data) {
-          details[entry.horse_name] = res.data;
-        }
-      } catch (e) {
-        // Ignore errors
-      }
-    }
-    setHorseDetails(details);
+    // Jersey URLs are now included in racecard API response
+    // No additional fetch needed
   };
 
   const calculatePredictions = () => {
@@ -169,6 +137,7 @@ function App() {
         jockey_name: entry.jockey_name,
         trainer_name: entry.trainer_name,
         draw: entry.draw,
+        jersey_url: entry.jersey_url || null,
         score,
         win_prob: 0,
         predicted_rank: 0
@@ -181,7 +150,6 @@ function App() {
     // Assign ranks
     sortedResults.forEach((r, i) => {
       r.predicted_rank = i + 1;
-      r.win_prob = totalScore > 0 ? Math.round((r.score / totalScore) * 100) : 0;
     });
     
     // Keep original order but add rank info
@@ -217,12 +185,14 @@ function App() {
     }
   };
 
-  // 獲取馬匹 Icon
+  // 獲取馬匹 Icon - use jersey_url from predictions directly
   const getJerseyInfo = (horseNo, horseName) => {
-    const detail = horseDetails[horseName];
-    if (detail && detail.jersey_url) {
-      return { type: 'image', url: detail.jersey_url };
+    // Find prediction entry for this horse
+    const pred = predictions.find(p => p.horse_no === horseNo && p.horse_name === horseName);
+    if (pred?.jersey_url) {
+      return { type: 'image', url: pred.jersey_url };
     }
+    // Fallback to color
     return { type: 'color', value: JERSEY_COLORS[(horseNo - 1) % JERSEY_COLORS.length] };
   };
 
@@ -353,9 +323,6 @@ function App() {
                   <div className="prediction-details">
                     <div className="prediction-name">{pred.horse_name} (#{pred.horse_no})</div>
                     <div className="prediction-jockey">{pred.jockey_name}</div>
-                  </div>
-                  <div className="prediction-prob">
-                    {pred.win_prob || 0}%
                   </div>
                 </div>
               );
