@@ -98,7 +98,7 @@ function App() {
     if (racecardData && selectedRaceNo) {
       calculatePredictions();
     }
-  }, [racecardData, selectedRaceNo]);
+  }, [selectedRaceNo]);
 
   // Auto-save prediction to MongoDB when predictions change
   useEffect(() => {
