@@ -26,13 +26,13 @@ const DEFAULT_WEIGHTS = {
 const MODEL_VERSION = "v1.0.0";
 
 const WEIGHT_LABELS = {
-  hj_win_rate: '練馬師勝率',
-  career_place_rate: '生涯位置率',
+  hj_win_rate: '馬騎師組合勝率',
   jockey_win_rate: '騎師勝率',
   trainer_win_rate: '練馬師勝率',
+  career_place_rate: '生涯位置率',
   dist_win_rate: '途程勝率',
-  recent3_avg_rank: '最近3場平均排名',
-  current_rating: '現時評分',
+  recent3_avg_rank: '近3場平均排名',
+  current_rating: '評分',
   dist_wins: '途程勝利次數',
   jt_win_rate: '騎師練馬師組合勝率',
   draw: '檔位'
