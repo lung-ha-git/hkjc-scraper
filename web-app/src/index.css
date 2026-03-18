@@ -79,9 +79,9 @@ body {
 
 /* Fixtures View */
 .fixtures-view {
-  display: grid;
-  grid-template-columns: 250px 1fr;
-  gap: 16px;
+  background: var(--secondary);
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .fixtures-list {
@@ -188,11 +188,20 @@ body {
 /* Main Layout */
 .main-layout {
   display: grid;
-  grid-template-columns: 1fr 350px;
+  grid-template-columns: 200px 1fr 320px;
   gap: 16px;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+  .main-layout {
+    grid-template-columns: 1fr 300px;
+  }
+  .fixtures-view {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
   .main-layout {
     grid-template-columns: 1fr;
   }
@@ -263,6 +272,39 @@ body {
   color: white;
   font-size: 0.85rem;
 }
+
+.jersey-placeholder {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.predicted-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.predicted-rank.rank-1 { background: var(--gold); color: #000; }
+.predicted-rank.rank-2 { background: var(--silver); color: #000; }
+.predicted-rank.rank-3 { background: var(--bronze); color: #000; }
+.predicted-rank.rank-4 { background: #4ade80; color: #000; }
+.predicted-rank.rank-5, 
+.predicted-rank.rank-6,
+.predicted-rank.rank-7,
+.predicted-rank.rank-8 { background: #666; color: #fff; }
 
 .horse-name-cell {
   display: flex;
@@ -425,6 +467,21 @@ body {
 
 .btn:hover {
   opacity: 0.9;
+}
+
+.btn-save {
+  background: #4ade80;
+  color: #000;
+  font-weight: bold;
+}
+
+.btn-save.saved {
+  background: #22c55e;
+  cursor: default;
+}
+
+.btn:disabled {
+  cursor: default;
 }
 
 /* Loading */

@@ -107,6 +107,28 @@ app.get('/api/horses/best-times', async (req, res) => {
 
 app.listen(PORT, () => console.log('Server:', PORT));
 
+// Save AI prediction
+app.post('/api/predictions', async (req, res) => {
+  try {
+    const { race_date, race_no, venue, predictions, weights } = req.body;
+    
+    const doc = {
+      race_date,
+      race_no,
+      venue,
+      predictions, // Array of { horse_no, horse_name, score, predicted_rank }
+      weights,     // Object of factor weights
+      created_at: new Date().toISOString()
+    };
+    
+    await db.collection('predictions').insertOne(doc);
+    res.json({ success: true, id: doc._id });
+  } catch (error) {
+    console.error('Error saving prediction:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/horses/by-name/:name', async (req, res) => {
   const { name } = req.params;
   const horse = await db.collection('horses').findOne({ name: name });

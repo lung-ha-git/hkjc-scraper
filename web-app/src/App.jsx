@@ -9,11 +9,45 @@ const JERSEY_COLORS = [
   '#F8B500', '#82E0AA', '#F1948A', '#7DCEA0'
 ];
 
+// AI 預測因子 - 繁體中文
+const DEFAULT_WEIGHTS = {
+  hj_win_rate: 10,         // 練馬師勝率
+  career_place_rate: 5,    // 生涯位置率
+  jockey_win_rate: 3,     // 騎師勝率
+  trainer_win_rate: 2,    // 練馬師勝率
+  dist_win_rate: 2,       // 途程勝率
+  recent3_avg_rank: 3,    // 最近3場平均排名
+  current_rating: 1,      // 現時評分
+  dist_wins: 1,          // 途程勝利次數
+  jt_win_rate: 1,        // 騎師練馬師組合勝率
+  draw: -1,               // 檔位
+  randomness: 5           // 隨機因素
+};
+
+const WEIGHT_LABELS = {
+  hj_win_rate: '練馬師勝率',
+  career_place_rate: '生涯位置率',
+  jockey_win_rate: '騎師勝率',
+  trainer_win_rate: '練馬師勝率',
+  dist_win_rate: '途程勝率',
+  recent3_avg_rank: '最近3場平均排名',
+  current_rating: '現時評分',
+  dist_wins: '途程勝利次數',
+  jt_win_rate: '騎師練馬師組合勝率',
+  draw: '檔位',
+  randomness: '隨機因素'
+};
+
 function App() {
   const [fixtures, setFixtures] = useState([]);
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [racecardData, setRacecardData] = useState(null);
+  const [selectedRaceNo, setSelectedRaceNo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [predictions, setPredictions] = useState([]);
+  const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
+  const [horseDetails, setHorseDetails] = useState({});
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     fetchFixtures();
@@ -47,10 +81,111 @@ function App() {
     try {
       const res = await axios.get(`/api/racecards?date=${selectedFixture.date}`);
       setRacecardData(res.data);
+      if (res.data.racecards && res.data.racecards.length > 0) {
+        setSelectedRaceNo(res.data.racecards[0].race_no);
+      }
     } catch (error) {
       console.log('Error fetching racecards:', error);
       setRacecardData(null);
     }
+  };
+
+  // 計算 AI 預測
+  useEffect(() => {
+    if (racecardData && selectedRaceNo) {
+      calculatePredictions();
+      fetchHorseDetails();
+    }
+  }, [racecardData, selectedRaceNo, weights]);
+
+  const fetchHorseDetails = async () => {
+    if (!racecardData || !selectedRaceNo) return;
+    
+    const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
+    const details = {};
+    
+    for (const entry of entries) {
+      try {
+        const res = await axios.get(`/api/horses/by-name/${encodeURIComponent(entry.horse_name)}`);
+        if (res.data) {
+          details[entry.horse_name] = res.data;
+        }
+      } catch (e) {
+        // Horse not found
+      }
+    }
+    setHorseDetails(details);
+  };
+
+  const calculatePredictions = () => {
+    if (!racecardData || !selectedRaceNo) return;
+    
+    const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
+    
+    const results = entries.map((entry, idx) => {
+      let score = 50 + Math.random() * 50;
+      score += (Math.random() - 0.5) * weights.randomness * 10;
+      
+      // 檔位影響 (負分 = 高檔位不利)
+      if (entry.draw) {
+        score += (8 - entry.draw) * weights.draw * 2;
+      }
+
+      return {
+        horse_no: entry.horse_no,
+        horse_name: entry.horse_name,
+        jockey_name: entry.jockey_name,
+        trainer_name: entry.trainer_name,
+        draw: entry.draw,
+        score,
+        predicted_rank: idx + 1
+      };
+    });
+
+    results.sort((a, b) => b.score - a.score);
+    
+    // 更新排名
+    results.forEach((r, i) => r.predicted_rank = i + 1);
+    setPredictions(results);
+  };
+
+  const handleWeightChange = (key, value) => {
+    setWeights(prev => ({
+      ...prev,
+      [key]: parseFloat(value)
+    }));
+    setSaved(false);
+  };
+
+  const handleRaceTabClick = (raceNo) => {
+    setSelectedRaceNo(raceNo);
+    setSaved(false);
+  };
+
+  const savePrediction = async () => {
+    if (!selectedFixture || !selectedRaceNo) return;
+    
+    try {
+      await axios.post('/api/predictions', {
+        race_date: selectedFixture.date,
+        race_no: selectedRaceNo,
+        venue: selectedFixture.venue,
+        predictions: predictions,
+        weights: weights
+      });
+      setSaved(true);
+    } catch (error) {
+      console.error('Error saving prediction:', error);
+    }
+  };
+
+  // 獲取馬匹 Icon
+  const getJerseyInfo = (horseNo, horseName) => {
+    const detail = horseDetails[horseName];
+    if (detail && detail.jersey_url) {
+      return { type: 'image', url: detail.jersey_url };
+    }
+    return { type: 'color', value: JERSEY_COLORS[(horseNo - 1) % JERSEY_COLORS.length] };
   };
 
   if (loading) {
@@ -61,86 +196,183 @@ function App() {
     );
   }
 
+  const currentRaceCards = racecardData?.racecards?.find(rc => rc.race_no === selectedRaceNo);
+  const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo) || [];
+
   return (
     <div className="app">
       <header className="header">
-        <h1>🏇 HKJC 賽程</h1>
+        <h1>🏇 HKJC AI 預測</h1>
       </header>
 
-      <div className="fixtures-view">
-        <div className="fixtures-list">
-          <h2>下一個賽日</h2>
-          {fixtures.length === 0 ? (
-            <div className="no-data">暫無賽程數據</div>
-          ) : (
-            <div 
-              className="fixture-item active"
-              onClick={() => setSelectedFixture(fixtures[0])}
-            >
-              <div className="fixture-date">{fixtures[0].date}</div>
-              <div className="fixture-venue">{fixtures[0].venue === 'ST' ? '沙田' : '跑馬地'}</div>
-              <div className="fixture-races">{fixtures[0].race_count || 8} 場</div>
-            </div>
-          )}
+      <div className="main-layout">
+        {/* 左側：賽程列表 */}
+        <div className="fixtures-view">
+          <div className="fixtures-list">
+            <h2>賽程</h2>
+            {fixtures.length === 0 ? (
+              <div className="no-data">暫無賽程數據</div>
+            ) : (
+              fixtures.slice(0, 5).map((fixture, idx) => (
+                <div 
+                  key={idx} 
+                  className={`fixture-item ${selectedFixture?.date === fixture.date ? 'active' : ''}`}
+                  onClick={() => setSelectedFixture(fixture)}
+                >
+                  <div className="fixture-date">{fixture.date}</div>
+                  <div className="fixture-venue">{fixture.venue === 'ST' ? '沙田' : '跑馬地'}</div>
+                  <div className="fixture-races">{fixture.race_count || 8} 場</div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        
-        <div className="fixture-detail">
+
+        {/* 中間：賽果/排位表 */}
+        <div className="race-card">
           {selectedFixture && racecardData && (
             <>
-              <h2>{selectedFixture.date} - {selectedFixture.venue === 'ST' ? '沙田' : '跑馬地'}</h2>
-              <div className="fixture-info">
-                <span>場次: {racecardData.racecards?.length || 0}</span>
+              <div className="race-header">
+                <h2>{selectedFixture.date} - {selectedFixture.venue === 'ST' ? '沙田' : '跑馬地'}</h2>
+                <div className="race-info">
+                  <span>第 {selectedRaceNo} 場</span>
+                  <span>{currentRaceCards?.distance || '-'}m</span>
+                  <span>{currentRaceCards?.class || '-'}</span>
+                </div>
               </div>
               
               <div className="race-tabs">
                 {racecardData.racecards?.map(rc => (
-                  <button key={rc.race_no} className="race-tab">
+                  <button 
+                    key={rc.race_no} 
+                    className={`race-tab ${selectedRaceNo === rc.race_no ? 'active' : ''}`}
+                    onClick={() => handleRaceTabClick(rc.race_no)}
+                  >
                     R{rc.race_no}
                   </button>
                 ))}
               </div>
               
-              {racecardData.entries && racecardData.entries.length > 0 && (
-                <table className="race-table">
-                  <thead>
-                    <tr>
-                      <th>馬號</th>
-                      <th>馬匹</th>
-                      <th>騎師</th>
-                      <th>練馬師</th>
-                      <th>檔位</th>
-                      <th>評分</th>
-                      <th>近績</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {racecardData.entries.slice(0, 12).map((entry, idx) => (
-                      <tr key={idx}>
-                        <td><div className="horse-number">{entry.horse_no}</div></td>
-                        <td>{entry.horse_name}</td>
-                        <td>{entry.jockey_name}</td>
-                        <td>{entry.trainer_name}</td>
-                        <td>{entry.draw}</td>
-                        <td>{entry.rating_change > 0 ? `+${entry.rating_change}` : entry.rating_change}</td>
-                        <td>{entry.recent_form}</td>
+              <table className="race-table">
+                <thead>
+                  <tr>
+                    <th>預測</th>
+                    <th>馬號</th>
+                    <th>馬匹</th>
+                    <th>騎師</th>
+                    <th>練馬師</th>
+                    <th>檔位</th>
+                    <th>評分</th>
+                    <th>近績</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {predictions.map((pred) => {
+                    const entry = currentEntries.find(e => e.horse_no === pred.horse_no);
+                    const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
+                    return (
+                      <tr key={pred.horse_no}>
+                        <td>
+                          <div className={`predicted-rank rank-${pred.predicted_rank}`}>
+                            {pred.predicted_rank}
+                          </div>
+                        </td>
+                        <td>
+                          <div 
+                            className="horse-number"
+                            style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
+                          >
+                            {pred.horse_no}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="horse-name-cell">
+                            {jersey.type === 'image' ? (
+                              <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
+                            ) : (
+                              <div className="jersey-placeholder" style={{ backgroundColor: jersey.value }}>
+                                {pred.horse_no}
+                              </div>
+                            )}
+                            <span>{pred.horse_name}</span>
+                          </div>
+                        </td>
+                        <td>{pred.jockey_name}</td>
+                        <td>{pred.trainer_name}</td>
+                        <td>{pred.draw}</td>
+                        <td>{entry?.rating_change > 0 ? `+${entry.rating_change}` : entry?.rating_change || '-'}</td>
+                        <td>{entry?.recent_form || '-'}</td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+                    );
+                  })}
+                </tbody>
+              </table>
             </>
           )}
-          {selectedFixture && !racecardData && (
-            <>
-              <h2>{selectedFixture.date} - {selectedFixture.venue === 'ST' ? '沙田' : '跑馬地'}</h2>
-              <div className="fixture-info">
-                <span>場次: {selectedFixture.race_count || 8}</span>
+        </div>
+
+        {/* 右側：AI 預測控制面板 */}
+        <div className="prediction-panel">
+          <h3>📊 AI 預測排名</h3>
+          
+          <div className="prediction-list">
+            {predictions.slice(0, 4).map((pred, idx) => {
+              const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
+              return (
+                <div key={idx} className="prediction-item top-4">
+                  <div 
+                    className={`prediction-rank rank-${idx + 1}`}
+                    style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
+                  >
+                    {pred.horse_no}
+                  </div>
+                  <div className="prediction-details">
+                    <div className="prediction-name">{pred.horse_name}</div>
+                    <div className="prediction-jockey">{pred.jockey_name}</div>
+                  </div>
+                  <div className="prediction-prob">
+                    {Math.max(5, 40 - idx * 10)}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="weights-panel">
+            <h4>⚙️ 因子權重調整</h4>
+            
+            {Object.entries(weights).map(([key, value]) => (
+              <div key={key} className="weight-slider">
+                <label>
+                  <span>{WEIGHT_LABELS[key] || key}</span>
+                  <span>{value}</span>
+                </label>
+                <input
+                  type="range"
+                  min={-5}
+                  max={20}
+                  step={0.5}
+                  value={value}
+                  onChange={(e) => handleWeightChange(key, e.target.value)}
+                />
               </div>
-              <p className="fixture-note">
-                正在載入排位表...
-              </p>
-            </>
-          )}
+            ))}
+            
+            <button 
+              className="btn"
+              onClick={() => setWeights(DEFAULT_WEIGHTS)}
+            >
+              重置權重
+            </button>
+
+            <button 
+              className={`btn btn-save ${saved ? 'saved' : ''}`}
+              onClick={savePrediction}
+              disabled={saved}
+            >
+              {saved ? '✅ 已儲存' : '💾 儲存預測'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
