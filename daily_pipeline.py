@@ -192,14 +192,21 @@ class FutureRacePipeline:
                 logger.warning(f"   ⚠️ 未能抓取 {race_date} ({venue}) 的 racecards")
             
             self.results["racecards"] = count
-            
+
         except Exception as e:
             logger.error(f"   ❌ Racecard 抓取失败: {e}")
             self.results.setdefault("errors", []).append(str(e))
-            
-        except Exception as e:
-            logger.error(f"   ❌ Racecard 抓取失败: {e}")
-            self.results.setdefault("errors", []).append(str(e))
+            # Reset status to pending so it will retry next run
+            try:
+                db = DatabaseConnection()
+                if db.connect():
+                    db.db["fixtures"].update_one(
+                        {"date": race_date, "venue": venue},
+                        {"$set": {"scrape_status": "pending"}}
+                    )
+                    db.disconnect()
+            except Exception:
+                pass
     
     def _log_summary(self):
         logger.info("\n" + "=" * 70)

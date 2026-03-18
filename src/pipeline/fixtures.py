@@ -60,11 +60,16 @@ async def sync_fixtures(months: List[tuple] = None) -> int:
                     "race_count": fixture.get("race_count", 8),
                     "first_race_time": fixture.get("first_race_time"),
                     "race_meeting": fixture.get("race_meeting"),
-                    "scrape_status": "pending",
                     "updated_at": datetime.now().isoformat(),
                     "racecard_url": fixture.get("racecard_url"),
                     "results_url": fixture.get("results_url"),
                 }
+                
+                # Upsert by date + venue, preserve existing scrape_status if present
+                existing = db.db["fixtures"].find_one({"date": race_date, "venue": venue})
+                if not existing:
+                    fixture_doc["scrape_status"] = "pending"
+                # else: keep existing scrape_status (don't overwrite completed/queued/in_progress)
                 
                 # Upsert by date + venue (not race_date)
                 db.db["fixtures"].update_one(
@@ -86,7 +91,7 @@ async def sync_fixtures(months: List[tuple] = None) -> int:
 
 
 def get_next_fixture() -> Dict:
-    """Get next upcoming race day from fixtures"""
+    """Get next upcoming race day from fixtures that hasn't been scraped yet"""
     db = DatabaseConnection()
     if not db.connect():
         return None
@@ -94,7 +99,7 @@ def get_next_fixture() -> Dict:
     today = datetime.now().strftime("%Y-%m-%d")
     
     fixture = db.db["fixtures"].find_one(
-        {"date": {"$gte": today}},
+        {"date": {"$gte": today}, "scrape_status": {"$ne": "completed"}},
         sort=[("date", 1)]
     )
     
@@ -120,21 +125,10 @@ def get_past_fixtures(days_back: int = 30) -> List[Dict]:
     return fixtures
 
 
-def get_past_fixture() -> Dict:
+def get_past_fixture(days_back: int = 30) -> Dict:
     """Get most recent past race day from fixtures"""
-    db = DatabaseConnection()
-    if not db.connect():
-        return None
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    
-    fixture = db.db["fixtures"].find_one(
-        {"date": {"$lt": today}},
-        sort=[("date", -1)]
-    )
-    
-    db.disconnect()
-    return fixture
+    fixtures = get_past_fixtures(days_back=days_back)
+    return fixtures[0] if fixtures else None
 
 
 if __name__ == "__main__":

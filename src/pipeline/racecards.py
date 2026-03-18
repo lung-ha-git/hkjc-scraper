@@ -79,15 +79,31 @@ async def scrape_next_racecards() -> int:
             logger.info(f"Racecards already complete for {race_date} ({venue}): {existing_count}/{expected_count}")
             return 0
         
-        # Mark fixture as queued
+        # Mark fixture as in_progress
         db.db["fixtures"].update_one(
             {"date": race_date, "venue": venue},
-            {"$set": {"scrape_status": "queued"}}
+            {"$set": {"scrape_status": "in_progress"}}
         )
         
         # Scrape
         db.disconnect()  # Close before scraper uses its own connection
-        count = await scrape_race_day(race_date, venue)
+        count = 0
+        try:
+            count = await scrape_race_day(race_date, venue)
+        except Exception as scrape_err:
+            logger.error(f"Scraper error for {race_date} ({venue}): {scrape_err}")
+            # Reset to pending so it will retry next run
+            try:
+                db3 = DatabaseConnection()
+                if db3.connect():
+                    db3.db["fixtures"].update_one(
+                        {"date": race_date, "venue": venue},
+                        {"$set": {"scrape_status": "pending"}}
+                    )
+                    db3.disconnect()
+            except Exception:
+                pass
+            return 0
         
         if count > 0:
             # Mark fixture as completed

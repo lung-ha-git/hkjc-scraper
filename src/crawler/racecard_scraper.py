@@ -353,8 +353,10 @@ class RaceCardScraper:
             if horses:
                 # Upsert each horse entry (not delete + insert) - delta change safe
                 for horse in horses:
+                    # Use race_id + horse_id (HKJC ID) for stable upsert key
+                    horse_id = horse.get("horse_id") or horse.get("horse_name")
                     db.db["racecard_entries"].update_one(
-                        {"race_id": race_id, "horse_no": horse.get("horse_no")},
+                        {"race_id": race_id, "horse_id": horse_id},
                         {"$set": horse},
                         upsert=True
                     )
