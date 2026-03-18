@@ -392,7 +392,10 @@ function App() {
             <div className="btn-group">
               <button 
                 className="btn btn-secondary"
-                onClick={() => setWeights(DEFAULT_WEIGHTS)}
+                onClick={() => {
+                  setWeights(DEFAULT_WEIGHTS);
+                  calculatePredictions();
+                }}
               >
                 重置
               </button>
