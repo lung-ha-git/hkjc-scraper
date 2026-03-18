@@ -310,7 +310,9 @@ function App() {
           <h3>📊 AI 預測排名</h3>
           
           <div className="prediction-list">
-            {predictions.slice(0, 4).sort((a,b) => a.predicted_rank - b.predicted_rank).map((pred, idx) => {
+            {predictions
+              .sort((a,b) => a.predicted_rank - b.predicted_rank)
+              .map((pred, idx) => {
               const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
               return (
                 <div key={idx} className="prediction-item top-4">
@@ -321,7 +323,16 @@ function App() {
                     {pred.predicted_rank}
                   </div>
                   <div className="prediction-details">
-                    <div className="prediction-name">{pred.horse_name} (#{pred.horse_no})</div>
+                    <div className="prediction-name">
+                      {jersey.type === 'image' ? (
+                        <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
+                      ) : (
+                        <div className="jersey-placeholder" style={{ backgroundColor: jersey.value }}>
+                          {pred.horse_no}
+                        </div>
+                      )}
+                      {pred.horse_name}
+                    </div>
                     <div className="prediction-jockey">{pred.jockey_name}</div>
                   </div>
                 </div>
