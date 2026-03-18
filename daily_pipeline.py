@@ -225,25 +225,26 @@ class HistoricalOptimizationPipeline:
     """
     第二部分：过去比赛预测模型优化
     
-    1. 检查今日日期，得到上一次比赛日期
-    2. 检查 race_history 是否有上一次比赛日期的所有场次
+    1. 获取过去 N 日内所有比赛日期
+    2. 对每个比赛日检查缺失的赛果
     3. 把 missing 的赛果用 localresult link 抓取
     4. 每一场结果同时抓取马匹详细资料 (upsert delta change)
     5. 把新的 race_history 喂给预测模型，生成新模型并 push 到 GitHub
     """
     
-    def __init__(self, dry_run: bool = False, skip_training: bool = False):
+    def __init__(self, dry_run: bool = False, skip_training: bool = False, days_back: int = 30):
         self.dry_run = dry_run
         self.skip_training = skip_training
+        self.days_back = days_back
         self.db = DatabaseConnection()
         self.results = {
-            "past_race_date": None,
-            "venue": None,
-            "expected_races": 0,
-            "found_races": 0,
-            "missing_races": [],
+            "total_fixtures": 0,
+            "fixtures_with_missing": 0,
+            "total_expected_races": 0,
+            "total_existing_races": 0,
+            "total_missing_races": [],
             "scraped_results": 0,
-            "horses_synced": [],
+            "unique_horses_synced": set(),
             "model_trained": False,
             "errors": []
         }
@@ -254,62 +255,63 @@ class HistoricalOptimizationPipeline:
         logger.info("📈 PART 2: HISTORICAL OPTIMIZATION")
         logger.info("=" * 70)
         
-        # Step 1: Get past race day
-        past_race = self._get_past_race_day()
+        # Step 1: Get ALL past race days
+        past_fixtures = self._get_all_past_fixtures()
         
-        if not past_race:
-            logger.info("ℹ️ 没有找到过去的比赛日 (可能今天没有比赛)")
+        if not past_fixtures:
+            logger.info("ℹ️ 没有找到过去的比赛日")
             return True
         
-        # Step 2: Gap analysis
-        missing = self._gap_analysis(past_race)
+        self.results["total_fixtures"] = len(past_fixtures)
         
-        if not missing:
-            logger.info("✅ 过去比赛数据完整，无需抓取")
-        else:
-            # Step 3 & 4: Scrape missing results + horse data
-            self._scrape_and_sync(missing)
+        # Step 2: Process each past fixture
+        for fixture in past_fixtures:
+            race_date = fixture["date"]
+            venue = fixture.get("venue", "ST")
+            
+            logger.info(f"\n{'='*60}")
+            logger.info(f"  处理: {race_date} ({venue})")
+            logger.info(f"{'='*60}")
+            
+            # Gap analysis for this fixture
+            missing = self._gap_analysis(fixture)
+            
+            if not missing:
+                logger.info(f"   ✅ 数据完整，跳过")
+            else:
+                self.results["fixtures_with_missing"] += 1
+                # Scrape missing results + horse data
+                scraped = self._scrape_and_sync(race_date, venue, missing)
+                self.results["scraped_results"] += scraped
         
-        # Step 5: Train model (if new data)
+        # Step 3: Train model (if new data)
         if not self.skip_training:
             self._train_model()
         
         self._log_summary()
         return len(self.results.get("errors", [])) == 0
     
-    def _get_past_race_day(self):
-        """1. 获取上一次比赛日"""
-        logger.info("\n🔍 Step 1: 获取上一次比赛日")
+    def _get_all_past_fixtures(self) -> list:
+        """获取所有过去的比赛日"""
+        logger.info(f"\n🔍 Step 1: 获取过去 {self.days_back} 日内所有比赛日...")
         
         try:
-            # Use existing fixture module
-            fixtures = get_past_fixtures(days_back=30)
-            
-            if not fixtures:
-                logger.info("   没有找到过去的比赛日")
-                return None
-            
-            # Get the most recent past fixture
-            fixture = fixtures[0]  # Already sorted by date desc
-            
-            logger.info(f"   上次比赛: {fixture['date']} ({fixture['venue']})")
-            self.results["past_race_date"] = fixture["date"]
-            self.results["venue"] = fixture["venue"]
-            self.results["expected_races"] = fixture.get("race_count", 8)
-            
-            return fixture
-                
+            fixtures = get_past_fixtures(days_back=self.days_back)
+            logger.info(f"   找到 {len(fixtures)} 个过去的比赛日")
+            for f in fixtures:
+                logger.info(f"   - {f['date']} ({f.get('venue','?')}): {f.get('race_count',0)} 场")
+            return fixtures
         except Exception as e:
-            logger.error(f"   ❌ 获取上次比赛失败: {e}")
-            return None
+            logger.error(f"   ❌ 获取过去比赛日失败: {e}")
+            return []
     
     def _gap_analysis(self, fixture: dict) -> list:
-        """2. 检查缺失的赛果"""
-        logger.info("\n🔍 Step 2: Gap Analysis - 检查缺失赛果")
-        
+        """检查单个赛果日的缺失场次"""
         race_date = fixture["date"]
-        venue = fixture["venue"]
+        venue = fixture.get("venue", "ST")
         expected = fixture.get("race_count", 8)
+        
+        self.results["total_expected_races"] += expected
         
         if not self.db.connect():
             return []
@@ -321,36 +323,37 @@ class HistoricalOptimizationPipeline:
                 "venue": venue
             })
             
-            self.results["found_races"] = found
+            self.results["total_existing_races"] += found
             
             logger.info(f"   期望: {expected} 场, 已有: {found} 场")
             
-            # Find missing race numbers
+            # Find missing race numbers (race_no stored as int in races collection)
             existing = list(self.db.db["races"].find(
                 {"race_date": race_date, "venue": venue},
                 {"race_no": 1}
             ))
-            existing_nos = [r["race_no"] for r in existing]
+            existing_nos = {int(r["race_no"]) for r in existing}
             
             missing = [i for i in range(1, expected + 1) if i not in existing_nos]
             
             if missing:
                 logger.info(f"   缺失: 第 {missing} 场")
+                self.results["total_missing_races"].append(
+                    {"date": race_date, "venue": venue, "missing": missing}
+                )
             else:
-                logger.info("   ✅ 数据完整")
+                logger.info(f"   ✅ 数据完整")
             
-            self.results["missing_races"] = missing
             return missing
             
         finally:
             self.db.disconnect()
     
-    def _scrape_and_sync(self, missing_races: list):
-        """3 & 4. 抓取缺失赛果 + 马匹详细数据 (使用 Upsert)"""
-        logger.info("\n🔄 Step 3 & 4: 抓取缺失赛果 + 马匹详细数据")
+    def _scrape_and_sync(self, race_date: str, venue: str, missing_races: list) -> int:
+        """抓取缺失赛果 + 马匹详细数据"""
+        logger.info(f"\n🔄 抓取 {race_date} ({venue}) 缺失场次...")
         
-        race_date = self.results["past_race_date"]
-        venue = self.results["venue"]
+        scraped_count = 0
         
         for race_no in missing_races:
             logger.info(f"   抓取场次: {race_date} {venue} 第 {race_no} 场")
@@ -358,12 +361,12 @@ class HistoricalOptimizationPipeline:
             if self.dry_run:
                 continue
             
-            # Scrape race result (use existing history module)
+            # Scrape race result
             result = self._scrape_race(race_date, venue, race_no)
             
             if result:
                 self._upsert_race_result(race_date, venue, race_no, result)
-                self.results["scraped_results"] += 1
+                scraped_count += 1
                 
                 # Scrape horse data for each horse
                 horses = result.get("horses", [])
@@ -371,10 +374,12 @@ class HistoricalOptimizationPipeline:
                     horse_id = horse.get("horse_id")
                     if horse_id:
                         self._upsert_horse_data(horse_id)
-                        self.results["horses_synced"].append(horse_id)
+                        self.results["unique_horses_synced"].add(horse_id)
             
             import time
             time.sleep(2)  # Rate limit
+        
+        return scraped_count
     
     def _scrape_race(self, race_date: str, venue: str, race_no: int) -> dict:
         """抓取单场赛果"""
@@ -444,7 +449,7 @@ class HistoricalOptimizationPipeline:
         """5. 训练模型并 Push 到 GitHub"""
         logger.info("\n🤖 Step 5: 训练预测模型")
         
-        if self.results["scraped_results"] == 0 and not self.results["horses_synced"]:
+        if self.results["scraped_results"] == 0 and len(self.results["unique_horses_synced"]) == 0:
             logger.info("   ℹ️ 没有新数据，跳过模型训练")
             return
         
@@ -520,12 +525,13 @@ class HistoricalOptimizationPipeline:
     def _log_summary(self):
         logger.info("\n" + "=" * 70)
         logger.info("📊 PART 2 完成")
-        logger.info(f"   上次比赛日期: {self.results['past_race_date']}")
-        logger.info(f"   期望场次: {self.results['expected_races']}")
-        logger.info(f"   已有场次: {self.results['found_races']}")
-        logger.info(f"   缺失场次: {len(self.results['missing_races'])}")
+        logger.info(f"   处理赛日: {self.results['total_fixtures']} 个")
+        logger.info(f"   有缺失赛日: {self.results['fixtures_with_missing']} 个")
+        logger.info(f"   期望场次: {self.results['total_expected_races']}")
+        logger.info(f"   已有场次: {self.results['total_existing_races']}")
+        logger.info(f"   缺失场次总数: {sum(len(m['missing']) for m in self.results['total_missing_races'])}")
         logger.info(f"   新抓取赛果: {self.results['scraped_results']}")
-        logger.info(f"   同步马匹数: {len(self.results['horses_synced'])}")
+        logger.info(f"   同步马匹数: {len(self.results['unique_horses_synced'])}")
         logger.info(f"   模型已训练: {self.results['model_trained']}")
         if self.results.get("errors"):
             logger.warning(f"   错误数: {len(self.results['errors'])}")
@@ -560,7 +566,7 @@ def main():
         "--days-back",
         type=int,
         default=30,
-        help="Part 3: 检查过去多少日的赛事的马匹完整性 (default 30)"
+        help="Part 2 & 3: 检查过去多少日的赛事 (default 30)"
     )
     parser.add_argument(
         "--skip-sync",
@@ -586,7 +592,8 @@ def main():
     if args.part is None or args.part == 2:
         history = HistoricalOptimizationPipeline(
             dry_run=args.dry_run,
-            skip_training=args.skip_training
+            skip_training=args.skip_training,
+            days_back=args.days_back,
         )
         success = history.run() and success
     
