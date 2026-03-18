@@ -51,36 +51,53 @@ async def scrape_next_racecards() -> int:
         return 0
     
     try:
-        # Find next race day from fixtures
+        # Find next race day from fixtures (use "date" field)
         today = datetime.now().strftime("%Y-%m-%d")
         
         fixture = db.db["fixtures"].find_one(
-            {"race_date": {"$gte": today}},
-            sort=[("race_date", 1)]
+            {"date": {"$gte": today}},
+            sort=[("date", 1)]
         )
         
         if not fixture:
             logger.warning("No upcoming race day found in fixtures")
             return 0
         
-        race_date = fixture["race_date"]
-        venue = fixture["venue"]
+        race_date = fixture["date"]
+        venue = fixture.get("venue", "ST")
         
         logger.info(f"Found next race day: {race_date} ({venue})")
         
-        # Check if already scraped
-        existing = db.db["racecards"].count_documents({
+        # Check if already scraped (complete = all races present)
+        existing_count = db.db["racecards"].count_documents({
             "race_date": race_date,
             "venue": venue
         })
+        expected_count = fixture.get("race_count", 0)
         
-        if existing > 0:
-            logger.info(f"Racecards already exist for {race_date} ({venue})")
+        if existing_count >= expected_count and expected_count > 0:
+            logger.info(f"Racecards already complete for {race_date} ({venue}): {existing_count}/{expected_count}")
             return 0
+        
+        # Mark fixture as queued
+        db.db["fixtures"].update_one(
+            {"date": race_date, "venue": venue},
+            {"$set": {"scrape_status": "queued"}}
+        )
         
         # Scrape
         db.disconnect()  # Close before scraper uses its own connection
         count = await scrape_race_day(race_date, venue)
+        
+        if count > 0:
+            # Mark fixture as completed
+            db2 = DatabaseConnection()
+            db2.connect()
+            db2.db["fixtures"].update_one(
+                {"date": race_date, "venue": venue},
+                {"$set": {"scrape_status": "completed"}}
+            )
+            db2.disconnect()
         
         return count
     

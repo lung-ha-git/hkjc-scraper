@@ -134,22 +134,68 @@ class FutureRacePipeline:
             return None
     
     def _scrape_racecards(self, fixture: dict):
-        """3 & 4. 抓取排位表并存入 MongoDB"""
+        """3 & 4. 抓取排位表并存入 MongoDB (Idempotent)"""
         logger.info("\n🏇 Step 3 & 4: 抓取排位表")
         
         race_date = fixture["date"]
-        venue = fixture["venue"]
+        venue = fixture.get("venue", "ST")
+        status = fixture.get("scrape_status", "pending")
+        
+        # Idempotency: skip if already completed
+        if status == "completed":
+            logger.info(f"   ⏭️  {race_date} ({venue}) 已完成，跳过")
+            self.results["racecards"] = fixture.get("race_count", 0)
+            return
         
         if self.dry_run:
             logger.info(f"   [DRY RUN] 跳过 racecard 抓取 {race_date} {venue}")
             return
         
         try:
-            # Use existing racecard module
+            # Connect to check existing racecards count
+            db = DatabaseConnection()
+            if not db.connect():
+                logger.error("   ❌ Cannot connect to MongoDB")
+                return
+            
+            existing = db.db["racecards"].count_documents({
+                "race_date": race_date,
+                "venue": venue
+            })
+            
+            if existing >= fixture.get("race_count", 0) and fixture.get("race_count", 0) > 0:
+                logger.info(f"   ✅ {race_date} ({venue}) 已有 {existing} 場 racecards，直接標記完成")
+                db.db["fixtures"].update_one(
+                    {"date": race_date, "venue": venue},
+                    {"$set": {"scrape_status": "completed"}}
+                )
+                db.disconnect()
+                self.results["racecards"] = existing
+                return
+            
+            db.disconnect()
+            
+            # Scrape from HKJC
             count = asyncio.run(scrape_race_day(race_date, venue))
             
+            if count > 0:
+                # Mark as completed
+                db2 = DatabaseConnection()
+                db2.connect()
+                db2.db["fixtures"].update_one(
+                    {"date": race_date, "venue": venue},
+                    {"$set": {"scrape_status": "completed"}}
+                )
+                db2.disconnect()
+                logger.info(f"   ✅ 抓取了 {count} 场赛事並標記完成")
+            else:
+                logger.warning(f"   ⚠️ 未能抓取 {race_date} ({venue}) 的 racecards")
+            
             self.results["racecards"] = count
-            logger.info(f"   ✅ 抓取了 {count} 场赛事")
+            
+        except Exception as e:
+            logger.error(f"   ❌ Racecard 抓取失败: {e}")
+            self.results.setdefault("errors", []).append(str(e))
             
         except Exception as e:
             logger.error(f"   ❌ Racecard 抓取失败: {e}")

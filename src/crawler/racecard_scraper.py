@@ -351,9 +351,13 @@ class RaceCardScraper:
                 horse["race_no"] = race_no
             
             if horses:
-                # Delete old entries and insert new
-                db.db["racecard_entries"].delete_many({"race_id": race_id})
-                db.db["racecard_entries"].insert_many(horses)
+                # Upsert each horse entry (not delete + insert) - delta change safe
+                for horse in horses:
+                    db.db["racecard_entries"].update_one(
+                        {"race_id": race_id, "horse_no": horse.get("horse_no")},
+                        {"$set": horse},
+                        upsert=True
+                    )
             
             logger.info(f"   ✅ Race {race_no}: {len(horses)} horses")
         
