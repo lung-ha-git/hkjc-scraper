@@ -581,14 +581,18 @@ def main():
     logger.info(f"   时间: {datetime.now()}")
     logger.info(f"   Dry Run: {args.dry_run}")
     logger.info(f"   Skip Training: {args.skip_training}")
-    
+
+    # Collect per-part results for MongoDB logging
+    part_results = {}
+
     success = True
-    
+
     # Part 1: Future Race
     if args.part is None or args.part == 1:
         future = FutureRacePipeline(dry_run=args.dry_run)
-        success = future.run() and success
-    
+        part_results["part1"] = {"success": future.run(), "data": future.results}
+        success = part_results["part1"]["success"] and success
+
     # Part 2: Historical
     if args.part is None or args.part == 2:
         history = HistoricalOptimizationPipeline(
@@ -596,18 +600,20 @@ def main():
             skip_training=args.skip_training,
             days_back=args.days_back,
         )
-        success = history.run() and success
-    
+        part_results["part2"] = {"success": history.run(), "data": history.results}
+        success = part_results["part2"]["success"] and success
+
     # Part 3: Horse data completeness check
     if args.part is None or args.part == 3:
         logger.info(f"\n🐴 Starting Part 3 (days_back={args.days_back}, skip_sync={args.skip_sync})")
-        part3_results = asyncio.run(completeness_check_and_sync(
+        part3_data = asyncio.run(completeness_check_and_sync(
             days_back=args.days_back,
             dry_run=args.dry_run,
             skip_sync=args.skip_sync,
         ))
-        logger.info(f"Part 3 results: {part3_results}")
-    
+        part_results["part3"] = {"success": True, "data": part3_data}
+        logger.info(f"Part 3 results: {part3_data}")
+
     # Final summary
     logger.info("\n" + "=" * 70)
     if success:
@@ -615,8 +621,63 @@ def main():
     else:
         logger.error("❌ Pipeline 有错误")
     logger.info("=" * 70)
-    
+
+    # Log run summary to MongoDB
+    _log_run_summary_to_mongodb(success, args, part_results)
+
     sys.exit(0 if success else 1)
+
+
+def _log_run_summary_to_mongodb(success: bool, args, part_results: dict):
+    """Write pipeline run summary to MongoDB for tracking & alerting"""
+    try:
+        from src.database.connection import DatabaseConnection
+        db_conn = DatabaseConnection()
+        if not db_conn.connect():
+            logger.warning("Cannot connect to MongoDB for run logging")
+            return
+
+        # Extract key metrics from each part
+        def safe_get(results, *keys, default=None):
+            for k in keys:
+                if isinstance(results, dict):
+                    results = results.get(k, default)
+                else:
+                    return default
+            return results
+
+        doc = {
+            "run_at": datetime.now().isoformat(),
+            "success": success,
+            "dry_run": args.dry_run,
+            "parts_run": [p for p in [1, 2, 3] if args.part is None or args.part == p],
+            "days_back": args.days_back,
+            "log_file": str(LOG_DIR / f"pipeline_{datetime.now().strftime('%Y%m%d')}.log"),
+
+            # Part 1
+            "part1_fixtures_synced": safe_get(part_results.get("part1", {}).get("data"), "fixtures", default=0),
+            "part1_racecards_scraped": safe_get(part_results.get("part1", {}).get("data"), "racecards", default=0),
+
+            # Part 2
+            "part2_fixtures_processed": safe_get(part_results.get("part2", {}).get("data"), "total_fixtures", default=0),
+            "part2_races_scraped": safe_get(part_results.get("part2", {}).get("data"), "scraped_results", default=0),
+            "part2_horses_synced": len(safe_get(part_results.get("part2", {}).get("data"), "unique_horses_synced", default=set())) or 0,
+            "part2_model_trained": safe_get(part_results.get("part2", {}).get("data"), "model_trained", default=False),
+            "part2_errors": safe_get(part_results.get("part2", {}).get("data"), "errors", default=[]),
+
+            # Part 3
+            "part3_total_horses": safe_get(part_results.get("part3", {}).get("data"), "total_recent_horses", default=0),
+            "part3_complete": safe_get(part_results.get("part3", {}).get("data"), "complete", default=0),
+            "part3_incomplete": safe_get(part_results.get("part3", {}).get("data"), "incomplete", default=0),
+            "part3_queued": safe_get(part_results.get("part3", {}).get("data"), "queued", default=0),
+            "part3_missing_fields": safe_get(part_results.get("part3", {}).get("data"), "missing_by_field", default={}),
+        }
+
+        db_conn.db["pipeline_runs"].insert_one(doc)
+        db_conn.disconnect()
+        logger.info(f"✅ Run summary logged to MongoDB: pipeline_runs")
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to log run summary to MongoDB: {e}")
 
 
 if __name__ == "__main__":
