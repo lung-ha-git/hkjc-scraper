@@ -15,17 +15,19 @@ from datetime import datetime, timedelta
 from typing import Set, Tuple
 
 from src.database.connection import DatabaseConnection
-from src.pipeline.deep_sync import sync_single_horse
 
 logger = logging.getLogger(__name__)
 
 
 # Fields critical for ML training, ordered by priority
-CRITICAL_FIELDS = [
+# Format: (field_name, human_label)
+# NOTE: career_starts=0 is valid for new horses, excluded from completeness check
+CRITICAL_FIELDS_ML = [
     ("current_rating", "rating"),
+]
+CRITICAL_FIELDS_DISPLAY = [
     ("name", "name"),
     ("jersey_url", "jersey"),
-    ("career_starts", "career stats"),
 ]
 
 
@@ -51,41 +53,62 @@ def get_recent_horse_ids(days_back: int = 30) -> Set[str]:
         db.disconnect()
 
 
-def check_horse_completeness(hkjc_horse_id: str, db) -> Tuple[bool, list]:
+def check_horse_completeness(hkjc_horse_id: str, db) -> Tuple[bool, list, dict]:
     """
     Check if a horse has complete critical fields in horses collection
     
     Returns:
-        (is_complete, list_of_missing_fields)
+        (is_complete, list_of_missing_ml_fields, missing_display_fields)
+        is_complete: True only if ALL ML-critical fields present
     """
     horse = db.db["horses"].find_one({"hkjc_horse_id": hkjc_horse_id})
     
     if not horse:
-        return False, ["not_in_collection"]
+        return False, ["not_in_collection"], []
     
-    missing = []
-    for field, label in CRITICAL_FIELDS:
+    missing_ml = []
+    missing_display = []
+    
+    for field, label in CRITICAL_FIELDS_ML:
         value = horse.get(field)
-        if value is None or value == "" or value == 0:
-            missing.append(label)
+        if value is None or value == "":
+            missing_ml.append(label)
     
-    return len(missing) == 0, missing
+    for field, label in CRITICAL_FIELDS_DISPLAY:
+        value = horse.get(field)
+        if value is None or value == "":
+            missing_display.append(label)
+    
+    all_missing = missing_ml + missing_display
+    return len(missing_ml) == 0, all_missing, missing_display
 
 
-def get_already_synced_recently(db, hours: int = 24) -> Set[str]:
-    """Get horse IDs that were recently synced (within N hours)"""
+def was_horse_recently_synced(db, hkjc_horse_id: str, hours: int = 24) -> bool:
+    """
+    Check if horse was recently synced by looking at horses.last_updated.
+    If last_updated is within N hours, skip re-queuing.
+    """
+    horse = db.db["horses"].find_one(
+        {"hkjc_horse_id": hkjc_horse_id},
+        {"last_updated": 1}
+    )
+    
+    if not horse:
+        return False
+    
+    last_updated = horse.get("last_updated")
+    if not last_updated:
+        return False
+    
+    # Handle both string and datetime formats
+    if isinstance(last_updated, str):
+        try:
+            last_updated = datetime.fromisoformat(last_updated.replace("Z", "+00:00"))
+        except ValueError:
+            return False
+    
     cutoff = datetime.now() - timedelta(hours=hours)
-    
-    entries = list(db.db["scrape_queue"].find(
-        {
-            "type": "horse_detail",
-            "modified_at": {"$gte": cutoff},
-            "status": {"$in": ["completed", "in_progress"]}
-        },
-        {"horse_id": 1}
-    ))
-    
-    return {e.get("horse_id") for e in entries if e.get("horse_id")}
+    return last_updated >= cutoff
 
 
 def add_to_sync_queue(db, hkjc_horse_id: str) -> bool:
@@ -150,6 +173,7 @@ async def completeness_check_and_sync(
         "queued": 0,
         "skipped_already_synced": 0,
         "missing_by_field": {},
+        "missing_display_only": 0,
     }
     
     # Step 1: Get horses from recent races
@@ -161,39 +185,48 @@ async def completeness_check_and_sync(
         logger.info("   No horses found in recent races")
         return results
     
-    # Step 2: Get already synced horses (to avoid re-queueing)
+    # Step 2: Check each horse
     db = DatabaseConnection()
     if not db.connect():
         logger.error("Cannot connect to MongoDB")
         return results
     
     try:
-        already_synced = get_already_synced_recently(db, hours=24)
-        logger.info(f"   {len(already_synced)} horses synced in last 24h (will skip)")
-        
-        # Step 3: Check each horse
         logger.info(f"\n🔍 Step 2: Checking completeness of {len(recent_ids)} horses...")
         
         to_sync = []
         
         for hkjc_horse_id in sorted(recent_ids):
-            is_complete, missing = check_horse_completeness(hkjc_horse_id, db)
+            is_complete, all_missing, missing_display = check_horse_completeness(hkjc_horse_id, db)
             
             if is_complete:
                 results["complete"] += 1
             else:
                 results["incomplete"] += 1
-                for m in missing:
+                
+                # ML-critical missing fields
+                ml_missing = [m for m in all_missing if m not in missing_display]
+                for m in ml_missing:
                     results["missing_by_field"][m] = results["missing_by_field"].get(m, 0) + 1
                 
-                if hkjc_horse_id not in already_synced and not skip_sync:
+                # Display-only missing (less urgent)
+                if missing_display and not ml_missing:
+                    results["missing_display_only"] += 1
+                
+                # Skip if already recently synced
+                if was_horse_recently_synced(db, hkjc_horse_id, hours=24):
+                    results["skipped_already_synced"] += 1
+                elif not skip_sync:
                     to_sync.append(hkjc_horse_id)
         
-        # Step 4: Queue incomplete horses for sync
+        # Step 3: Queue incomplete horses for sync
         if dry_run:
-            logger.info(f"\n📋 [DRY RUN] Would queue {len(to_sync)} horses for deep sync:")
-            for hid in to_sync:
-                logger.info(f"   - {hid}")
+            if to_sync:
+                logger.info(f"\n📋 [DRY RUN] Would queue {len(to_sync)} horses for deep sync:")
+                for hid in to_sync:
+                    logger.info(f"   - {hid}")
+            else:
+                logger.info(f"\n📋 [DRY RUN] No horses need syncing")
         elif to_sync:
             logger.info(f"\n🔄 Step 3: Queuing {len(to_sync)} horses for deep sync...")
             
@@ -202,8 +235,6 @@ async def completeness_check_and_sync(
                 if add_to_sync_queue(db, hkjc_horse_id):
                     logger.info(f"   ✅ Queued: {hkjc_horse_id}")
                     queued_count += 1
-                else:
-                    results["skipped_already_synced"] += 1
             
             results["queued"] = queued_count
     
@@ -215,11 +246,12 @@ async def completeness_check_and_sync(
     logger.info("📊 PART 3 完成")
     logger.info(f"   最近 {days_back} 日賽事馬匹: {results['total_recent_horses']}")
     logger.info(f"   資料完整: {results['complete']}")
-    logger.info(f"   資料不完整: {results['incomplete']}")
+    logger.info(f"   資料不完整 (ML): {results['incomplete'] - results['missing_display_only']}")
+    logger.info(f"   資料不完整 (僅Display): {results['missing_display_only']}")
     logger.info(f"   已加入同步隊列: {results['queued']}")
-    logger.info(f"   跳過 (已同步): {results['skipped_already_synced']}")
+    logger.info(f"   跳過 (24h內已同步): {results['skipped_already_synced']}")
     if results["missing_by_field"]:
-        logger.info(f"   缺失字段:")
+        logger.info(f"   缺失 ML 字段:")
         for field, count in sorted(results["missing_by_field"].items()):
             logger.info(f"     - {field}: {count}")
     logger.info("=" * 70)
