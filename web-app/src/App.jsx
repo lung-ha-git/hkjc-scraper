@@ -31,10 +31,20 @@ function App() {
   const [horseDetails, setHorseDetails] = useState({});
   const [bestTimes, setBestTimes] = useState({});
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('results'); // 'results' or 'upcoming'
+  const [fixtures, setFixtures] = useState([]);
+  const [selectedFixture, setSelectedFixture] = useState(null);
 
   useEffect(() => {
     fetchRaces();
+    fetchFixtures();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'upcoming' && fixtures.length > 0 && !selectedFixture) {
+      setSelectedFixture(fixtures[0]);
+    }
+  }, [activeTab, fixtures]);
 
   useEffect(() => {
     if (selectedRace && selectedRace.results) {
@@ -59,6 +69,15 @@ function App() {
       setRaces(MOCK_RACE_DATA);
       setSelectedRace(MOCK_RACE_DATA[0]);
       setLoading(false);
+    }
+  };
+
+  const fetchFixtures = async () => {
+    try {
+      const res = await axios.get('/api/fixtures?mode=upcoming');
+      setFixtures(res.data || []);
+    } catch (error) {
+      console.log('Error fetching fixtures:', error);
     }
   };
 
@@ -140,20 +159,39 @@ function App() {
     <div className="app">
       <header className="header">
         <h1>🏇 HKJC AI 預測系統</h1>
-        <span className="date">{selectedRace?.race_date || '2026/03/22'} - {selectedRace?.venue || 'ST'}</span>
+        <div className="header-tabs">
+          <button 
+            className={`header-tab ${activeTab === 'results' ? 'active' : ''}`}
+            onClick={() => setActiveTab('results')}
+          >
+            賽果
+          </button>
+          <button 
+            className={`header-tab ${activeTab === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setActiveTab('upcoming')}
+          >
+            賽程
+          </button>
+        </div>
       </header>
 
-      <div className="race-tabs">
-        {races.map(race => (
-          <button
-            key={`${race.race_date}-${race.race_no}`}
-            className={`race-tab ${selectedRace?.race_no === race.race_no ? 'active' : ''}`}
-            onClick={() => setSelectedRace(race)}
-          >
-            R{race.race_no}
-          </button>
-        ))}
-      </div>
+      {activeTab === 'results' ? (
+        <>
+          <div className="date-bar">
+            {selectedRace?.race_date || '2026/03/15'} - {selectedRace?.venue || 'ST'}
+          </div>
+
+          <div className="race-tabs">
+            {races.map(race => (
+              <button
+                key={`${race.race_date}-${race.race_no}`}
+                className={`race-tab ${selectedRace?.race_no === race.race_no ? 'active' : ''}`}
+                onClick={() => setSelectedRace(race)}
+              >
+                R{race.race_no}
+              </button>
+            ))}
+          </div>
 
       <div className="main-layout">
         <div className="race-card">
@@ -296,6 +334,44 @@ function App() {
           </div>
         </div>
       </div>
+      </>
+      ) : (
+        // Upcoming Fixtures Tab
+        <div className="fixtures-view">
+          <div className="fixtures-list">
+            <h2>未來賽程</h2>
+            {fixtures.length === 0 ? (
+              <div className="no-data">暫無賽程數據</div>
+            ) : (
+              fixtures.map((fixture, idx) => (
+                <div 
+                  key={idx} 
+                  className={`fixture-item ${selectedFixture?.date === fixture.date ? 'active' : ''}`}
+                  onClick={() => setSelectedFixture(fixture)}
+                >
+                  <div className="fixture-date">{fixture.date}</div>
+                  <div className="fixture-venue">{fixture.venue === 'ST' ? '沙田' : '跑馬地'}</div>
+                  <div className="fixture-races">{fixture.race_count || 8} 場</div>
+                </div>
+              ))
+            )}
+          </div>
+          
+          <div className="fixture-detail">
+            {selectedFixture && (
+              <>
+                <h2>{selectedFixture.date} - {selectedFixture.venue === 'ST' ? '沙田' : '跑馬地'}</h2>
+                <div className="fixture-info">
+                  <span>場次: {selectedFixture.race_count || 8}</span>
+                </div>
+                <p className="fixture-note">
+                  排位表將於賽日前一天自動抓取
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

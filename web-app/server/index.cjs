@@ -23,6 +23,51 @@ connect().catch(console.error);
 
 app.get('/api/health', (req, res) => res.json({ok: 1}));
 
+// Fixtures - upcoming and past race days
+app.get('/api/fixtures', async (req, res) => {
+  const { mode = 'upcoming' } = req.query; // 'upcoming', 'past', or 'all'
+  const today = new Date().toISOString().split('T')[0];
+  
+  let query = {};
+  if (mode === 'upcoming') {
+    query = { date: { $gte: today } };
+  } else if (mode === 'past') {
+    query = { date: { $lt: today } };
+  }
+  
+  const fixtures = await db.collection('fixtures')
+    .find(query)
+    .sort({ date: mode === 'past' ? -1 : 1 })
+    .limit(20)
+    .toArray();
+  
+  res.json(fixtures);
+});
+
+// Racecards - for a specific race day
+app.get('/api/racecards', async (req, res) => {
+  const { date, venue } = req.query;
+  
+  if (!date) {
+    return res.status(400).json({error: 'date required'});
+  }
+  
+  const query = { race_date: date };
+  if (venue) query.venue = venue;
+  
+  const racecards = await db.collection('racecards')
+    .find(query)
+    .sort({ race_no: 1 })
+    .toArray();
+  
+  // Also get horse entries
+  const entries = await db.collection('racecard_entries')
+    .find(query)
+    .toArray();
+  
+  res.json({ racecards, entries });
+});
+
 app.get('/api/races', async (req, res) => {
   const { date } = req.query;
   console.log('Query date:', date);
