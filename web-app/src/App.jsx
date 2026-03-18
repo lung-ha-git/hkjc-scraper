@@ -21,7 +21,7 @@ const DEFAULT_WEIGHTS = {
   dist_wins: 1,
   jt_win_rate: 1,
   draw: -1,
-  randomness: 5
+  randomness: 0  // 設為0，避免經常變動
 };
 
 const MODEL_VERSION = "v1.0.0";
@@ -125,17 +125,20 @@ function App() {
     
     for (const entry of entries) {
       try {
-        // Use horse name to fetch jersey
-        const name = entry.horse_name.trim();
-        const res = await axios.get(`/api/horses/by-name/${encodeURIComponent(name)}`);
-        if (res.data) {
+        // Use horse_id first (e.g., K290), fallback to name
+        let res = null;
+        if (entry.horse_id) {
+          res = await axios.get(`/api/horses/by-id/${entry.horse_id}`);
+        }
+        if (!res?.data) {
+          const name = entry.horse_name.trim();
+          res = await axios.get(`/api/horses/by-name/${encodeURIComponent(name)}`);
+        }
+        if (res?.data) {
           details[entry.horse_name] = res.data;
-          console.log(`Got jersey for ${entry.horse_name}:`, res.data.jersey_url);
-        } else {
-          console.log(`No horse found for: ${entry.horse_name}`);
         }
       } catch (e) {
-        console.log(`Error fetching ${entry.horse_name}:`, e.message);
+        // Ignore errors
       }
     }
     setHorseDetails(details);
@@ -144,13 +147,14 @@ function App() {
   const calculatePredictions = () => {
     if (!racecardData || !selectedRaceNo) return;
     
+    // Get entries sorted by horse_no
     const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
+    entries.sort((a, b) => a.horse_no - b.horse_no);
     
     // Calculate total score for percentage
     let totalScore = 0;
     const results = entries.map((entry) => {
-      let score = 50 + Math.random() * 50;
-      score += (Math.random() - 0.5) * weights.randomness * 10;
+      let score = 50;
       
       // 檔位影響 (負分 = 高檔位不利)
       if (entry.draw) {
@@ -166,17 +170,21 @@ function App() {
         trainer_name: entry.trainer_name,
         draw: entry.draw,
         score,
+        win_prob: 0,
         predicted_rank: 0
       };
     });
 
-    results.sort((a, b) => b.score - a.score);
+    // Sort by score for ranking
+    const sortedResults = [...results].sort((a, b) => b.score - a.score);
     
-    // Calculate win probability percentage
-    results.forEach((r, i) => {
+    // Assign ranks
+    sortedResults.forEach((r, i) => {
       r.predicted_rank = i + 1;
       r.win_prob = totalScore > 0 ? Math.round((r.score / totalScore) * 100) : 0;
     });
+    
+    // Keep original order but add rank info
     setPredictions(results);
   };
 
@@ -332,18 +340,18 @@ function App() {
           <h3>📊 AI 預測排名</h3>
           
           <div className="prediction-list">
-            {predictions.slice(0, 4).map((pred, idx) => {
+            {predictions.slice(0, 4).sort((a,b) => a.predicted_rank - b.predicted_rank).map((pred, idx) => {
               const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
               return (
                 <div key={idx} className="prediction-item top-4">
                   <div 
-                    className={`prediction-rank rank-${idx + 1}`}
+                    className={`prediction-rank rank-${pred.predicted_rank}`}
                     style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
                   >
-                    {pred.horse_no}
+                    {pred.predicted_rank}
                   </div>
                   <div className="prediction-details">
-                    <div className="prediction-name">{pred.horse_name}</div>
+                    <div className="prediction-name">{pred.horse_name} (#{pred.horse_no})</div>
                     <div className="prediction-jockey">{pred.jockey_name}</div>
                   </div>
                   <div className="prediction-prob">
