@@ -198,9 +198,11 @@ function App() {
               <table className="race-table">
                 <thead>
                   <tr>
-                    <th>預測</th>
-                    <th>馬號</th>
-                    <th>馬匹</th>
+                    <th className="mobile-only">馬號</th>
+                    <th className="mobile-only">馬匹</th>
+                    <th className="desktop-only">預測</th>
+                    <th className="desktop-only">馬號</th>
+                    <th className="desktop-only">馬匹</th>
                     <th className="desktop-only">騎師</th>
                     <th className="desktop-only">練馬師</th>
                     <th className="desktop-only">檔位</th>
@@ -217,12 +219,8 @@ function App() {
                     const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
                     return (
                       <tr key={pred.horse_no}>
-                        <td>
-                          <div className={`predicted-rank rank-${pred.predicted_rank}`}>
-                            {pred.predicted_rank}
-                          </div>
-                        </td>
-                        <td>
+                        {/* Mobile: 馬號, 馬匹 */}
+                        <td className="mobile-only">
                           <div 
                             className="horse-number"
                             style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
@@ -230,7 +228,37 @@ function App() {
                             {pred.horse_no}
                           </div>
                         </td>
-                        <td>
+                        <td className="mobile-only">
+                          <div className="horse-name-cell">
+                            {jersey.type === 'image' ? (
+                              <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
+                            ) : (
+                              <div className="jersey-placeholder" style={{ backgroundColor: jersey.value }}>
+                                {pred.horse_no}
+                              </div>
+                            )}
+                            <span>{pred.horse_name}</span>
+                          </div>
+                        </td>
+                        <td className="mobile-only">{pred.jockey_name}</td>
+                        <td className="mobile-only">{pred.trainer_name}</td>
+                        <td className="mobile-only">{pred.draw}</td>
+                        
+                        {/* Desktop: 預測, 馬號, 馬匹, 騎師, 練馬師, 檔位, 評分, 近績 */}
+                        <td className="desktop-only">
+                          <div className={`predicted-rank rank-${pred.predicted_rank}`}>
+                            {pred.predicted_rank}
+                          </div>
+                        </td>
+                        <td className="desktop-only">
+                          <div 
+                            className="horse-number"
+                            style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
+                          >
+                            {pred.horse_no}
+                          </div>
+                        </td>
+                        <td className="desktop-only">
                           <div className="horse-name-cell">
                             {jersey.type === 'image' ? (
                               <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
@@ -245,7 +273,7 @@ function App() {
                         <td className="desktop-only">{pred.jockey_name}</td>
                         <td className="desktop-only">{pred.trainer_name}</td>
                         <td className="desktop-only">{pred.draw}</td>
-                        <td className="desktop-only">{entry?.rating_change > 0 ? `+${entry?.rating_change}` : entry?.rating_change || '-'}</td>
+                        <td className="desktop-only">{entry?.rating_change || '-'}</td>
                         <td className="desktop-only">{entry?.recent_form || '-'}</td>
                       </tr>
                     );

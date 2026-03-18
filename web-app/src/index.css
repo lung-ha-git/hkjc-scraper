@@ -203,9 +203,15 @@ body {
   .desktop-only {
     display: none !important;
   }
+  .mobile-only {
+    display: table-cell !important;
+  }
 }
 
 @media (min-width: 769px) {
+  .desktop-only {
+    display: table-cell !important;
+  }
   .mobile-only {
     display: none !important;
   }
