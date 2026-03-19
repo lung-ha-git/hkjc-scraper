@@ -33,8 +33,6 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
     
     # Combo stats
     jt_wins, jt_races = defaultdict(int), defaultdict(int)
-    hj_wins, hj_races = defaultdict(int), defaultdict(int)
-    
     for race in races:
         for r in race.get('results', []):
             jockey, trainer, horse_name = r.get('jockey', ''), r.get('trainer', ''), r.get('horse_name', '')
@@ -43,9 +41,28 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
             if jockey and trainer:
                 jt_races[(jockey, trainer)] += 1
                 if rank == 1: jt_wins[(jockey, trainer)] += 1
-            if horse_name and jockey:
-                hj_races[(horse_name, jockey)] += 1
-                if rank == 1: hj_wins[(horse_name, jockey)] += 1
+    
+    # Build distance + venue stats from race history
+    dist_time_stats = defaultdict(list)
+    venue_dist_time_stats = defaultdict(list)
+    
+    for rh in db.db['horse_race_history'].find({}):
+        try:
+            ft = float(rh.get('finish_time', 0))
+            dist = int(rh.get('distance', 0))
+            venue = rh.get('venue', '')
+            if ft > 0 and dist > 0:
+                dist_time_stats[dist].append(ft)
+                # Extract venue from venue string (e.g., "沙田草地\"C\"" -> "ST")
+                v_key = 'HV' if '跑馬地' in venue or 'HV' in venue else 'ST'
+                venue_dist_time_stats[(v_key, dist)].append(ft)
+        except: pass
+    
+    # Calculate best times for each distance and venue+distance
+    dist_best_time = {d: min(times) for d, times in dist_time_stats.items() if times}
+    venue_dist_best = {}
+    for (v, d), times in venue_dist_time_stats.items():
+        venue_dist_best[(v, d)] = min(times)
     
     # Race history with finish times
     race_history = {}
@@ -143,7 +160,10 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
             
             # Combos
             jt_wr = jt_wins.get((jockey_name, trainer_name), 0) / jt_races.get((jockey_name, trainer_name), 1) if jt_races.get((jockey_name, trainer_name), 0) > 0 else 0
-            hj_wr = hj_wins.get((horse_name, jockey_name), 0) / hj_races.get((horse_name, jockey_name), 1) if hj_races.get((horse_name, jockey_name), 0) > 0 else 0
+            
+            # Best time for this distance and venue+distance
+            best_dist_time = dist_best_time.get(race_dist, 0)
+            best_venue_dist_time = venue_dist_best.get((race_venue, race_dist), 0)
             
             j = jockeys.get(jockey_name)
             j_wr = (j.get('wins', 0) or 0) / max(1, j.get('total_rides', 0) or 0) if j else 0
@@ -164,7 +184,8 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
                 'recent3_avg_rank': recent3_avg, 'recent3_wins': recent3_wins, 'venue_avg_rank': venue_avg,
                 'jockey_win_rate': j_wr, 'trainer_win_rate': t_wr, 'jt_win_rate': jt_wr, 
                 'jt_races': jt_races.get((jockey_name, trainer_name), 0),
-                'hj_win_rate': hj_wr, 'hj_races': hj_races.get((horse_name, jockey_name), 0),
+                'best_dist_time': best_dist_time,
+                'best_venue_dist_time': best_venue_dist_time,
                 'best_finish_time': best_finish if best_finish else 0,
                 'finish_time_diff': finish_diff,
                 'draw_dist': draw * race_dist, 'draw_rating': draw * current_rating,
@@ -183,7 +204,7 @@ def train_and_evaluate(df):
         'track_wins', 'track_runs', 'track_win_rate',
         'recent3_avg_rank', 'recent3_wins', 'venue_avg_rank',
         'jockey_win_rate', 'trainer_win_rate', 'jt_win_rate', 'jt_races',
-        'hj_win_rate', 'hj_races',
+        'best_dist_time', 'best_venue_dist_time',
         'best_finish_time', 'finish_time_diff',
         'draw_dist', 'draw_rating'
     ]
