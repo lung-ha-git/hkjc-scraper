@@ -121,10 +121,20 @@ class CompleteHorseScraper:
         
         info = {}
         
-        # Horse name from title or page
-        title_match = re.search(r'<h1[^>]*>(.+?)</h1>', content, re.DOTALL)
+        # Horse name from title tag (e.g., "榮耀盛甲 - 馬匹資料 - 香港賽馬會")
+        title_match = re.search(r'<title[^>]*>([^<]+)', content)
         if title_match:
-            info["name"] = re.sub(r'<[^>]+>', '', title_match.group(1)).strip()
+            title = title_match.group(1).strip()
+            # Extract name before " - " separator
+            if ' - ' in title:
+                info["name"] = title.split(' - ')[0].strip()
+            else:
+                info["name"] = title.strip()
+        
+        # Also try h1 as fallback
+        h1_match = re.search(r'<h1[^>]*>(.+?)</h1>', content, re.DOTALL)
+        if h1_match and not info.get("name"):
+            info["name"] = re.sub(r'<[^>]+>', '', h1_match.group(1)).strip()
         
         # Extract using patterns
         patterns = {
