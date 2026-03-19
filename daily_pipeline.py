@@ -641,6 +641,9 @@ class QueueWorkerPipeline:
                     horse_id = job.get("horse_id")
                     try:
                         # Run async sync
+                        import sys
+                        sys.path.insert(0, str(PROJECT_ROOT))
+                        from src.pipeline.deep_sync import sync_single_horse
                         result = asyncio.run(sync_single_horse(horse_id))
                         if result:
                             self.results["success"] += 1

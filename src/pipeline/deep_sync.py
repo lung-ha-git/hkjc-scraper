@@ -25,13 +25,13 @@ async def sync_single_horse(horse_id: str, force: bool = False) -> bool:
     Returns:
         True if successful
     """
-    async with CompleteHorseScraper(headless=True, delay=2) as scraper:
-        try:
-            result = await scraper.scrape_horse_complete(horse_id)
-            
-            if not result:
-                logger.warning(f"No data returned for {horse_id}")
-                return False
+    scraper = CompleteHorseScraper(headless=True, delay=2)
+    try:
+        result = await scraper.scrape_horse_complete(horse_id)
+        
+        if not result:
+            logger.warning(f"No data returned for {horse_id}")
+            return False
             
             db = DatabaseConnection()
             if not db.connect():
@@ -148,10 +148,10 @@ async def sync_single_horse(horse_id: str, force: bool = False) -> bool:
             
             db.disconnect()
             return True
-        
-        except Exception as e:
-            logger.error(f"Error syncing horse {horse_id}: {e}")
-            return False
+    
+    except Exception as e:
+        logger.error(f"Error syncing horse {horse_id}: {e}")
+        return False
 
 
 async def deep_sync_horse_data(days_back: int = 7, limit: int = 50) -> int:
