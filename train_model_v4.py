@@ -42,6 +42,47 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
                 jt_races[(jockey, trainer)] += 1
                 if rank == 1: jt_wins[(jockey, trainer)] += 1
     
+    # Track condition wins/runs
+    track_cond_wins = defaultdict(int)
+    track_cond_runs = defaultdict(int)
+    
+    # Early pace stats (from running_position)
+    early_pace_scores = defaultdict(list)
+    
+    for race in races:
+        track_cond = race.get('track_condition', '好地')
+        for r in race.get('results', []):
+            horse_name = r.get('horse_name', '')
+            running_pos = r.get('running_position', '')
+            try: rank = int(r.get('rank', 0)) if r.get('rank') else 0
+            except: rank = 0
+            
+            # Track condition stats
+            if horse_name and track_cond:
+                track_cond_runs[(horse_name, track_cond)] += 1
+                if rank == 1: track_cond_wins[(horse_name, track_cond)] += 1
+            
+            # Early pace (parse first position from "1 2 3" pattern)
+            if running_pos and horse_name:
+                parts = running_pos.split()
+                if parts:
+                    try:
+                        first_pos = int(parts[0])
+                        # Lower first position = front-runner = higher pace score
+                        # Invert so high score = front-runner
+                        early_pace_scores[horse_name].append(first_pos)
+                    except: pass
+    
+    # Calculate avg early pace (lower = front-runner)
+    avg_early_pace = {h: sum(scores)/len(scores) for h, scores in early_pace_scores.items() if scores}
+    
+    # Calculate track condition win rates
+    track_cond_winrate = {}
+    for (horse, cond), wins in track_cond_wins.items():
+        runs = track_cond_runs.get((horse, cond), 0)
+        if runs > 0:
+            track_cond_winrate[(horse, cond)] = wins / runs
+    
     # Build distance + venue stats from race history
     dist_time_stats = defaultdict(list)
     venue_dist_time_stats = defaultdict(list)
@@ -165,6 +206,18 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
             best_dist_time = dist_best_time.get(race_dist, 0)
             best_venue_dist_time = venue_dist_best.get((race_venue, race_dist), 0)
             
+            # New: Track condition adaptation
+            tc_wr = track_cond_winrate.get((horse_name, track_cond), 0)
+            tc_runs = track_cond_runs.get((horse_name, track_cond), 0)
+            
+            # New: Early pace score (lower = front-runner, higher = closer)
+            avg_ep = avg_early_pace.get(horse_name, 10)  # default 10 = unknown/very slow early
+            
+            # New: Weight advantage (lighter = better, typical min ~113)
+            # actual_weight from race result if available, else 0
+            actual_wt = r.get('actual_weight', 0) if 'r' in dir() else 0
+            weight_advantage = max(0, 120 - actual_wt) if actual_wt > 0 else 0
+            
             j = jockeys.get(jockey_name)
             j_wr = (j.get('wins', 0) or 0) / max(1, j.get('total_rides', 0) or 0) if j else 0
             
@@ -189,6 +242,11 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
                 'best_finish_time': best_finish if best_finish else 0,
                 'finish_time_diff': finish_diff,
                 'draw_dist': draw * race_dist, 'draw_rating': draw * current_rating,
+                'track_cond_winrate': tc_wr,
+                'track_cond_runs': tc_runs,
+                'early_pace_score': avg_ep,
+                'weight_advantage': weight_advantage,
+                # Target variable (not a feature)
                 'actual_rank': rank,
             })
     
@@ -206,7 +264,9 @@ def train_and_evaluate(df):
         'jockey_win_rate', 'trainer_win_rate', 'jt_win_rate', 'jt_races',
         'best_dist_time', 'best_venue_dist_time',
         'best_finish_time', 'finish_time_diff',
-        'draw_dist', 'draw_rating'
+        'draw_dist', 'draw_rating',
+        'track_cond_winrate', 'track_cond_runs',
+        'early_pace_score', 'weight_advantage'
     ]
     
     X = df[features].fillna(0).replace([float('inf'), float('-inf')], 0)
