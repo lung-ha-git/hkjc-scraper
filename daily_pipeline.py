@@ -34,6 +34,7 @@ from src.pipeline.racecards import scrape_next_racecards, scrape_race_day
 from src.pipeline.history import sync_past_race_results, get_race_gaps
 from src.pipeline.deep_sync import sync_single_horse, get_horses_needing_sync
 from src.pipeline.completeness import completeness_check_and_sync
+from src.scheduler.queue_worker import QueueWorker
 
 # ============================================================================
 # LOGGING SETUP
@@ -586,6 +587,103 @@ class HistoricalOptimizationPipeline:
 
 
 # ============================================================================
+# PART 4: QUEUE WORKER
+# ============================================================================
+
+class QueueWorkerPipeline:
+    """
+    第四部分：处理 scrape_queue 中的马匹数据同步任务
+    """
+    
+    def __init__(self, dry_run: bool = False, max_items: int = 50):
+        self.dry_run = dry_run
+        self.max_items = max_items
+        self.results = {
+            "processed": 0,
+            "success": 0,
+            "failed": 0,
+            "errors": []
+        }
+    
+    def run(self) -> bool:
+        """执行 queue worker"""
+        logger.info("=" * 70)
+        logger.info("🔄 PART 4: QUEUE WORKER")
+        logger.info("=" * 70)
+        
+        if self.dry_run:
+            logger.info("   [DRY RUN] 跳过 queue processing")
+            return True
+        
+        try:
+            from src.scheduler.queue_worker import QueueWorker
+            
+            worker = QueueWorker()
+            
+            if not worker.connect():
+                logger.error("   ❌ Cannot connect to MongoDB")
+                return False
+            
+            logger.info(f"   Processing up to {self.max_items} queue items...")
+            
+            # Process horse detail queue
+            for i in range(self.max_items):
+                job = worker.claim_next_job("scrape_queue")
+                if not job:
+                    logger.info(f"   ✅ No more pending jobs")
+                    break
+                
+                self.results["processed"] += 1
+                logger.info(f"   Processing: {job.get('horse_id', job.get('target_url'))}")
+                
+                # Process based on job type
+                if job.get("type") == "horse_detail":
+                    horse_id = job.get("horse_id")
+                    try:
+                        # Run async sync
+                        result = asyncio.run(sync_single_horse(horse_id))
+                        if result:
+                            self.results["success"] += 1
+                            logger.info(f"   ✅ Synced: {horse_id}")
+                        else:
+                            self.results["failed"] += 1
+                            logger.warning(f"   ⚠️ Failed: {horse_id}")
+                    except Exception as e:
+                        self.results["failed"] += 1
+                        self.results["errors"].append(str(e))
+                        logger.error(f"   ❌ Error syncing {horse_id}: {e}")
+                
+                # Mark job as completed/failed
+                status = "completed" if job.get("status") != "failed" else "failed"
+                worker.db.db["scrape_queue"].update_one(
+                    {"_id": job["_id"]},
+                    {"$set": {"status": status, "processed_at": datetime.now().isoformat()}}
+                )
+                
+                import time
+                time.sleep(1)  # Rate limit
+            
+            worker.disconnect()
+            
+            self._log_summary()
+            return self.results["failed"] == 0
+            
+        except Exception as e:
+            logger.error(f"   ❌ Queue worker error: {e}")
+            return False
+    
+    def _log_summary(self):
+        logger.info("\n" + "=" * 70)
+        logger.info("📊 PART 4 完成")
+        logger.info(f"   处理: {self.results['processed']}")
+        logger.info(f"   成功: {self.results['success']}")
+        logger.info(f"   失败: {self.results['failed']}")
+        if self.results.get("errors"):
+            logger.warning(f"   错误: {len(self.results['errors'])}")
+        logger.info("=" * 70)
+
+
+# ============================================================================
 # MAIN RUNNER
 # ============================================================================
 
@@ -606,8 +704,8 @@ def main():
     parser.add_argument(
         "--part",
         type=int,
-        choices=[1, 2, 3],
-        help="只运行指定部分 (1=未来比赛, 2=历史优化, 3=马匹资料完整性检查)"
+        choices=[1, 2, 3, 4],
+        help="只运行指定部分 (1=未来比赛, 2=历史优化, 3=马匹资料完整性检查, 4=队列处理)"
     )
     parser.add_argument(
         "--days-back",
@@ -659,6 +757,12 @@ def main():
         ))
         part_results["part3"] = {"success": True, "data": part3_data}
         logger.info(f"Part 3 results: {part3_data}")
+
+    # Part 4: Queue Worker
+    if args.part is None or args.part == 4:
+        logger.info(f"\n🔄 Starting Part 4: Queue Worker")
+        queue = QueueWorkerPipeline(dry_run=args.dry_run, max_items=50)
+        part_results["part4"] = {"success": queue.run(), "data": queue.results}
 
     # Final summary
     logger.info("\n" + "=" * 70)
