@@ -65,9 +65,9 @@ app.get('/api/racecards', async (req, res) => {
     .find(query)
     .toArray();
   
-  // Add jersey_url to each entry
+  // Add jersey_url to each entry (lookup by hkjc_horse_id)
   for (const entry of entries) {
-    const horse = await db.collection('horses').findOne({ name: entry.horse_name });
+    const horse = await db.collection('horses').findOne({ hkjc_horse_id: entry.hkjc_horse_id });
     entry.jersey_url = horse?.jersey_url || null;
   }
   
