@@ -25,7 +25,7 @@ import subprocess
 import os
 
 # Add project to path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.database.connection import DatabaseConnection
@@ -506,7 +506,7 @@ class HistoricalOptimizationPipeline:
         
         try:
             # Run training script
-            train_script = PROJECT_ROOT / "hkjc_project" / "train_model_v4.py"
+            train_script = PROJECT_ROOT / "train_model_v4.py"
             
             if not train_script.exists():
                 logger.warning("   ⚠️ 训练脚本不存在")
