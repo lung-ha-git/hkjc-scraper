@@ -136,16 +136,21 @@ class FutureRacePipeline:
             return None
     
     def _scrape_racecards(self, fixture: dict):
-        """3 & 4. 抓取排位表并存入 MongoDB (Idempotent)"""
+        """3 & 4. 抓取排位表并存入 MongoDB (Idempotent - daily update for upcoming races)"""
         logger.info("\n🏇 Step 3 & 4: 抓取排位表")
         
         race_date = fixture["date"]
         venue = fixture.get("venue", "ST")
         status = fixture.get("scrape_status", "pending")
         
-        # Idempotency: skip if already completed
-        if status == "completed":
-            logger.info(f"   ⏭️  {race_date} ({venue}) 已完成，跳过")
+        # Always re-scrape upcoming races (racecards can change daily - scratchings, weights)
+        # Only skip past/completed races that are NOT upcoming
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+        is_future = race_date >= today
+        
+        if status == "completed" and not is_future:
+            logger.info(f"   ⏭️  {race_date} ({venue}) 已完成且非未來賽事，跳过")
             self.results["racecards"] = fixture.get("race_count", 0)
             return
         
