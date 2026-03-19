@@ -305,11 +305,45 @@ class HistoricalOptimizationPipeline:
             logger.error(f"   ❌ 获取过去比赛日失败: {e}")
             return []
     
+    def _get_actual_race_count(self, race_date: str, venue: str) -> int:
+        """从 HKJC results page 获取实际场次数量"""
+        import re
+        import urllib.request
+        import urllib.error
+        
+        url = f"https://racing.hkjc.com/zh-hk/local/information/localresults?racedate={race_date.replace('-', '/')}"
+        
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=15) as response:
+                content = response.read().decode('utf-8', errors='replace')
+            
+            # Find all race numbers: 第X場 pattern
+            race_nums = re.findall(r'第(\d+)場', content)
+            
+            if race_nums:
+                actual_count = max(int(r) for r in race_nums)
+                logger.info(f"   📊 实际场次: {actual_count} (from results page)")
+                return actual_count
+            else:
+                # Fallback to fixture value
+                logger.warning(f"   ⚠️ 无法从 results page 获取场次，使用 fixture 默认值")
+                return 8
+                
+        except urllib.error.HTTPError as e:
+            logger.warning(f"   ⚠️ HTTP error {e.code} 获取场次: {race_date}")
+            return 8
+        except Exception as e:
+            logger.warning(f"   ⚠️ 获取场次失败: {e}")
+            return 8
+    
     def _gap_analysis(self, fixture: dict) -> list:
         """检查单个赛果日的缺失场次"""
         race_date = fixture["date"]
         venue = fixture.get("venue", "ST")
-        expected = fixture.get("race_count", 8)
+        
+        # Get actual race count from results page (more reliable than fixture.race_count)
+        expected = self._get_actual_race_count(race_date, venue)
         
         self.results["total_expected_races"] += expected
         
