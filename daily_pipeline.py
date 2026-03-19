@@ -318,24 +318,31 @@ class HistoricalOptimizationPipeline:
             with urllib.request.urlopen(req, timeout=15) as response:
                 content = response.read().decode('utf-8', errors='replace')
             
-            # Find all race numbers: 第X場 pattern
-            race_nums = re.findall(r'第(\d+)場', content)
+            # Find all RaceNo= patterns in links (more reliable than 第X場 which is JS-rendered)
+            race_nos = re.findall(r'RaceNo=(\d+)', content)
             
-            if race_nums:
-                actual_count = max(int(r) for r in race_nums)
-                logger.info(f"   📊 实际场次: {actual_count} (from results page)")
+            if race_nos:
+                actual_count = max(int(r) for r in race_nos)
+                logger.info(f"   📊 实际场次: {actual_count} (from RaceNo links)")
                 return actual_count
             else:
-                # Fallback to fixture value
-                logger.warning(f"   ⚠️ 无法从 results page 获取场次，使用 fixture 默认值")
-                return 8
+                # Fallback: try 第X場 pattern
+                race_nums = re.findall(r'第\s*(\d+)\s*場', content)
+                if race_nums:
+                    actual_count = max(int(r) for r in race_nums)
+                    logger.info(f"   📊 实际场次: {actual_count} (from 第X場)")
+                    return actual_count
+                
+                # No races found - likely future date
+                logger.warning(f"   ⚠️ 无法从 results page 获取场次 (可能当日无赛事的未来日期)")
+                return 0
                 
         except urllib.error.HTTPError as e:
             logger.warning(f"   ⚠️ HTTP error {e.code} 获取场次: {race_date}")
-            return 8
+            return 0
         except Exception as e:
             logger.warning(f"   ⚠️ 获取场次失败: {e}")
-            return 8
+            return 0
     
     def _gap_analysis(self, fixture: dict) -> list:
         """检查单个赛果日的缺失场次"""
@@ -344,6 +351,11 @@ class HistoricalOptimizationPipeline:
         
         # Get actual race count from results page (more reliable than fixture.race_count)
         expected = self._get_actual_race_count(race_date, venue)
+        
+        # If 0 races, likely future date - skip this fixture
+        if expected == 0:
+            logger.info(f"   跳过 (当日无赛事，可能是未来日期)")
+            return []
         
         self.results["total_expected_races"] += expected
         
