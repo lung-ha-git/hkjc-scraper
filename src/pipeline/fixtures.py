@@ -57,7 +57,7 @@ async def sync_fixtures(months: List[tuple] = None) -> int:
                 fixture_doc = {
                     "date": race_date,  # Canonical field: "date"
                     "venue": venue,
-                    "race_count": fixture.get("race_count", 8),
+                    "race_count": fixture.get("race_count", 12),
                     "first_race_time": fixture.get("first_race_time"),
                     "race_meeting": fixture.get("race_meeting"),
                     "updated_at": datetime.now().isoformat(),
