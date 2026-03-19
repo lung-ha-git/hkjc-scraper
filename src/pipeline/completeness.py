@@ -199,7 +199,7 @@ async def completeness_check_and_sync(
         for hkjc_horse_id in sorted(recent_ids):
             is_complete, all_missing, missing_display = check_horse_completeness(hkjc_horse_id, db)
             
-            if is_complete:
+            if is_complete and not missing_display:
                 results["complete"] += 1
             else:
                 results["incomplete"] += 1
@@ -217,6 +217,7 @@ async def completeness_check_and_sync(
                 if was_horse_recently_synced(db, hkjc_horse_id, hours=24):
                     results["skipped_already_synced"] += 1
                 elif not skip_sync:
+                    # Queue ALL incomplete horses (including those missing display fields like 'name')
                     to_sync.append(hkjc_horse_id)
         
         # Step 3: Queue incomplete horses for sync
