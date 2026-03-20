@@ -99,7 +99,7 @@ def get_next_fixture() -> Dict:
     today = datetime.now().strftime("%Y-%m-%d")
     
     fixture = db.db["fixtures"].find_one(
-        {"date": {"$gte": today}, "scrape_status": {"$ne": "completed"}},
+        {"date": {"$gte": today}, "scrape_status": {"$nin": ["completed", "race_day"]}},
         sort=[("date", 1)]
     )
     

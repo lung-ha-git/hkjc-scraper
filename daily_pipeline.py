@@ -196,7 +196,25 @@ class FutureRacePipeline:
                 db2.disconnect()
                 logger.info(f"   ✅ 抓取了 {count} 场赛事並標記完成")
             else:
-                logger.warning(f"   ⚠️ 未能抓取 {race_date} ({venue}) 的 racecards")
+                # No racecards found - could be not published yet OR it's race day
+                # HKJC publishes racecards around noon the day BEFORE the race
+                # If today is race day, racecards won't appear - mark as race_day (no more retries needed)
+                from datetime import datetime as dt
+                today_str = dt.now().strftime("%Y-%m-%d")
+                is_race_day = (race_date == today_str)
+                
+                if is_race_day:
+                    db3 = DatabaseConnection()
+                    db3.connect()
+                    db3.db["fixtures"].update_one(
+                        {"date": race_date, "venue": venue},
+                        {"$set": {"scrape_status": "race_day"}}
+                    )
+                    db3.disconnect()
+                    logger.info(f"   ℹ️  {race_date} ({venue}) 是賽日當天，排位表已截止，標記為 race_day")
+                else:
+                    logger.warning(f"   ⚠️ 未能抓取 {race_date} ({venue}) 的 racecards（可能尚未發布，明天再試）")
+                    # Keep status as pending - will retry tomorrow
             
             self.results["racecards"] = count
 
