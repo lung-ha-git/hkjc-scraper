@@ -95,6 +95,7 @@ class FeatureEngineer:
             
             # Days since last race
             "days_since_last": self._get_days_since_last_race(horse_id, race_date),
+            "days_rest": self._get_days_since_last_race(horse_id, race_date),
             
             # Sire/dam info
             "sire": horse.get("sire", ""),
@@ -293,16 +294,20 @@ class FeatureEngineer:
         ht_history = [h for h in ht_history if h.get("trainer")]
         
         ht_wins = sum(1 for h in ht_history if self._parse_position(h.get("position")) == 1)
+        ht_places = sum(1 for h in ht_history if self._parse_position(h.get("position", 0)) <= 3)
         
         features = {
             "horse_jockey_races": len(hj_history),
             "horse_jockey_wins": hj_wins,
             "horse_jockey_places": hj_places,
             "horse_jockey_win_rate": hj_wins / len(hj_history) if hj_history else 0,
+            "horse_jockey_place_rate": hj_places / len(hj_history) if hj_history else 0,
             
             "horse_trainer_races": len(ht_history),
             "horse_trainer_wins": ht_wins,
+            "horse_trainer_places": ht_places,
             "horse_trainer_win_rate": ht_wins / len(ht_history) if ht_history else 0,
+            "horse_trainer_place_rate": ht_places / len(ht_history) if ht_history else 0,
         }
         
         return features
@@ -376,6 +381,9 @@ class FeatureEngineer:
                 **trainer_feats,
                 **matchup_feats,
                 "draw": draw,
+                "draw_advantage": self.get_draw_advantage(
+                    draw, race_info.get("venue", ""), race_info.get("distance", 0)
+                ),
                 "horse_number": runner.get("horse_number", 0),
                 "win_odds": runner.get("win_odds", 0) or 0,
             }
@@ -396,7 +404,31 @@ class FeatureEngineer:
             "horses": horse_features_list,
         }
     
-    # ==================== Helper Methods ====================
+    def get_draw_advantage(self, draw: int, venue: str, distance: int) -> float:
+        """
+        Calculate draw advantage/disadvantage.
+        
+        Rules:
+        - ST 1000m: outer draw (high draw) = advantage
+        - HV all distances: inner draw (low draw) = advantage
+        
+        Returns:
+            Positive = advantage, Negative = disadvantage, 0 = neutral
+        """
+        if draw is None or draw == 0:
+            return 0
+        
+        if venue == "HV":
+            # Happy Valley: inner draw is always better
+            # draw 1=最內檔(advantage) to draw 14=最外檔
+            return 8 - draw  # draw 1 → +7, draw 8 → 0, draw 14 → -6
+        
+        if venue == "ST" and distance == 1000:
+            # Sha Tin 1000m: outer draw is better (can get out from inside)
+            return draw - 8  # draw 14 → +6, draw 8 → 0, draw 1 → -7
+        
+        # ST other distances: no strong draw bias
+        return 0
     
     def _find_horse_id_by_name(self, horse_name: str) -> Optional[str]:
         """Find horse ID by name"""

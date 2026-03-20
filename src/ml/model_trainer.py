@@ -78,13 +78,16 @@ class ModelTrainer:
             # Trainer features
             "total_races", "place_rate",
             
-            # Matchup features
+            # Matchup features (replaced win_rate with place_rate for better signal)
             "horse_jockey_races", "horse_jockey_wins", "horse_jockey_win_rate",
+            "horse_jockey_places", "horse_jockey_place_rate",
             "horse_trainer_races", "horse_trainer_wins", "horse_trainer_win_rate",
+            "horse_trainer_places", "horse_trainer_place_rate",
             
             # Race features
             "draw", "horse_number", "win_odds",
             "distance", "total_runners",
+            "draw_advantage",
         ]
         
         # Filter to existing columns

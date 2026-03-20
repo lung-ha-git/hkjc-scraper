@@ -12,6 +12,22 @@ from collections import defaultdict
 import xgboost as xgb
 
 
+def _get_draw_advantage(draw, venue, distance):
+    """
+    Calculate draw advantage/disadvantage.
+    - HV all distances: inner draw (low draw) = advantage
+    - ST 1000m: outer draw (high draw) = advantage
+    Returns: positive = advantage, negative = disadvantage, 0 = neutral
+    """
+    if not draw:
+        return 0
+    if venue == 'HV':
+        return 8 - draw   # draw 1 → +7, draw 8 → 0, draw 14 → -6
+    if venue == 'ST' and distance == 1000:
+        return draw - 8  # draw 14 → +6, draw 8 → 0, draw 1 → -7
+    return 0
+
+
 def load_data():
     """Load all data from MongoDB"""
     db = DatabaseConnection()
@@ -32,8 +48,15 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
     """Build feature matrix"""
     
     # Combo stats
-    jt_wins, jt_races = defaultdict(int), defaultdict(int)
+    jt_wins, jt_races, jt_places = defaultdict(int), defaultdict(int), defaultdict(int)
+    hj_wins, hj_races, hj_places = defaultdict(int), defaultdict(int), defaultdict(int)
+    
+    # Horse last race data (for days_rest and weight_change)
+    horse_last_race = {}  # horse_name -> {date, weight}
+    horse_last_draw = {}  # horse_name -> last race draw_weight
+    
     for race in races:
+        race_date = race.get('race_date', '')
         for r in race.get('results', []):
             jockey, trainer, horse_name = r.get('jockey', ''), r.get('trainer', ''), r.get('horse_name', '')
             try: rank = int(r.get('rank', 0)) if r.get('rank') else 0
@@ -41,6 +64,11 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
             if jockey and trainer:
                 jt_races[(jockey, trainer)] += 1
                 if rank == 1: jt_wins[(jockey, trainer)] += 1
+                if rank <= 3: jt_places[(jockey, trainer)] += 1
+            if horse_name and jockey:
+                hj_races[(horse_name, jockey)] += 1
+                if rank == 1: hj_wins[(horse_name, jockey)] += 1
+                if rank <= 3: hj_places[(horse_name, jockey)] += 1
     
     # Track condition wins/runs
     track_cond_wins = defaultdict(int)
@@ -218,14 +246,25 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
             actual_wt = r.get('actual_weight', 0) if 'r' in dir() else 0
             weight_advantage = max(0, 120 - actual_wt) if actual_wt > 0 else 0
             
-            j = jockeys.get(jockey_name)
-            j_wr = (j.get('wins', 0) or 0) / max(1, j.get('total_rides', 0) or 0) if j else 0
+            j = jockeys.get(jockey_name) or {}
+            j_wr = (j.get('wins') or 0) / max(1, j.get('total_rides') or 0) if j else 0
+            j_places = (j.get('seconds') or 0) + (j.get('thirds') or 0) + (j.get('wins') or 0)
+            j_place_rate = j_places / max(1, j.get('total_rides') or 0) if j else 0
             
             t = trainers.get(trainer_name)
             t_wr = (t.get('wins', 0) or 0) / max(1, t.get('total_horses', 0) or 0) if t else 0
             
             career_place = career_wins + career_seconds + career_thirds
             cpr = career_place / career_starts if career_starts > 0 else 0
+            
+            # HJ / JT place rates (replacing win rates as more stable signal)
+            hj_key = (horse_name, jockey_name)
+            hj_place_rate = hj_places.get(hj_key, 0) / hj_races.get(hj_key, 1) if hj_races.get(hj_key, 0) > 0 else 0
+            jt_key = (jockey_name, trainer_name)
+            jt_place_rate = jt_places.get(jt_key, 0) / jt_races.get(jt_key, 1) if jt_races.get(jt_key, 0) > 0 else 0
+            
+            # Draw advantage
+            draw_adv = _get_draw_advantage(draw, race_venue, race_dist)
             
             samples.append({
                 'race_id': race_id, 'horse_name': horse_name, 'draw': draw, 'distance': race_dist,
@@ -235,8 +274,11 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
                 'season_prize': season_prize, 'dist_wins': dist_wins, 'dist_runs': dist_runs, 'dist_win_rate': dist_win_rate,
                 'track_wins': track_wins, 'track_runs': track_runs, 'track_win_rate': track_win_rate,
                 'recent3_avg_rank': recent3_avg, 'recent3_wins': recent3_wins, 'venue_avg_rank': venue_avg,
-                'jockey_win_rate': j_wr, 'trainer_win_rate': t_wr, 'jt_win_rate': jt_wr, 
+                'jockey_win_rate': j_wr, 'jockey_place_rate': j_place_rate,
+                'trainer_win_rate': t_wr,
+                'jt_place_rate': jt_place_rate,
                 'jt_races': jt_races.get((jockey_name, trainer_name), 0),
+                'hj_place_rate': hj_place_rate,
                 'best_dist_time': best_dist_time,
                 'best_venue_dist_time': best_venue_dist_time,
                 'best_finish_time': best_finish if best_finish else 0,
@@ -246,6 +288,7 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
                 'track_cond_runs': tc_runs,
                 'early_pace_score': avg_ep,
                 'weight_advantage': weight_advantage,
+                'draw_advantage': draw_adv,
                 # Target variable (not a feature)
                 'actual_rank': rank,
             })
@@ -261,12 +304,16 @@ def train_and_evaluate(df):
         'dist_wins', 'dist_runs', 'dist_win_rate',
         'track_wins', 'track_runs', 'track_win_rate',
         'recent3_avg_rank', 'recent3_wins', 'venue_avg_rank',
-        'jockey_win_rate', 'trainer_win_rate', 'jt_win_rate', 'jt_races',
+        'jockey_win_rate', 'jockey_place_rate',
+        'trainer_win_rate',
+        'jt_place_rate', 'jt_races',
+        'hj_place_rate',
         'best_dist_time', 'best_venue_dist_time',
         'best_finish_time', 'finish_time_diff',
         'draw_dist', 'draw_rating',
         'track_cond_winrate', 'track_cond_runs',
-        'early_pace_score', 'weight_advantage'
+        'early_pace_score', 'weight_advantage',
+        'draw_advantage',
     ]
     
     X = df[features].fillna(0).replace([float('inf'), float('-inf')], 0)
