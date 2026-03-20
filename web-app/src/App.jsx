@@ -17,6 +17,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState([]);
   const [predicting, setPredicting] = useState(false);
+  const [raceConfidence, setRaceConfidence] = useState(null);
   const [showBoost, setShowBoost] = useState(false);
   
   // Feature boosting factors (0.0 = off, 1.0 = normal, 3.0 = 3x boost)
@@ -93,7 +94,8 @@ function App() {
   // Calculate predictions when race changes
   useEffect(() => {
     if (racecardData && selectedRaceNo) {
-      lastPredictRef.current = 0; // reset throttle on race change
+      lastPredictRef.current = 0;
+      setRaceConfidence(null);
       calculatePredictions();
     }
   }, [selectedRaceNo]);
@@ -142,6 +144,7 @@ function App() {
       .then(data => {
         setPredicting(false);
         if (data && data.predictions) {
+          setRaceConfidence(data.race_confidence != null ? data.race_confidence : null);
           // Add jersey_url, horse_no from racecard data
           const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
           const results = data.predictions.map(pred => {
@@ -234,7 +237,14 @@ function App() {
           {selectedFixture && racecardData && selectedRaceNo && (
             <>
               <div className="race-header">
-                <h2>{selectedFixture.date} - {selectedFixture.venue === 'ST' ? '沙田' : '跑馬地'}</h2>
+                <div className="race-header-top">
+                  <h2>{selectedFixture.date} - {selectedFixture.venue === 'ST' ? '沙田' : '跑馬地'}</h2>
+                  {raceConfidence != null && (
+                    <span className={`conf-badge ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
+                      {raceConfidence}
+                    </span>
+                  )}
+                </div>
                 <div className="race-info">
                   <span>第 {selectedRaceNo} 場</span>
                   <span>{currentRaceCards?.distance || '-'}m</span>
@@ -242,8 +252,9 @@ function App() {
                 </div>
               </div>
               
-              <div className="race-tabs">
-                {racecardData.racecards?.map(rc => (
+              <div className="race-tabs-wrapper">
+                <div className="race-tabs">
+                  {racecardData.racecards?.map(rc => (
                   <button 
                     key={rc.race_no} 
                     className={`race-tab ${selectedRaceNo === rc.race_no ? 'active' : ''}`}
@@ -252,6 +263,12 @@ function App() {
                     R{rc.race_no}
                   </button>
                 ))}
+                </div>
+                {raceConfidence != null && (
+                  <div className={`conf-tab-badge ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
+                    信心 {raceConfidence}
+                  </div>
+                )}
               </div>
               
               <table className="race-table">
@@ -259,6 +276,9 @@ function App() {
                   <tr>
                     <th className="mobile-only">馬號</th>
                     <th className="mobile-only">馬匹</th>
+                    <th className="mobile-only">騎師</th>
+                    <th className="mobile-only">練馬師</th>
+                    <th className="mobile-only">檔位</th>
                     <th className="desktop-only">預測</th>
                     <th className="desktop-only">馬號</th>
                     <th className="desktop-only">馬匹</th>
@@ -348,7 +368,15 @@ function App() {
 
         {/* 右側：AI 預測控制面板 */}
         <div className="prediction-panel">
-          <h3>📊 AI 預測排名 {predicting && <span className="predicting-spinner">⟳</span>}</h3>
+          <h3>📊 AI 預測 {predicting && <span className="predicting-spinner">⟳</span>}</h3>
+          {raceConfidence != null && (
+            <div className="confidence-badge">
+              <span className="confidence-label">信心指數</span>
+              <span className={`confidence-value ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
+                {raceConfidence}
+              </span>
+            </div>
+          )}
           
           <button className="boost-toggle" onClick={() => setShowBoost(!showBoost)}>
             {showBoost ? '🔼 隱藏' : '🔽 因子調整'}

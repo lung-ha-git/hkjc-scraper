@@ -1,0 +1,572 @@
+{
+  "strategies": {
+    "top1_win_$10": {
+      "cost": 21350,
+      "payout": 17700.0,
+      "profit": -3650.0,
+      "hits": 69,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top1_win_$25": {
+      "cost": 53375,
+      "payout": 44250.0,
+      "profit": -9125.0,
+      "hits": 69,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top1_win_$50": {
+      "cost": 106750,
+      "payout": 88500.0,
+      "profit": -18250.0,
+      "hits": 69,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top1_win_$100": {
+      "cost": 213500,
+      "payout": 177000.0,
+      "profit": -36500.0,
+      "hits": 69,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top1_place_$10": {
+      "cost": 21350,
+      "payout": 16130.2,
+      "profit": -5219.8,
+      "hits": 338,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top1_place_$25": {
+      "cost": 53375,
+      "payout": 40325.5,
+      "profit": -13049.5,
+      "hits": 338,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top1_place_$50": {
+      "cost": 106750,
+      "payout": 80651.0,
+      "profit": -26099.0,
+      "hits": 338,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top1_place_$100": {
+      "cost": 213500,
+      "payout": 161302.0,
+      "profit": -52198.0,
+      "hits": 338,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top2_win_$10": {
+      "cost": 42700,
+      "payout": 32536.5,
+      "profit": -10163.5,
+      "hits": 116,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top2_win_$25": {
+      "cost": 106750,
+      "payout": 81341.25,
+      "profit": -25408.75,
+      "hits": 116,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top2_win_$50": {
+      "cost": 213500,
+      "payout": 162682.5,
+      "profit": -50817.5,
+      "hits": 116,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top2_win_$100": {
+      "cost": 427000,
+      "payout": 325365.0,
+      "profit": -101635.0,
+      "hits": 116,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top2_place_$10": {
+      "cost": 42700,
+      "payout": 31477.4,
+      "profit": -11222.6,
+      "hits": 581,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top2_place_$25": {
+      "cost": 106750,
+      "payout": 78693.5,
+      "profit": -28056.5,
+      "hits": 581,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top2_place_$50": {
+      "cost": 213500,
+      "payout": 157387.0,
+      "profit": -56113.0,
+      "hits": 581,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top2_place_$100": {
+      "cost": 427000,
+      "payout": 314774.0,
+      "profit": -112226.0,
+      "hits": 581,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top3_win_$10": {
+      "cost": 64050,
+      "payout": 46958.0,
+      "profit": -17092.0,
+      "hits": 140,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top3_win_$25": {
+      "cost": 160125,
+      "payout": 117395.0,
+      "profit": -42730.0,
+      "hits": 140,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top3_win_$50": {
+      "cost": 320250,
+      "payout": 234790.0,
+      "profit": -85460.0,
+      "hits": 140,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top3_win_$100": {
+      "cost": 640500,
+      "payout": 469580.0,
+      "profit": -170920.0,
+      "hits": 140,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top3_place_$10": {
+      "cost": 64050,
+      "payout": 46926.4,
+      "profit": -17123.6,
+      "hits": 765,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top3_place_$25": {
+      "cost": 160125,
+      "payout": 117316.0,
+      "profit": -42809.0,
+      "hits": 765,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top3_place_$50": {
+      "cost": 320250,
+      "payout": 234632.0,
+      "profit": -85618.0,
+      "hits": 765,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top3_place_$100": {
+      "cost": 640500,
+      "payout": 469264.0,
+      "profit": -171236.0,
+      "hits": 765,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top4_win_$10": {
+      "cost": 85400,
+      "payout": 60532.0,
+      "profit": -24868.0,
+      "hits": 150,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top4_win_$25": {
+      "cost": 213500,
+      "payout": 151330.0,
+      "profit": -62170.0,
+      "hits": 150,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top4_win_$50": {
+      "cost": 427000,
+      "payout": 302660.0,
+      "profit": -124340.0,
+      "hits": 150,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top4_win_$100": {
+      "cost": 854000,
+      "payout": 605320.0,
+      "profit": -248680.0,
+      "hits": 150,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top4_place_$10": {
+      "cost": 85400,
+      "payout": 63237.0,
+      "profit": -22163.0,
+      "hits": 907,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top4_place_$25": {
+      "cost": 213500,
+      "payout": 158092.5,
+      "profit": -55407.5,
+      "hits": 907,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top4_place_$50": {
+      "cost": 427000,
+      "payout": 316185.0,
+      "profit": -110815.0,
+      "hits": 907,
+      "races": 2135,
+      "bets": 2135
+    },
+    "top4_place_$100": {
+      "cost": 854000,
+      "payout": 632370.0,
+      "profit": -221630.0,
+      "hits": 907,
+      "races": 2135,
+      "bets": 2135
+    },
+    "value_3.0_win_$25": {
+      "cost": 15966.0,
+      "payout": 11311.5,
+      "profit": -4654.5,
+      "hits": 83,
+      "races": 2133,
+      "bets": 2133
+    },
+    "value_3.0_win_$50": {
+      "cost": 15966.0,
+      "payout": 11311.5,
+      "profit": -4654.5,
+      "hits": 83,
+      "races": 2133,
+      "bets": 2133
+    },
+    "value_3.0_win_$100": {
+      "cost": 15966.0,
+      "payout": 11311.5,
+      "profit": -4654.5,
+      "hits": 83,
+      "races": 2133,
+      "bets": 2133
+    },
+    "value_3.0_place_$25": {
+      "cost": 15966.0,
+      "payout": 11675.94,
+      "profit": -4290.06,
+      "hits": 599,
+      "races": 2133,
+      "bets": 2133
+    },
+    "value_3.0_place_$50": {
+      "cost": 15966.0,
+      "payout": 11675.94,
+      "profit": -4290.06,
+      "hits": 599,
+      "races": 2133,
+      "bets": 2133
+    },
+    "value_3.0_place_$100": {
+      "cost": 15966.0,
+      "payout": 11675.94,
+      "profit": -4290.06,
+      "hits": 599,
+      "races": 2133,
+      "bets": 2133
+    },
+    "value_5.0_win_$25": {
+      "cost": 15120.0,
+      "payout": 9544.0,
+      "profit": -5576.0,
+      "hits": 39,
+      "races": 1973,
+      "bets": 1973
+    },
+    "value_5.0_win_$50": {
+      "cost": 15120.0,
+      "payout": 9544.0,
+      "profit": -5576.0,
+      "hits": 39,
+      "races": 1973,
+      "bets": 1973
+    },
+    "value_5.0_win_$100": {
+      "cost": 15120.0,
+      "payout": 9544.0,
+      "profit": -5576.0,
+      "hits": 39,
+      "races": 1973,
+      "bets": 1973
+    },
+    "value_5.0_place_$25": {
+      "cost": 15120.0,
+      "payout": 10841.75,
+      "profit": -4278.25,
+      "hits": 319,
+      "races": 1973,
+      "bets": 1973
+    },
+    "value_5.0_place_$50": {
+      "cost": 15120.0,
+      "payout": 10841.75,
+      "profit": -4278.25,
+      "hits": 319,
+      "races": 1973,
+      "bets": 1973
+    },
+    "value_5.0_place_$100": {
+      "cost": 15120.0,
+      "payout": 10841.75,
+      "profit": -4278.25,
+      "hits": 319,
+      "races": 1973,
+      "bets": 1973
+    },
+    "value_7.0_win_$25": {
+      "cost": 7504.0,
+      "payout": 4713.8,
+      "profit": -2790.2,
+      "hits": 3,
+      "races": 907,
+      "bets": 907
+    },
+    "value_7.0_win_$50": {
+      "cost": 7504.0,
+      "payout": 4713.8,
+      "profit": -2790.2,
+      "hits": 3,
+      "races": 907,
+      "bets": 907
+    },
+    "value_7.0_win_$100": {
+      "cost": 7504.0,
+      "payout": 4713.8,
+      "profit": -2790.2,
+      "hits": 3,
+      "races": 907,
+      "bets": 907
+    },
+    "value_7.0_place_$25": {
+      "cost": 7504.0,
+      "payout": 5300.19,
+      "profit": -2203.81,
+      "hits": 92,
+      "races": 907,
+      "bets": 907
+    },
+    "value_7.0_place_$50": {
+      "cost": 7504.0,
+      "payout": 5300.19,
+      "profit": -2203.81,
+      "hits": 92,
+      "races": 907,
+      "bets": 907
+    },
+    "value_7.0_place_$100": {
+      "cost": 7504.0,
+      "payout": 5300.19,
+      "profit": -2203.81,
+      "hits": 92,
+      "races": 907,
+      "bets": 907
+    },
+    "value_10.0_win_$25": {
+      "cost": 2040.0,
+      "payout": 1494.5,
+      "profit": -545.5,
+      "hits": 0,
+      "races": 188,
+      "bets": 188
+    },
+    "value_10.0_win_$50": {
+      "cost": 2040.0,
+      "payout": 1494.5,
+      "profit": -545.5,
+      "hits": 0,
+      "races": 188,
+      "bets": 188
+    },
+    "value_10.0_win_$100": {
+      "cost": 2040.0,
+      "payout": 1494.5,
+      "profit": -545.5,
+      "hits": 0,
+      "races": 188,
+      "bets": 188
+    },
+    "value_10.0_place_$25": {
+      "cost": 2040.0,
+      "payout": 1266.4,
+      "profit": -773.6,
+      "hits": 19,
+      "races": 188,
+      "bets": 188
+    },
+    "value_10.0_place_$50": {
+      "cost": 2040.0,
+      "payout": 1266.4,
+      "profit": -773.6,
+      "hits": 19,
+      "races": 188,
+      "bets": 188
+    },
+    "value_10.0_place_$100": {
+      "cost": 2040.0,
+      "payout": 1266.4,
+      "profit": -773.6,
+      "hits": 19,
+      "races": 188,
+      "bets": 188
+    },
+    "winner_all_win_$25": {
+      "cost": 53375,
+      "payout": 44250.0,
+      "profit": -9125.0,
+      "hits": 69,
+      "races": 2135,
+      "bets": 2135
+    },
+    "winner_all_win_$50": {
+      "cost": 106750,
+      "payout": 88500.0,
+      "profit": -18250.0,
+      "hits": 69,
+      "races": 2135,
+      "bets": 2135
+    },
+    "winner_all_win_$100": {
+      "cost": 213500,
+      "payout": 177000.0,
+      "profit": -36500.0,
+      "hits": 69,
+      "races": 2135,
+      "bets": 2135
+    },
+    "winner_low_win_$25": {
+      "cost": 23525,
+      "payout": 6542.5,
+      "profit": -16982.5,
+      "hits": 68,
+      "races": 2135,
+      "bets": 941
+    },
+    "winner_low_win_$50": {
+      "cost": 47050,
+      "payout": 13085.0,
+      "profit": -33965.0,
+      "hits": 68,
+      "races": 2135,
+      "bets": 941
+    },
+    "winner_low_win_$100": {
+      "cost": 94100,
+      "payout": 26170.0,
+      "profit": -67930.0,
+      "hits": 68,
+      "races": 2135,
+      "bets": 941
+    },
+    "winner_high_win_$25": {
+      "cost": 29850,
+      "payout": 37707.5,
+      "profit": 7857.5,
+      "hits": 1,
+      "races": 2135,
+      "bets": 1194
+    },
+    "winner_high_win_$50": {
+      "cost": 59700,
+      "payout": 75415.0,
+      "profit": 15715.0,
+      "hits": 1,
+      "races": 2135,
+      "bets": 1194
+    },
+    "winner_high_win_$100": {
+      "cost": 119400,
+      "payout": 150830.0,
+      "profit": 31430.0,
+      "hits": 1,
+      "races": 2135,
+      "bets": 1194
+    }
+  },
+  "by_type": {
+    "win": {
+      "cost": 3949750,
+      "profit": -1031809.75,
+      "races": 34160
+    },
+    "place": {
+      "cost": 3949750,
+      "profit": -1030986.5,
+      "races": 34160
+    },
+    "3.0": {
+      "cost": 95796.0,
+      "profit": -26833.68,
+      "races": 12798
+    },
+    "5.0": {
+      "cost": 90720.0,
+      "profit": -29562.75,
+      "races": 11838
+    },
+    "7.0": {
+      "cost": 45024.0,
+      "profit": -14982.03,
+      "races": 5442
+    },
+    "10.0": {
+      "cost": 12240.0,
+      "profit": -3957.3,
+      "races": 1128
+    },
+    "all": {
+      "cost": 373625,
+      "profit": -63875.0,
+      "races": 6405
+    },
+    "low": {
+      "cost": 164675,
+      "profit": -118877.5,
+      "races": 6405
+    },
+    "high": {
+      "cost": 208950,
+      "profit": 55002.5,
+      "races": 6405
+    }
+  },
+  "total_races": 2135
+}

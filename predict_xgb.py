@@ -335,7 +335,13 @@ def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_s
     for i, r in enumerate(results):
         r['predicted_rank'] = i + 1
     
-    return results
+    # Confidence score: sum of raw scores for top 4 (lower raw = better predicted)
+    # This reflects how "clear" the model's verdict is for this race
+    top4_raw_sum = sum(results[i]['raw_score'] for i in range(min(4, len(results))))
+    # Invert: raw_score low = confident prediction, so invert to get confidence where HIGHER = more confident
+    race_confidence = round(100 - top4_raw_sum, 2)
+    
+    return results, race_confidence
 
 
 if __name__ == '__main__':
@@ -372,6 +378,6 @@ if __name__ == '__main__':
     
     distance = racecard.get('distance', 1200) if racecard else 1200
     
-    predictions = predict_race(racecard_entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features, boosting)
+    predictions, race_confidence = predict_race(racecard_entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features, boosting)
     
-    print(json.dumps({'predictions': predictions}, ensure_ascii=False))
+    print(json.dumps({'predictions': predictions, 'race_confidence': race_confidence}, ensure_ascii=False))
