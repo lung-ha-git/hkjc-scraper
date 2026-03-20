@@ -28,6 +28,25 @@ def _get_draw_advantage(draw, venue, distance):
     return 0
 
 
+def _parse_finish_time(ft_str):
+    """
+    Parse finish_time like '1.10.22' (min.sec.cc) → total seconds as float.
+    Returns 0 if unparseable.
+    """
+    if not ft_str or ft_str == '0':
+        return 0
+    try:
+        parts = ft_str.strip().split('.')
+        if len(parts) == 3:
+            return int(parts[0]) * 60 + int(parts[1]) + int(parts[2]) / 100
+        elif len(parts) == 2:
+            return int(parts[0]) * 60 + float(parts[1])
+        else:
+            return float(ft_str)
+    except Exception:
+        return 0
+
+
 def load_data():
     """Load all data from MongoDB"""
     db = DatabaseConnection()
@@ -117,7 +136,7 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
     
     for rh in db.db['horse_race_history'].find({}):
         try:
-            ft = float(rh.get('finish_time', 0))
+            ft = _parse_finish_time(rh.get('finish_time', ''))
             dist = int(rh.get('distance', 0))
             venue = rh.get('venue', '')
             if ft > 0 and dist > 0:
@@ -142,12 +161,7 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
             try: rank = int(rh.get('position', 0)) if rh.get('position') else 0
             except: rank = 0
             finish_time = rh.get('finish_time', '')
-            try:
-                if finish_time and '.' in finish_time:
-                    parts = finish_time.split('.')
-                    ft = int(parts[0])*60 + int(parts[1]) + int(parts[2])/100 if len(parts) == 3 else 0
-                else: ft = 0
-            except: ft = 0
+            ft = _parse_finish_time(finish_time)
             race_history[hid].append({'date': rh.get('date', ''), 'rank': rank, 'distance': rh.get('distance', 0), 'venue': rh.get('venue', ''), 'finish_time': ft})
     
     for hid in race_history: race_history[hid].sort(key=lambda x: x.get('date', ''), reverse=True)
@@ -217,8 +231,8 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
                     if rh.get('venue') == race_venue and rh.get('rank'): recent_venue_ranks.append(rh.get('rank'))
                 for rh in race_history[hid][:20]:
                     if rh.get('distance') == race_dist and rh.get('finish_time', 0) > 0:
-                        if best_finish is None or rh.get('finish_time') < best_finish:
-                            best_finish = rh.get('finish_time')
+                        if best_finish is None or rh.get('finish_time', 0) < best_finish:
+                            best_finish = rh.get('finish_time', 0)
             
             recent3_avg = sum(recent_3_ranks)/len(recent_3_ranks) if recent_3_ranks else 0
             recent3_wins = sum(1 for r in recent_3_ranks if r == 1)
@@ -269,7 +283,6 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
             samples.append({
                 'race_id': race_id, 'horse_name': horse_name, 'draw': draw, 'distance': race_dist,
                 'venue': 1 if race_venue == 'HV' else 0, 'current_rating': current_rating,
-                'relative_rating': current_rating - race_avg if race_avg > 0 else 0,
                 'career_starts': career_starts, 'career_wins': career_wins, 'career_place_rate': cpr,
                 'season_prize': season_prize, 'dist_wins': dist_wins, 'dist_runs': dist_runs, 'dist_win_rate': dist_win_rate,
                 'track_wins': track_wins, 'track_runs': track_runs, 'track_win_rate': track_win_rate,
@@ -278,7 +291,6 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
                 'trainer_win_rate': t_wr,
                 'jt_place_rate': jt_place_rate,
                 'jt_races': jt_races.get((jockey_name, trainer_name), 0),
-                'hj_place_rate': hj_place_rate,
                 'best_dist_time': best_dist_time,
                 'best_venue_dist_time': best_venue_dist_time,
                 'best_finish_time': best_finish if best_finish else 0,
@@ -299,7 +311,6 @@ def build_features(races, horses, jockeys, trainers, distance_stats):
 def train_and_evaluate(df):
     """Train model and evaluate"""
     features = [
-        'draw', 'distance', 'venue', 'current_rating', 'relative_rating', 
         'career_starts', 'career_wins', 'career_place_rate', 'season_prize',
         'dist_wins', 'dist_runs', 'dist_win_rate',
         'track_wins', 'track_runs', 'track_win_rate',
@@ -307,7 +318,6 @@ def train_and_evaluate(df):
         'jockey_win_rate', 'jockey_place_rate',
         'trainer_win_rate',
         'jt_place_rate', 'jt_races',
-        'hj_place_rate',
         'best_dist_time', 'best_venue_dist_time',
         'best_finish_time', 'finish_time_diff',
         'draw_dist', 'draw_rating',
@@ -330,8 +340,13 @@ def train_and_evaluate(df):
     X_train, y_train = X_scaled[train_mask], df.loc[train_mask, 'actual_rank']
     X_test = X_scaled[test_mask]
     
-    # Train XGBoost
-    model = xgb.XGBRegressor(n_estimators=300, max_depth=4, learning_rate=0.05, random_state=42, n_jobs=-1)
+    # Train XGBoost with regularization
+    model = xgb.XGBRegressor(
+        n_estimators=300, max_depth=4, learning_rate=0.05,
+        reg_alpha=0.5,   # L1 — penalize large weights, spread importance
+        reg_lambda=1.0,  # L2 — smooth out dominant features
+        random_state=42, n_jobs=-1
+    )
     model.fit(X_train, y_train)
     
     # Evaluate
@@ -349,6 +364,10 @@ def train_and_evaluate(df):
     print(f'Results: 1st={c1/n*100:.1f}%, Top3={t3/n:.2f}')
     print(f'Features: {len(features)}')
     
+    print('\nTop Features:')
+    for f, i in sorted(zip(features, model.feature_importances_), key=lambda x: -x[1])[:20]:
+        print(f'  {i:.4f}  {f}')
+    
     return model, features
 
 
@@ -364,10 +383,6 @@ if __name__ == '__main__':
     
     print('Training model...')
     model, features = train_and_evaluate(df)
-    
-    print('\nTop Features:')
-    for f, i in sorted(zip(features, model.feature_importances_), key=lambda x: -x[1])[:10]:
-        print(f'  {f:25s}: {i:.4f}')
     
     # Save model
     with open('xgb_model.pkl', 'wb') as f:

@@ -41,7 +41,7 @@ def load_data():
     # Build combo stats
     jt_wins, jt_races = defaultdict(int), defaultdict(int)
     hj_wins, hj_races = defaultdict(int), defaultdict(int)
-    hj_places, jt_places = defaultdict(int), defaultdict(int)
+    jt_places = defaultdict(int)
     
     for race in races:
         for r in race.get('results', []):
@@ -55,7 +55,6 @@ def load_data():
             if horse_name and jockey:
                 hj_races[(horse_name, jockey)] += 1
                 if rank == 1: hj_wins[(horse_name, jockey)] += 1
-                if rank <= 3: hj_places[(horse_name, jockey)] += 1
     
     # Build horse last race data (for days_rest and weight_change)
     horse_last_race = {}
@@ -101,7 +100,7 @@ def load_data():
         if poses
     }
     
-    return db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, hj_places, jt_places, horse_last_race, horse_early_pace
+    return db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace
 
 
 def _get_draw_advantage(draw: int, venue: str, distance: int) -> float:
@@ -131,7 +130,7 @@ def _get_draw_advantage(draw: int, venue: str, distance: int) -> float:
     return 0
 
 
-def build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, hj_places, jt_places, horse_last_race, race_date, horse_early_pace):
+def build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, race_date, horse_early_pace):
     """Build features for race entries"""
     results = []
     
@@ -178,7 +177,6 @@ def build_features_for_race(entries, distance, venue, horses, jockeys, trainers,
         # Horse-jockey combo
         hj = (horse_name, jockey)
         hj_win_rate = hj_wins.get(hj, 0) / hj_races.get(hj, 1) if hj_races.get(hj, 0) > 0 else 0
-        hj_place_rate = hj_places.get(hj, 0) / hj_races.get(hj, 1) if hj_races.get(hj, 0) > 0 else 0
         
         # Jockey
         j = jockeys.get(jockey, {})
@@ -213,7 +211,6 @@ def build_features_for_race(entries, distance, venue, horses, jockeys, trainers,
             'distance': distance,
             'venue': 1 if venue == 'HV' else 0,
             'current_rating': current_rating,
-            'relative_rating': current_rating - race_avg,
             'career_starts': career_starts,
             'career_wins': career_wins,
             'career_place_rate': career_place_rate,
@@ -225,7 +222,6 @@ def build_features_for_race(entries, distance, venue, horses, jockeys, trainers,
             'jt_win_rate': jt_win_rate,
             'jt_place_rate': jt_place_rate,
             'hj_win_rate': hj_win_rate,
-            'hj_place_rate': hj_place_rate,
             'draw_dist': draw * distance,
             'hj_races': hj_races.get(hj, 0),
             'days_rest': days_rest,
@@ -236,9 +232,9 @@ def build_features_for_race(entries, distance, venue, horses, jockeys, trainers,
     return results
 
 
-def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, hj_places, jt_places, horse_last_race, horse_early_pace, race_date, model, features):
+def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features):
     """Predict race using XGBoost model with pace adjustment"""
-    entry_features = build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, hj_places, jt_places, horse_last_race, race_date, horse_early_pace)
+    entry_features = build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, race_date, horse_early_pace)
     
     # Add early pace to each feature entry
     for ef in entry_features:
@@ -323,7 +319,7 @@ if __name__ == '__main__':
     print(f'Loading model and data for {race_date} R{race_no} {venue}...')
     
     model, features = load_model()
-    db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, hj_places, jt_places, horse_last_race, horse_early_pace = load_data()
+    db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace = load_data()
     
     # Get racecard entries
     racecard_entries = list(db.db['racecard_entries'].find({
@@ -340,6 +336,6 @@ if __name__ == '__main__':
     
     distance = racecard.get('distance', 1200) if racecard else 1200
     
-    predictions = predict_race(racecard_entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, hj_places, jt_places, horse_last_race, horse_early_pace, race_date, model, features)
+    predictions = predict_race(racecard_entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features)
     
     print(json.dumps({'predictions': predictions}, ensure_ascii=False))
