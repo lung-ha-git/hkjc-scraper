@@ -116,20 +116,40 @@ app.listen(PORT, () => console.log('Server:', PORT));
 // Save AI prediction
 app.post('/api/predictions', async (req, res) => {
   try {
-    const { race_date, race_no, venue, predictions, weights, model_version, created_at } = req.body;
+    const { race_date, race_no, venue, predictions, weights, boosting, racecard, model_version, created_at } = req.body;
     
     const doc = {
       race_date,
       race_no,
       venue,
-      predictions, // Array of { horse_no, horse_name, score, predicted_rank }
-      weights,     // Object of factor weights
+      predictions,
+      weights,
       model_version: model_version || 'v1.0.0',
       created_at: created_at || new Date().toISOString()
     };
     
     await db.collection('predictions').insertOne(doc);
-    res.json({ success: true });
+    
+    // Save boost experiment if boosting is non-default
+    const isDefault = !boosting || Object.values(boosting).every(v => v === 1.0);
+    if (!isDefault && racecard) {
+      const experiment = {
+        race_date,
+        race_no,
+        venue,
+        boosting,
+        racecard,
+        predictions: predictions.map(p => ({
+          horse_name: p.horse_name,
+          predicted_rank: p.predicted_rank,
+          score: p.score
+        })),
+        created_at: new Date().toISOString()
+      };
+      await db.collection('boost_experiments').insertOne(experiment);
+    }
+    
+    res.json({ success: true, saved_experiment: !isDefault });
   } catch (error) {
     console.error('Error saving prediction:', error);
     res.status(500).json({ error: error.message });
@@ -156,9 +176,9 @@ app.get('/api/horses/by-id/:horseId', async (req, res) => {
   });
 });
 
-// ML Prediction using XGBoost model
+// ML Prediction using XGBoost model with optional boosting
 app.get('/api/predict', async (req, res) => {
-  const { race_date, race_no, venue } = req.query;
+  const { race_date, race_no, venue, boosting } = req.query;
   
   if (!race_date || !race_no) {
     return res.status(400).json({error: 'race_date and race_no required'});
@@ -167,10 +187,10 @@ app.get('/api/predict', async (req, res) => {
   try {
     const { execSync } = require('child_process');
     
-    const result = execSync(
-      `python3 /Users/fatlung/.openclaw/workspace-main/hkjc_project/predict_xgb.py ${race_date} ${race_no} ${venue} 2>&1 | grep -v '^Loading'`,
-      { encoding: 'utf8', timeout: 60000 }
-    );
+    const boostingArg = boosting ? `'${boosting.replace(/'/g, "'\\''")}'` : 'null';
+    const cmd = `python3 /Users/fatlung/.openclaw/workspace-main/hkjc_project/predict_xgb.py ${race_date} ${race_no} ${venue} ${boostingArg} 2>&1 | grep -v '^Loading'`;
+    
+    const result = execSync(cmd, { encoding: 'utf8', timeout: 60000 });
     
     res.json(JSON.parse(result));
   } catch (error) {

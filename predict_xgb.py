@@ -232,22 +232,51 @@ def build_features_for_race(entries, distance, venue, horses, jockeys, trainers,
     return results
 
 
-def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features):
-    """Predict race using XGBoost model with pace adjustment"""
+def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features, boosting=None):
+    """Predict race with optional feature boosting.
+    
+    boosting: dict of group_name or feature_name -> multiplier (default 1.0)
+    Groups: distance, jockey, recent, track, draw, career, trainer, best_time, pace
+    """
+    # Map frontend group names to actual feature names
+    GROUP_FEATURES = {
+        'distance': ['dist_wins', 'dist_win_rate', 'dist_runs', 'best_dist_time', 'best_venue_dist_time'],
+        'jockey': ['jockey_win_rate', 'jockey_place_rate', 'jt_place_rate', 'jt_races'],
+        'recent': ['recent3_avg_rank', 'recent3_wins'],
+        'track': ['track_cond_winrate', 'track_cond_runs', 'track_wins', 'track_races', 'track_win_rate'],
+        'draw': ['draw', 'draw_advantage', 'draw_dist', 'draw_rating'],
+        'career': ['career_starts', 'career_wins', 'career_place_rate', 'season_prize'],
+        'trainer': ['trainer_win_rate', 'trainer_place_rate'],
+        'best_time': ['best_finish_time', 'finish_time_diff'],
+        'pace': ['early_pace_score'],
+    }
+    
+    # Expand group-level boosting to feature-level
+    expanded_boost = {}
+    if boosting:
+        for group, mult in boosting.items():
+            if group in GROUP_FEATURES:
+                for feat in GROUP_FEATURES[group]:
+                    expanded_boost[feat] = mult
+            else:
+                expanded_boost[group] = mult
+    
     entry_features = build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, race_date, horse_early_pace)
     
     # Add early pace to each feature entry
     for ef in entry_features:
         ef['horse_early_pace'] = horse_early_pace.get(ef['horse_name'], 5.0)
     
-    # Build feature matrix (without pace - model doesn't use it yet)
+    # Build feature matrix (with optional boosting)
     import numpy as np
     
     X = []
     for ef in entry_features:
         row = []
         for f in features:
-            row.append(ef.get(f, 0))
+            val = ef.get(f, 0) or 0
+            boost = expanded_boost.get(f, 1.0)
+            row.append(val * boost)
         X.append(row)
     
     X = np.array(X)
@@ -315,8 +344,15 @@ if __name__ == '__main__':
     race_date = sys.argv[1] if len(sys.argv) > 1 else '2026-03-18'
     race_no = int(sys.argv[2]) if len(sys.argv) > 2 else 1
     venue = sys.argv[3] if len(sys.argv) > 3 else 'HV'
+    boosting = None
+    if len(sys.argv) > 4 and sys.argv[4] != 'null':
+        try:
+            import json
+            boosting = json.loads(sys.argv[4])
+        except Exception:
+            pass
     
-    print(f'Loading model and data for {race_date} R{race_no} {venue}...')
+    print(f'Loading model and data for {race_date} R{race_no} {venue}...' + (f' boosting={boosting}' if boosting else ''))
     
     model, features = load_model()
     db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace = load_data()
@@ -336,6 +372,6 @@ if __name__ == '__main__':
     
     distance = racecard.get('distance', 1200) if racecard else 1200
     
-    predictions = predict_race(racecard_entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features)
+    predictions = predict_race(racecard_entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features, boosting)
     
     print(json.dumps({'predictions': predictions}, ensure_ascii=False))

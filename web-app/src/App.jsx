@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './index.css';
 
@@ -16,6 +16,32 @@ function App() {
   const [selectedRaceNo, setSelectedRaceNo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [predictions, setPredictions] = useState([]);
+  const [predicting, setPredicting] = useState(false);
+  const [showBoost, setShowBoost] = useState(false);
+  
+  // Feature boosting factors (0.0 = off, 1.0 = normal, 3.0 = 3x boost)
+  const [boosting, setBoosting] = useState({
+    distance: 1.0,
+    jockey: 1.0,
+    recent: 1.0,
+    track: 1.0,
+    draw: 1.0,
+    career: 1.0,
+    trainer: 1.0,
+    best_time: 1.0,
+    pace: 1.0,
+  });
+  
+  // Debounced re-predict when boosting sliders change
+  const predictControllerRef = useRef(null);
+  const lastPredictRef = useRef(0);
+
+  const cancelPendingPredict = () => {
+    if (predictControllerRef.current) {
+      predictControllerRef.current.abort();
+      predictControllerRef.current = null;
+    }
+  };
 
   useEffect(() => {
     fetchFixtures();
@@ -28,6 +54,7 @@ function App() {
   }, [fixtures]);
 
   useEffect(() => {
+    cancelPendingPredict();
     if (selectedFixture) {
       setSelectedRaceNo(null);
       fetchRacecards();
@@ -66,15 +93,19 @@ function App() {
   // Calculate predictions when race changes
   useEffect(() => {
     if (racecardData && selectedRaceNo) {
+      lastPredictRef.current = 0; // reset throttle on race change
       calculatePredictions();
     }
   }, [selectedRaceNo]);
 
-  // Auto-save prediction to MongoDB when predictions change
+  // Auto-save prediction to MongoDB when predictions change (debounced)
+  const saveTimerRef = useRef(null);
   useEffect(() => {
     if (predictions.length > 0 && selectedFixture && selectedRaceNo) {
-      savePrediction();
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => savePrediction(), 2000);
     }
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [predictions]);
 
   const fetchHorseDetails = async () => {
@@ -82,13 +113,34 @@ function App() {
     // No additional fetch needed
   };
 
+  const handleBoostChange = (key, val) => {
+    setBoosting(b => ({...b, [key]: val}));
+    calculatePredictions();
+  };
+
+  const THROTTLE_MS = 600;
+
   const calculatePredictions = () => {
     if (!selectedFixture || !selectedRaceNo) return;
+    const now = Date.now();
+    if (now - lastPredictRef.current < THROTTLE_MS) return;
+    lastPredictRef.current = now;
     
-    // Call XGBoost ML prediction API
-    fetch(`/api/predict?race_date=${selectedFixture.date}&race_no=${selectedRaceNo}&venue=${selectedFixture.venue}`)
-      .then(res => res.json())
+    cancelPendingPredict();
+    const controller = new AbortController();
+    predictControllerRef.current = controller;
+    
+    const activeBoost = {};
+    Object.entries(boosting).forEach(([group, val]) => {
+      if (val !== 1.0) activeBoost[group] = val;
+    });
+    const boostArg = Object.keys(activeBoost).length > 0 ? encodeURIComponent(JSON.stringify(activeBoost)) : '';
+    const url = `/api/predict?race_date=${selectedFixture.date}&race_no=${selectedRaceNo}&venue=${selectedFixture.venue}${boostArg ? '&boosting=' + boostArg : ''}`;
+    
+    setPredicting(true);
+    fetch(url, { signal: controller.signal }).then(res => res.json())
       .then(data => {
+        setPredicting(false);
         if (data && data.predictions) {
           // Add jersey_url, horse_no from racecard data
           const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
@@ -122,12 +174,19 @@ function App() {
   const savePrediction = async () => {
     if (!selectedFixture || !selectedRaceNo || predictions.length === 0) return;
     
+    // Get current racecard data
+    const currentRace = racecardData?.racecards?.find(rc => rc.race_no === selectedRaceNo);
+    const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo) || [];
+    
     try {
       await axios.post('/api/predictions', {
         race_date: selectedFixture.date,
         race_no: selectedRaceNo,
         venue: selectedFixture.venue,
         predictions: predictions,
+        boosting: {...boosting},
+        racecard: currentRace ? {...currentRace} : null,
+        entries: currentEntries.map(e => ({ horse_no: e.horse_no, horse_name: e.horse_name, draw: e.draw })),
         model_version: 'xgb_v1',
         created_at: new Date().toISOString()
       });
@@ -289,7 +348,47 @@ function App() {
 
         {/* 右側：AI 預測控制面板 */}
         <div className="prediction-panel">
-          <h3>📊 AI 預測排名</h3>
+          <h3>📊 AI 預測排名 {predicting && <span className="predicting-spinner">⟳</span>}</h3>
+          
+          <button className="boost-toggle" onClick={() => setShowBoost(!showBoost)}>
+            {showBoost ? '🔼 隱藏' : '🔽 因子調整'}
+          </button>
+          
+          {showBoost && (
+            <div className="boost-panel">
+              <div className="boost-title">因子調整（0=關閉，1=正常，3=3倍）</div>
+              {[
+                {key: 'distance', label: '🏇 路程成績'},
+                {key: 'jockey', label: '🧑‍✈️ 騎師/組合'},
+                {key: 'recent', label: '📊 近績'},
+                {key: 'track', label: '🌱 跑道/狀況'},
+                {key: 'draw', label: '📍 檔位'},
+                {key: 'career', label: '🏆 歷史戰績'},
+                {key: 'trainer', label: '👤 練馬師'},
+                {key: 'best_time', label: '⏱ 最快時間'},
+                {key: 'pace', label: '⚡ 前中後段速'},
+              ].map(({key, label}) => (
+                <div className="boost-row" key={key}>
+                  <span className="boost-label">{label}</span>
+                  <input
+                    type="range"
+                    min="0" max="3" step="0.1"
+                    value={boosting[key]}
+                    onChange={e => handleBoostChange(key, parseFloat(e.target.value))}
+                  />
+                  <span className="boost-val">{boosting[key].toFixed(1)}x</span>
+                  <button className="boost-reset" onClick={() => handleBoostChange(key, 1.0)}>↺</button>
+                </div>
+              ))}
+              <button className="boost-reset-all" onClick={() => {
+                const reset = Object.fromEntries(Object.keys(boosting).map(k => [k, 1.0]));
+                setBoosting(reset);
+                setTimeout(() => calculatePredictions(), 50);
+              }}>
+                ↺ 重置全部
+              </button>
+            </div>
+          )}
           
           <div className="prediction-list">
             {predictions

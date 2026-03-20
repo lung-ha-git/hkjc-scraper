@@ -531,3 +531,91 @@ body {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+/* Boosting sliders */
+.boost-toggle {
+  width: 100%;
+  padding: 6px 12px;
+  background: #3b4252;
+  color: #eceff4;
+  border: 1px solid #4c566a;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+.boost-toggle:hover { background: #434c5e; }
+
+.boost-panel {
+  background: #2e3440;
+  border: 1px solid #4c566a;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+.boost-title {
+  font-size: 0.75rem;
+  color: #a0a0a0;
+  margin-bottom: 8px;
+}
+.boost-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.boost-label {
+  font-size: 0.8rem;
+  color: #eceff4;
+  width: 90px;
+  flex-shrink: 0;
+}
+.boost-row input[type=range] {
+  flex: 1;
+  accent-color: #88c0d0;
+}
+.boost-val {
+  font-size: 0.75rem;
+  color: #88c0d0;
+  width: 30px;
+  text-align: right;
+}
+.boost-reset {
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  background: #4c566a;
+  color: #ccc;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.boost-reset-all {
+  width: 100%;
+  font-size: 0.75rem;
+  padding: 4px;
+  background: #4c566a;
+  color: #ccc;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.boost-reset {
+  font-size: 1rem;
+  padding: 0 4px;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
+.boost-reset:hover { color: #88c0d0; }
+.predicting-spinner {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+  color: #88c0d0;
+  font-size: 1rem;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
