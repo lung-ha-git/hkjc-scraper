@@ -151,6 +151,25 @@ async function broadcastSnapshot(raceId, odds) {
   } catch (e) { /* silent */ }
 }
 
+// ─── Batch broadcast all races in one request ───────────────────────────────────
+async function broadcastBatch(races) {
+  if (races.length === 0) return;
+  try {
+    const body = races.map(race => ({
+      race_id: race.race_id,
+      odds: Object.fromEntries(
+        Object.entries(race.odds || { win: race.win, place: race.place })
+          .map(([h, v]) => [Number(h), v])
+      )
+    }));
+    await fetch(`${API_BASE}/api/odds/batch-snapshot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ races: body })
+    });
+  } catch (e) { /* silent */ }
+}
+
 // ─── Continuous collector loop ───────────────────────────────────────────────────
 async function runCollector(date, venue, races, intervalMs = 10000) {
   console.log(`\n🚀 HKJC Odds Collector (Fresh Browser Per Cycle) starting...`);
@@ -177,10 +196,9 @@ async function runCollector(date, venue, races, intervalMs = 10000) {
         console.error(`[${ts}] ⚠️  MongoDB: ${e.message}`);
       }
 
-      for (const race of results) {
-        await broadcastSnapshot(race.race_id, { win: race.win, place: race.place });
-        console.log(`[${ts}] 📡 → ${race.race_id}`);
-      }
+      // Batch broadcast all races in one request
+      await broadcastBatch(results);
+      console.log(`[${ts}] 📡 Batch broadcast → ${results.length} races`);
 
       return true;
     } catch (e) {
@@ -214,11 +232,8 @@ async function runOnce(date, venue, races) {
   if (results.length > 0) {
     console.log(`\n⏱️  Done in ${elapsed}ms | 💾 Saving ${results.length} races...`);
     await saveToMongoDB(results);
-    for (const race of results) {
-      await broadcastSnapshot(race.race_id, { win: race.win, place: race.place });
-      console.log(`  📡 ${race.race_id}`);
-    }
-    console.log('\n✅ Done!\n');
+    await broadcastBatch(results);
+    console.log(`  📡 Batch broadcast → ${results.length} races\n✅ Done!\n`);
   } else {
     console.log('\n❌ No data.\n');
   }

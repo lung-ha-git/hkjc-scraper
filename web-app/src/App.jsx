@@ -50,9 +50,21 @@ function App() {
     fetchFixtures();
   }, []);
 
+  // Restore selected race from localStorage when fixtures load
   useEffect(() => {
     if (fixtures.length > 0 && !selectedFixture) {
-      setSelectedFixture(fixtures[0]);
+      const stored = localStorage.getItem('hkjc_selectedRaceNo');
+      const storedDate = localStorage.getItem('hkjc_selectedDate');
+      const storedVenue = localStorage.getItem('hkjc_selectedVenue');
+      const fixture = fixtures[0];
+
+      if (stored && storedDate === fixture.date && storedVenue === fixture.venue) {
+        // Restore to stored race if date/venue match
+        setSelectedFixture(fixture);
+        setSelectedRaceNo(parseInt(stored));
+      } else {
+        setSelectedFixture(fixtures[0]);
+      }
     }
   }, [fixtures]);
 
@@ -63,6 +75,15 @@ function App() {
       fetchRacecards();
     }
   }, [selectedFixture]);
+
+  // Persist selected race to localStorage on change
+  useEffect(() => {
+    if (selectedRaceNo && selectedFixture) {
+      localStorage.setItem('hkjc_selectedRaceNo', String(selectedRaceNo));
+      localStorage.setItem('hkjc_selectedDate', selectedFixture.date);
+      localStorage.setItem('hkjc_selectedVenue', selectedFixture.venue);
+    }
+  }, [selectedRaceNo, selectedFixture]);
 
   // Compute race ID for WebSocket subscription
   const raceId = selectedFixture && selectedRaceNo

@@ -214,6 +214,35 @@ app.post('/api/odds/snapshot', (req, res) => {
   res.json({ ok: 1, count: Object.keys(odds).length });
 });
 
+// Batch broadcast: receive all races at once, emit to each race room
+// Body: { races: [{ race_id, odds: { horse_no: { win, place } } }] }
+app.post('/api/odds/batch-snapshot', (req, res) => {
+  const { races } = req.body;
+  if (!races || !Array.isArray(races)) {
+    return res.status(400).json({ error: 'races array required' });
+  }
+
+  const timestamp = Date.now();
+  let count = 0;
+
+  races.forEach(({ race_id, odds }) => {
+    if (!race_id || !odds) return;
+
+    // Update cache
+    const cached = {};
+    Object.entries(odds).forEach(([horse_no, odds_val]) => {
+      cached[Number(horse_no)] = { ...odds_val, updated_at: timestamp };
+    });
+    req.oddsCache[race_id] = cached;
+
+    // Broadcast to race room
+    req.io.to(race_id).emit('odds_snapshot', { odds: cached });
+    count++;
+  });
+
+  res.json({ ok: 1, races_count: count });
+});
+
 // Get full odds history from MongoDB for a race
 // Returns: { times: [...], horses: { [horseNo]: { win: [...], place: [...] } } }
 app.get('/api/odds/history/:raceId', async (req, res) => {
