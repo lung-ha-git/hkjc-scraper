@@ -201,6 +201,47 @@ app.post('/api/odds/snapshot', (req, res) => {
   res.json({ ok: 1, count: Object.keys(odds).length });
 });
 
+// Get full odds history from MongoDB for a race
+// Returns: { times: [...], horses: { [horseNo]: { win: [...], place: [...] } } }
+app.get('/api/odds/history/:raceId', async (req, res) => {
+  const { raceId } = req.params;
+  
+  const docs = await db.collection('live_odds')
+    .find({ race_id: raceId })
+    .sort({ scraped_at: 1 })
+    .toArray();
+  
+  if (!docs.length) return res.json({ times: [], horses: {} });
+  
+  // Collect all horse numbers across all docs (normalize to string)
+  const allHorses = new Set();
+  docs.forEach(doc => {
+    Object.keys(doc.win || {}).forEach(k => allHorses.add(String(Number(k))));
+    Object.keys(doc.place || {}).forEach(k => allHorses.add(String(Number(k))));
+  });
+  
+  // Build time series per horse (keyed by string: "1", "2", ... "14")
+  const horses = {};
+  Array.from(allHorses).sort((a, b) => Number(a) - Number(b)).forEach(h => {
+    horses[h] = { win: [], place: [] };
+  });
+  
+  const times = docs.map(d => d.scraped_at);
+  
+  docs.forEach(doc => {
+    Object.entries(doc.win || {}).forEach(([hk, v]) => {
+      const h = String(Number(hk));
+      if (horses[h]) horses[h].win.push(v);
+    });
+    Object.entries(doc.place || {}).forEach(([hk, v]) => {
+      const h = String(Number(hk));
+      if (horses[h]) horses[h].place.push(v);
+    });
+  });
+  
+  res.json({ times, horses });
+});
+
 app.get('/api/horses/best-times', async (req, res) => {
   const { date, raceNo } = req.query;
   console.log('best-times called', date, raceNo);
