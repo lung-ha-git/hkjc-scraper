@@ -193,16 +193,17 @@ async function scrapeAllRaces(browser, date, venue, races) {
 /**
  * Continuous collector loop
  */
-async function runCollector(date, venue, races, intervalMs = 5000) {
+async function runCollector(date, venue, races, intervalMs = 15000) {
   console.log(`\n🚀 HKJC Odds Collector starting...`);
   console.log(`📅 ${date} ${venue} | 🏃 Races: ${races.join(', ')}`);
   console.log(`⏱️  Interval: ${intervalMs}ms | 🌐 ${API_BASE}\n`);
 
   let isFirstRun = true;
   const snapshotSent = new Set();
+  let consecutiveFailures = 0;
+  let currentInterval = intervalMs;
 
   const run = async () => {
-    // Create a fresh browser for each scrape cycle (avoids HKJC blocking reused sessions)
     let localBrowser = null;
     const startTime = Date.now();
     const timestamp = new Date().toLocaleTimeString();
@@ -216,10 +217,15 @@ async function runCollector(date, venue, races, intervalMs = 5000) {
       const elapsed = Date.now() - startTime;
 
       if (results.length === 0) {
-        console.log(`[${timestamp}] ❌ No data scraped (${elapsed}ms)`);
-        return;
+        consecutiveFailures++;
+        const backoffMs = Math.min(currentInterval * consecutiveFailures, 120000);
+        console.log(`[${timestamp}] ❌ No data (${elapsed}ms), failure #${consecutiveFailures}, backing off ${backoffMs}ms`);
+        return; // Don't update interval or snapshot state
       }
 
+      // Success — reset failure counter and interval
+      consecutiveFailures = 0;
+      currentInterval = intervalMs;
       console.log(`[${timestamp}] Scraped ${results.length}/${races.length} races in ${elapsed}ms`);
 
       // Save to MongoDB
@@ -233,7 +239,6 @@ async function runCollector(date, venue, races, intervalMs = 5000) {
       // Broadcast to WebSocket clients
       for (const race of results) {
         if (isFirstRun || !snapshotSent.has(race.race_id)) {
-          // Send full snapshot
           const odds = {};
           const allHorseNos = new Set([
             ...Object.keys(race.win),
@@ -249,7 +254,6 @@ async function runCollector(date, venue, races, intervalMs = 5000) {
           snapshotSent.add(race.race_id);
           console.log(`[${timestamp}] 📡 Snapshot → ${race.race_id}`);
         } else {
-          // Send incremental updates per horse
           for (const [horseNo, winOdds] of Object.entries(race.win)) {
             await broadcastOddsUpdate(race.race_id, horseNo, winOdds, race.place[horseNo] ?? null);
           }
@@ -258,6 +262,7 @@ async function runCollector(date, venue, races, intervalMs = 5000) {
 
       isFirstRun = false;
     } catch (e) {
+      consecutiveFailures++;
       console.error(`[${timestamp}] ❌ Error: ${e.message}`);
     } finally {
       if (localBrowser) {
@@ -267,8 +272,21 @@ async function runCollector(date, venue, races, intervalMs = 5000) {
   };
 
   // Run immediately, then on interval
-  await run();
-  return setInterval(run, intervalMs);
+  // Use recursive setTimeout so next interval adapts based on failure count
+  let timer = null;
+  const scheduleNext = (interval) => {
+    timer = setTimeout(async () => {
+      await run();
+      // If we failed recently, back off exponentially; otherwise use normal interval
+      const nextInterval = consecutiveFailures > 0
+        ? Math.min(interval * consecutiveFailures, 120000)
+        : interval;
+      scheduleNext(nextInterval);
+    }, interval);
+    return timer;
+  };
+
+  return scheduleNext(intervalMs);
 }
 
 /**
