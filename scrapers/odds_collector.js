@@ -154,7 +154,7 @@ async function scrapeAllRaces(date, venue, races) {
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
   const page = await browser.newPage();
   
-  // Warm up session
+  // Warm up session (3s to avoid HKJC blocking sequential navigation)
   await page.goto(`https://bet.hkjc.com/ch/racing/wp/${date}/${venue}/1`, {
     waitUntil: 'domcontentloaded',
     timeout: 15000
