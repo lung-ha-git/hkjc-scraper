@@ -86,6 +86,11 @@ function App() {
     }
   }, [selectedRaceNo, selectedFixture]);
 
+  // Compute race ID for WebSocket subscription
+  const raceId = selectedFixture && selectedRaceNo
+    ? `${selectedFixture.date}_${selectedFixture.venue}_R${selectedRaceNo}`
+    : null;
+
   // FEAT-010: clear predictions + racecard on race change
   useEffect(() => {
     if (!raceId) return;
@@ -93,11 +98,6 @@ function App() {
     setRaceConfidence(null);
     setRacecardData(null);
   }, [raceId]);
-
-  // Compute race ID for WebSocket subscription
-  const raceId = selectedFixture && selectedRaceNo
-    ? `${selectedFixture.date}_${selectedFixture.venue}_R${selectedRaceNo}`
-    : null;
 
   // WebSocket for real-time odds
   const { oddsData, oddsHistory, connected, error: oddsError } = useOddsSocket(raceId);
@@ -501,26 +501,29 @@ function App() {
       </div>
 
       {/* Mobile unified table (outside main-layout, controlled by CSS */}
-      {selectedFixture && selectedRaceNo && (
-        <div className="unified-table-wrap">
-          <div className="ut-mobile-header">
-            <span>第 {selectedRaceNo} 場</span>
-            <span>{currentRaceCards?.distance ? `${currentRaceCards.distance}m` : ''}</span>
-            {raceConfidence != null && (
-              <span className={`conf-dot ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
-                {raceConfidence}
-              </span>
-            )}
-          </div>
-          <UnifiedRaceTable
-            predictions={predictions}
-            currentEntries={currentEntries}
-            oddsData={oddsData}
-            oddsHistory={oddsHistory}
-            connected={connected}
-          />
+      <div className="unified-table-wrap">
+        <div className="ut-mobile-header">
+          <span>第 {selectedRaceNo || '-'} 場</span>
+          <span>{currentRaceCards?.distance ? `${currentRaceCards.distance}m` : ''}</span>
+          {raceConfidence != null && (
+            <span className={`conf-dot ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
+              {raceConfidence}
+            </span>
+          )}
         </div>
-      )}
+        <UnifiedRaceTable
+          predictions={predictions}
+          currentEntries={currentEntries}
+          oddsData={oddsData}
+          oddsHistory={oddsHistory}
+          connected={connected}
+        />
+        <div style={{color:'#aaa',fontSize:11,padding:'8px 12px',textAlign:'center'}}>
+          {selectedRaceNo
+            ? `R${selectedRaceNo} · 行={predictions?.length || 0} · 連接=${String(connected)}`
+            : '揀一場賽事'}
+        </div>
+      </div>
     </div>
   );
 }
