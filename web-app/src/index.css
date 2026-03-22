@@ -188,8 +188,14 @@ body {
 /* Main Layout */
 .main-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 320px 380px;
   gap: 16px;
+}
+
+@media (max-width: 1200px) {
+  .main-layout {
+    grid-template-columns: 1fr 320px;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -683,3 +689,164 @@ body {
 .conf-tab-badge.high { background: #2d4a2d; color: #a3d9a5; }
 .conf-tab-badge.medium { background: #4a4a2d; color: #ebcb8b; }
 .conf-tab-badge.low { background: #4a2d2d; color: #bf616a; }
+
+/* ========== OddsPanel ========== */
+.odds-panel {
+  background: var(--secondary);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 320px;
+  max-width: 400px;
+}
+
+.odds-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.odds-panel-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot.connected { background: #4ade80; }
+.status-dot.disconnected { background: #f87171; }
+
+.race-id-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--primary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.connection-error {
+  font-size: 0.8rem;
+  color: #f87171;
+}
+
+.odds-connecting {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px;
+}
+
+/* Odds Table */
+.odds-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.odds-table-header {
+  display: grid;
+  grid-template-columns: 36px 1fr 60px 60px 24px;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.odds-row {
+  border-radius: 8px;
+  overflow: hidden;
+  transition: background 0.15s;
+}
+
+.odds-row:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.odds-row-main {
+  display: grid;
+  grid-template-columns: 36px 1fr 60px 60px 24px;
+  gap: 8px;
+  padding: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.odds-horse-no {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.odds-horse-name {
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.odds-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.odds-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.odds-num {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.odds-value.win .odds-num { color: #fbbf24; }
+.odds-value.place .odds-num { color: #60a5fa; }
+
+.odds-toggle {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.odds-row-chart {
+  padding: 8px 8px 12px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.odds-chart-empty {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.odds-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 32px;
+}

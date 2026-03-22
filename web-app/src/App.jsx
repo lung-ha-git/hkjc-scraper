@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './index.css';
+import OddsPanel from './components/OddsPanel';
+import { useOddsSocket } from './hooks/useOddsSocket';
 
 // Fallback colors when no jersey_url
 const JERSEY_COLORS = [
@@ -61,6 +63,14 @@ function App() {
       fetchRacecards();
     }
   }, [selectedFixture]);
+
+  // Compute race ID for WebSocket subscription
+  const raceId = selectedFixture && selectedRaceNo
+    ? `${selectedFixture.date}_${selectedFixture.venue}_R${selectedRaceNo}`
+    : null;
+
+  // WebSocket for real-time odds
+  const { oddsData, oddsHistory, connected, error: oddsError } = useOddsSocket(raceId);
 
   const fetchFixtures = async () => {
     try {
@@ -448,6 +458,16 @@ function App() {
             })}
           </div>
         </div>
+
+        {/* 右側：即時賠率面板 */}
+        <OddsPanel
+          oddsData={oddsData}
+          oddsHistory={oddsHistory}
+          entries={currentEntries}
+          connected={connected}
+          error={oddsError}
+          raceId={raceId}
+        />
       </div>
     </div>
   );

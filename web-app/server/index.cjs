@@ -1,9 +1,20 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
 const PORT = 3001;
+
+// Create HTTP server + Socket.IO
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -12,6 +23,42 @@ const mongoUrl = 'mongodb://localhost:27017/';
 const dbName = 'hkjc_racing_dev';
 
 let db;
+
+// In-memory cache for latest odds per race
+// { "2026-03-22_ST_R7": { 1: { win, place, timestamp }, ... } }
+const oddsCache = {};
+
+io.on('connection', (socket) => {
+  console.log('[WS] Client connected:', socket.id);
+
+  socket.on('subscribe', ({ race_id }) => {
+    if (!race_id) return;
+    socket.join(race_id);
+    console.log(`[WS] ${socket.id} joined ${race_id}`);
+    
+    // Send cached snapshot if available
+    if (oddsCache[race_id]) {
+      socket.emit('odds_snapshot', { odds: oddsCache[race_id] });
+    }
+  });
+
+  socket.on('unsubscribe', ({ race_id }) => {
+    if (!race_id) return;
+    socket.leave(race_id);
+    console.log(`[WS] ${socket.id} left ${race_id}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[WS] Client disconnected:', socket.id);
+  });
+});
+
+// Expose io instance for scraper calls via /api/odds/broadcast
+app.use((req, res, next) => {
+  req.io = io;
+  req.oddsCache = oddsCache;
+  next();
+});
 
 async function connect() {
   const client = new MongoClient(mongoUrl);
@@ -84,6 +131,67 @@ app.get('/api/races', async (req, res) => {
   res.json(r);
 });
 
+// Get latest cached odds for a race (HTTP fallback / initial load)
+app.get('/api/odds/:raceId', (req, res) => {
+  const { raceId } = req.params;
+  const cached = req.oddsCache[raceId];
+  if (cached) {
+    res.json({ odds: cached, source: 'cache' });
+  } else {
+    res.json({ odds: {}, source: 'cache' });
+  }
+});
+
+// Broadcast odds update (called by scraper after writing to MongoDB)
+// Body: { race_id, horse_no, win, place }
+app.post('/api/odds/broadcast', (req, res) => {
+  const { race_id, horse_no, win, place } = req.body;
+  if (!race_id || horse_no == null) {
+    return res.status(400).json({ error: 'race_id and horse_no required' });
+  }
+
+  const timestamp = Date.now();
+
+  // Update in-memory cache
+  if (!req.oddsCache[race_id]) {
+    req.oddsCache[race_id] = {};
+  }
+  req.oddsCache[race_id][horse_no] = { win, place, updated_at: timestamp };
+
+  // Broadcast to all subscribers of this race
+  req.io.to(race_id).emit('odds_update', {
+    horse_no,
+    win,
+    place,
+    timestamp
+  });
+
+  res.json({ ok: 1, broadcast: true });
+});
+
+// Broadcast full snapshot (called by scraper on initial scrape)
+// Body: { race_id, odds: { horse_no: { win, place } } }
+app.post('/api/odds/snapshot', (req, res) => {
+  const { race_id, odds } = req.body;
+  if (!race_id || !odds) {
+    return res.status(400).json({ error: 'race_id and odds required' });
+  }
+
+  const timestamp = Date.now();
+
+  // Update cache
+  const cached = {};
+  Object.entries(odds).forEach(([horse_no, odds_val]) => {
+    cached[Number(horse_no)] = { ...odds_val, updated_at: timestamp };
+  });
+  req.oddsCache[race_id] = cached;
+
+  // Broadcast snapshot
+  req.io.to(race_id).emit('odds_snapshot', { odds: cached });
+
+  res.json({ ok: 1, count: Object.keys(odds).length });
+});
+
 app.get('/api/horses/best-times', async (req, res) => {
   const { date, raceNo } = req.query;
   console.log('best-times called', date, raceNo);
@@ -111,7 +219,7 @@ app.get('/api/horses/best-times', async (req, res) => {
   res.json(bestTimes);
 });
 
-app.listen(PORT, () => console.log('Server:', PORT));
+httpServer.listen(PORT, () => console.log('Server:', PORT));
 
 // Save AI prediction
 app.post('/api/predictions', async (req, res) => {
