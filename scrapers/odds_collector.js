@@ -89,10 +89,11 @@ function parseOdds(data) {
  */
 async function broadcastOddsUpdate(raceId, horseNo, win, place) {
   try {
+    // Normalize horseNo to number (odds scraper returns "01", "02" strings)
     await fetch(`${API_BASE}/api/odds/broadcast`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ race_id: raceId, horse_no: horseNo, win, place })
+      body: JSON.stringify({ race_id: raceId, horse_no: Number(horseNo), win, place })
     });
   } catch (e) {
     // Silent failure to not block scraping
@@ -104,10 +105,15 @@ async function broadcastOddsUpdate(raceId, horseNo, win, place) {
  */
 async function broadcastSnapshot(raceId, odds) {
   try {
+    // Normalize all horse_no keys to numbers (keys come as "01", "02" strings from scraper)
+    const normalizedOdds = {};
+    for (const [h, v] of Object.entries(odds)) {
+      normalizedOdds[Number(h)] = v;
+    }
     await fetch(`${API_BASE}/api/odds/snapshot`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ race_id: raceId, odds })
+      body: JSON.stringify({ race_id: raceId, odds: normalizedOdds })
     });
   } catch (e) {
     // Silent failure
@@ -168,13 +174,21 @@ async function scrapeAllRaces(browser, date, venue, races) {
     }
 
     const raceId = buildRaceId(date, venue, raceNo);
+
+    // Normalize keys to numbers: scraper returns "01", "02" strings → 1, 2 numbers
+    const normalizeKeys = (obj) => {
+      const out = {};
+      for (const [k, v] of Object.entries(obj)) out[Number(k)] = v;
+      return out;
+    };
+
     results.push({
       race_id: raceId,
       date,
       venue,
       race_no: parseInt(raceNo),
-      win: odds.win,
-      place: odds.place,
+      win: normalizeKeys(odds.win),
+      place: normalizeKeys(odds.place),
       scraped_at: new Date()
     });
 
@@ -241,8 +255,8 @@ async function runCollector(date, venue, races, intervalMs = 15000) {
         if (isFirstRun || !snapshotSent.has(race.race_id)) {
           const odds = {};
           const allHorseNos = new Set([
-            ...Object.keys(race.win),
-            ...Object.keys(race.place)
+            ...Object.keys(race.win).map(Number),
+            ...Object.keys(race.place).map(Number)
           ]);
           for (const h of allHorseNos) {
             odds[h] = {
@@ -255,7 +269,7 @@ async function runCollector(date, venue, races, intervalMs = 15000) {
           console.log(`[${timestamp}] 📡 Snapshot → ${race.race_id}`);
         } else {
           for (const [horseNo, winOdds] of Object.entries(race.win)) {
-            await broadcastOddsUpdate(race.race_id, horseNo, winOdds, race.place[horseNo] ?? null);
+            await broadcastOddsUpdate(race.race_id, Number(horseNo), winOdds, race.place[Number(horseNo)] ?? null);
           }
         }
       }
@@ -311,8 +325,8 @@ async function runOnce(date, venue, races) {
     for (const race of results) {
       const odds = {};
       const allHorseNos = new Set([
-        ...Object.keys(race.win),
-        ...Object.keys(race.place)
+        ...Object.keys(race.win).map(Number),
+        ...Object.keys(race.place).map(Number)
       ]);
       for (const h of allHorseNos) {
         odds[h] = {

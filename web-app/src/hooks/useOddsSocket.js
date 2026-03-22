@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3001' 
-  : `http://${window.location.hostname}:3001`;
+// Use origin-only URL + explicit path to avoid Socket.IO double-path bug
+// (io("https://host/socket.io") makes Engine.IO requests to /socket.io/socket.io/)
+const SOCKET_ORIGIN = window.location.origin;
+const SOCKET_PATH = '/socket.io/';
 
 /**
  * useOddsSocket - WebSocket hook for real-time odds updates
@@ -30,7 +31,8 @@ export function useOddsSocket(raceId) {
     setConnected(false);
     setError(null);
 
-    const socket = io(SOCKET_URL, {
+    const socket = io(SOCKET_ORIGIN, {
+      path: SOCKET_PATH,
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
@@ -58,21 +60,23 @@ export function useOddsSocket(raceId) {
     // Receive odds update: { horse_no, win, place, timestamp }
     socket.on('odds_update', (data) => {
       const { horse_no, win, place, timestamp } = data;
+      // Normalize horse_no to string (Object.keys/JSON always stringify numeric keys)
+      const hk = String(horse_no);
       
       setOddsData(prev => ({
         ...prev,
-        [horse_no]: { win, place, updated_at: timestamp }
+        [hk]: { win, place, updated_at: timestamp }
       }));
 
       // Append to history
       const point = { time: timestamp, win, place };
       setOddsHistory(prev => {
-        const existing = prev[horse_no] || [];
+        const existing = prev[hk] || [];
         // Keep last 60 points (~5 minutes at 5s intervals)
         const updated = [...existing, point].slice(-60);
-        return { ...prev, [horse_no]: updated };
+        return { ...prev, [hk]: updated };
       });
-      historyRef.current = { ...historyRef.current, [horse_no]: [...(historyRef.current[horse_no] || []), point].slice(-60) };
+      historyRef.current = { ...historyRef.current, [hk]: [...(historyRef.current[hk] || []), point].slice(-60) };
     });
 
     // Receive full snapshot: { odds: { [horse_no]: { win, place } } }
@@ -81,9 +85,10 @@ export function useOddsSocket(raceId) {
       const newData = {};
       const now = Date.now();
       Object.entries(odds).forEach(([horse_no, odds_val]) => {
-        newData[horse_no] = { ...odds_val, updated_at: now };
-        // Seed history with current value
-        historyRef.current[horse_no] = [{ time: now, win: odds_val.win, place: odds_val.place }];
+        // Normalize key to string (JSON always stringifies numeric object keys)
+        const hk = String(horse_no);
+        newData[hk] = { ...odds_val, updated_at: now };
+        historyRef.current[hk] = [{ time: now, win: odds_val.win, place: odds_val.place }];
       });
       setOddsData(newData);
       setOddsHistory({ ...historyRef.current });

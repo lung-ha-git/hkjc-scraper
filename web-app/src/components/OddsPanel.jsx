@@ -203,20 +203,21 @@ export default function OddsPanel({ oddsData, oddsHistory, entries, connected, e
         </div>
 
         {sortedEntries.map((entry, idx) => {
-          const horseNo = entry.horse_no;
-          const odds = oddsData[horseNo];
-          const history = oddsHistory[horseNo] || [];
-          const isExpanded = expandedHorses[horseNo] || false;
+          // Normalize horse_no to string key (JSON always converts numeric object keys to strings)
+          const horseNoKey = String(entry.horse_no);
+          const odds = oddsData[horseNoKey];
+          const history = oddsHistory[horseNoKey] || [];
+          const isExpanded = expandedHorses[horseNoKey] || false;
 
           return (
             <HorseOddsRow
-              key={horseNo}
+              key={horseNoKey}
               horse={entry}
               odds={odds}
               history={history}
               colorIndex={idx}
               isExpanded={isExpanded}
-              onToggle={() => toggleHorse(horseNo)}
+              onToggle={() => toggleHorse(horseNoKey)}
             />
           );
         })}

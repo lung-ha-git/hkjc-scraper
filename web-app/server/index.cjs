@@ -3,6 +3,7 @@ const cors = require('cors');
 const { MongoClient, ObjectId } = require('mongodb');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
 const PORT = 3001;
@@ -18,6 +19,14 @@ const io = new Server(httpServer, {
 
 app.use(cors());
 app.use(express.json());
+
+// Serve built static files from dist/
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// SPA fallback: serve index.html for non-API, non-socket.io routes
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 const mongoUrl = 'mongodb://localhost:27017/';
 const dbName = 'hkjc_racing_dev';
@@ -156,11 +165,11 @@ app.post('/api/odds/broadcast', (req, res) => {
   if (!req.oddsCache[race_id]) {
     req.oddsCache[race_id] = {};
   }
-  req.oddsCache[race_id][horse_no] = { win, place, updated_at: timestamp };
+  req.oddsCache[race_id][Number(horse_no)] = { win, place, updated_at: timestamp };
 
   // Broadcast to all subscribers of this race
   req.io.to(race_id).emit('odds_update', {
-    horse_no,
+    horse_no: Number(horse_no),
     win,
     place,
     timestamp
