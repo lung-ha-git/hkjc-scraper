@@ -393,10 +393,10 @@ body {
   margin: 0 auto;
 }
 
-.rank-1 { background: var(--secondary); color: var(--gold); }
-.rank-2 { background: var(--secondary); color: var(--silver); }
-.rank-3 { background: var(--secondary); color: var(--bronze); }
-.rank-4 { background: var(--secondary); color: #60a5fa; }
+.rank-1 { background: var(--gold); color: #1a1a2e; }
+.rank-2 { background: var(--silver); color: #1a1a2e; }
+.rank-3 { background: var(--bronze); color: #fff; }
+.rank-4 { background: #1e40af; color: #fff; }
 .rank-5, .rank-6 { background: #444; color: #fff; }
 .rank-7, .rank-8, .rank-9, .rank-10,
 .rank-11, .rank-12, .rank-13, .rank-14 { background: var(--secondary); color: var(--text-muted); }
