@@ -536,16 +536,26 @@ function App() {
           </button>
           {showBoost && (
             <div className="mob-boost-panel">
-              {Object.entries(boosting).map(([key, val]) => (
+              {[
+                {key: 'distance', label: '🏇 路程'},
+                {key: 'jockey', label: '🧑‍✈️ 騎師'},
+                {key: 'recent', label: '📊 近績'},
+                {key: 'track', label: '🌱 跑道'},
+                {key: 'draw', label: '📍 檔位'},
+                {key: 'career', label: '🏆 歷史'},
+                {key: 'trainer', label: '👤 練馬師'},
+                {key: 'best_time', label: '⏱ 最快'},
+                {key: 'pace', label: '⚡ 段速'},
+              ].map(({key, label}) => (
                 <div key={key} className="mob-boost-row">
-                  <span className="mob-boost-label">{key}</span>
+                  <span className="mob-boost-label">{label}</span>
                   <input
                     type="range"
-                    min="0" max="3" step="0.5"
-                    value={val}
+                    min="0" max="3" step="0.1"
+                    value={boosting[key]}
                     onChange={e => handleBoostChange(key, parseFloat(e.target.value))}
                   />
-                  <span className="mob-boost-val">{val.toFixed(1)}</span>
+                  <span className="mob-boost-val">{boosting[key].toFixed(1)}</span>
                 </div>
               ))}
               <button className="mob-boost-reset" onClick={() => {
