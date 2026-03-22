@@ -82,10 +82,8 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
             <th>預</th>
             <th>#</th>
             <th>馬匹</th>
-            <th>WIN</th>
-            <th>WIN走</th>
-            <th>PLA</th>
-            <th>PLA走</th>
+            <th>WIN<div className="ut-sub-h">走</div></th>
+            <th>PLA<div className="ut-sub-h">走</div></th>
             <th>檔</th>
             <th>評</th>
             <th>近</th>
@@ -104,17 +102,13 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
                 <div className="ut-horse">{p.horse_name}</div>
                 <div className="ut-jk">{p.jockey_name} - {p.trainer_name}</div>
               </td>
-              <td className="ut-win">
-                <div className="ut-odds">{fmt(odds.win)}</div>
+              <td className="ut-odds-cell">
+                <div className="ut-win-spark"><TinySparkline hist={hist} color="#fbbf24" /></div>
+                <div className="ut-odds-val ut-win-val">{fmt(odds.win)}</div>
               </td>
-              <td className="ut-spark">
-                <TinySparkline hist={hist} color="#fbbf24" />
-              </td>
-              <td className="ut-pla">
-                <div className="ut-odds">{fmt(odds.place)}</div>
-              </td>
-              <td className="ut-spark">
-                <TinySparkline hist={hist} color="#60a5fa" />
+              <td className="ut-odds-cell">
+                <div className="ut-pla-spark"><TinySparkline hist={hist} color="#60a5fa" /></div>
+                <div className="ut-odds-val ut-pla-val">{fmt(odds.place)}</div>
               </td>
               <td className="ut-draw">{entry?.draw ?? '-'}</td>
               <td className="ut-rating">{entry?.rating_change ?? '-'}</td>
