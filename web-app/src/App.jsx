@@ -519,7 +519,7 @@ function App() {
         />
         <div style={{color:'#aaa',fontSize:11,padding:'8px 12px',textAlign:'center'}}>
           {selectedRaceNo
-            ? `R${selectedRaceNo} · 行={predictions?.length || 0} · 連接=${String(connected)}`
+            ? `R${selectedRaceNo} · 行=${predictions?.length || 0} · 連接=${String(connected)}`
             : '揀一場賽事'}
         </div>
       </div>
