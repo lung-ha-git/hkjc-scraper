@@ -120,7 +120,12 @@ export default function OddsPanel({ oddsData, oddsHistory, entries, connected, e
           const odds = oddsData[hk];
           const color = HORSE_COLORS[entry.horse_no % HORSE_COLORS.length];
           // Get this horse's history from MongoDB data
-          const horseHistory = historyData?.horses?.[hk] || [];
+          // MongoDB format: { win: [...], place: [...] }
+          // Sparkline expects: [{ time, win, place }, ...]
+          const raw = historyData?.horses?.[hk];
+          const horseHistory = (raw && raw.win && raw.place)
+            ? raw.win.map((w, i) => ({ win: w, place: raw.place[i] ?? null }))
+            : [];
 
           return (
             <div key={hk} className="odds-row">
