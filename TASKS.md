@@ -11,28 +11,61 @@
 ### Sub-tasks
 
 - [ ] **9.1** Audit current App.jsx layout — 了解現有 3-column 架構
+  - **Test**: 瀏覽器 DevTools mobile 模式 (< 768px) 截圖記錄現狀
 - [ ] **9.2** 研究 odds API response 格式 — 確認 racecard entries 包含哂咩 fields
+  - **Test**: `curl /api/racecards` 輸出結構
 - [ ] **9.3** 設計 unified table schema — 馬號/馬名/WIN/PLACE/信心指數/預測 rank
+  - **Test**: 人工對照 mock data 確認各 column 有數值
 - [ ] **9.4** 實現 unified table component (mobile-first)
+  - **Test**: `npm run build` 無 error，`curl /` 正常 serve
 - [ ] **9.5** Desktop layout: 保持 3-column or 改 2-column
+  - **Test**: Desktop (≥1200px) 截圖確認 layout
 - [ ] **9.6** 測試 mobile viewport (< 768px)
+  - **Test**: DevTools mobile 模式，確認 unified table 顯示，3-column 隱藏
 - [ ] **9.7** 移除/替換現有 OddsPanel component
+  - **Test**: Desktop + Mobile 兩種mode 都正常，console 無 red error
 
 **參考**: `web-app/src/App.jsx`, `web-app/src/components/`
 
 ---
 
-## FEAT-011: Webapp UX — Persist Selected Race on Refresh 🔴 HIGH
+## FEAT-010: Webapp UX — Clear on Race Switch ✅ DONE
 
-**目標**: Page refresh 時維持場次，唔回到 R1
+> ✅ **DONE** `94e97d50` — clears racecard + predictions + odds on race switch
 
 ### Sub-tasks
 
-- [ ] **11.1** 在 App.jsx mount 時讀取 `localStorage.getItem('selectedRace')`
-- [ ] **11.2** Race change 時寫入 `localStorage.setItem('selectedRace', raceId)`
-- [ ] **11.3** Handle missing/invalid stored value gracefully (default to R1)
+- [x] **10.1** Identify where state lives ✅
+- [x] **10.2** Reset oddsData/oddsHistory when raceId changes ✅
+- [x] **10.3** Clear racecard + predictions on race change ✅
+- [x] **10.4** Test rapid race switching ✅ (manual: R1→R3→R5 確認無 stale data)
 
-**技術**: React `useEffect` on mount, `localStorage`
+---
+
+## FEAT-011: Webapp UX — Persist Selected Race on Refresh ✅ DONE
+
+> ✅ **DONE** `c3b06ab8` — localStorage restore on fixtures load, persist on race change
+
+### Sub-tasks
+
+- [x] **11.1** Restore from localStorage on mount ✅
+- [x] **11.2** Persist on race change ✅
+- [x] **11.3** Handle missing/invalid stored value ✅
+- [x] **11.4** Test: Refresh page, confirm race preserved ✅
+
+---
+
+## FEAT-001: Batch Broadcast — 10→1 Request ✅ DONE
+
+> ✅ **DONE** `c3b06ab8` — batch endpoint + scraper update
+
+### Sub-tasks
+
+- [x] **1.1** Server: `POST /api/odds/batch-snapshot` endpoint ✅
+- [x] **1.2** Server: Broadcast all races in one loop ✅
+- [x] **1.3** Scraper: One fetch() call for all races ✅
+- [x] **1.4** Test: `curl -X POST /api/odds/batch-snapshot` → `{"ok":1,"races_count":N}` ✅
+- [x] **1.5** Test: Scraper logs "Batch broadcast → N races" ✅
 
 ---
 
@@ -43,27 +76,17 @@
 ### Sub-tasks
 
 - [ ] **6.1** 研究 odds GraphQL response — 找出 actual entries fields
+  - **Test**: `node scrapers/odds_collector.js` 單場，log 完整 response 結構
 - [ ] **6.2** 寫 script 比對 `racecard_entries` vs `odds_entries`
-- [ ] **6.3** 整合進 daily pipeline (Python: racecards.py)
-- [ ] **6.4** Output 報告：新增馬匹、移除馬匹、替補
-- [ ] **6.5** UI 提示：webapp 顯示 "馬匹有變動" warning
+  - **Test**: MongoDB query 確認兩邊 horse_no 集合差異
+- [ ] **6.3** 整合進 daily pipeline (Python)
+  - **Test**: `python racecards.py 2026-03-22` 確認 output 有 mismatch 報告
+- [ ] **6.4** Output 報告：新增/移除/替補馬匹
+  - **Test**: 對照 HKJC 官網賽事資料驗證
+- [ ] **6.5** Webapp 顯示 "馬匹有變動" warning
+  - **Test**: Mobile + Desktop 確認 warning badge 出現
 
-**技術**: Python (racecards.py), MongoDB `racecard_entries` vs `live_odds`
-
----
-
-## FEAT-010: Webapp UX — Clear on Race Switch 🟡 MEDIUM
-
-**目標**: R1→R2 時清空舊 content，防止 stale data flash
-
-### Sub-tasks
-
-- [ ] **10.1** Identify where state lives (App.jsx vs individual components)
-- [ ] **10.2** Reset oddsData/oddsHistory when raceId changes
-- [ ] **10.3** Add "loading" indicator during race switch
-- [ ] **10.4** Test rapid race switching (R1→R3→R5)
-
-**技術**: React state reset on `raceId` dependency change
+**技術**: Python (racecards.py), MongoDB
 
 ---
 
@@ -73,11 +96,16 @@
 
 ### Sub-tasks
 
-- [ ] **7.1** Inspect full odds GraphQL response structure — 找 racecard fields
+- [ ] **7.1** Inspect full odds GraphQL response structure
+  - **Test**: Playwright intercept response，完整 JSON 存檔分析
 - [ ] **7.2** 確認 HKJC odds page 有咩額外 data (draw, wt., etc.)
+  - **Test**: 對照 racecards.py 現有 fields
 - [ ] **7.3** 寫 prototype script 測試
-- [ ] **7.4** 評估：係咪值得替換現有 racecards.py
-- [ ] **7.5** 實現 (如值得): 修改 pipeline 或新增 API endpoint
+  - **Test**: Script 輸出 racecard JSON，與現有 API `/api/racecards` 對比
+- [ ] **7.4** 評估：係咪值得替換
+  - **Test**: 比較 field coverage + scrape speed
+- [ ] **7.5** 實現 (如值得)
+  - **Test**: 新舊 API output diff 為空
 
 **技術**: Playwright intercept, GraphQL response parsing
 
@@ -89,27 +117,16 @@
 
 ### Sub-tasks
 
-- [ ] **8.1** 設計 storage: MongoDB schema (新增 fields) 或 separate collection
-- [ ] **8.2** 改 odds_collector: 記錄首個 scrape 時間
-- [ ] **8.3** 實現 websocket emit when first/last scrape for a race
-- [ ] **8.4** Webapp: 顯示 "Odds collected: 9:00 AM – 12:30 PM"
+- [ ] **8.1** 設計 storage: MongoDB schema 或 separate collection
+  - **Test**: MongoDB insert/read roundtrip
+- [ ] **8.2** 改 odds_collector: 記錄首個/最後 scrape 時間
+  - **Test**: 單次 scrape，MongoDB 確認 timestamp fields
+- [ ] **8.3** Webapp: 顯示 "Odds: 9:00 AM – 12:30 PM"
+  - **Test**: DevTools network tab 確認 WS emit 含 timestamps
+- [ ] **8.4** End-to-end test
+  - **Test**: Scraper 運行 10 分鐘，webapp 顯示正確時間範圍
 
 **技術**: `odds_collector.js`, `useOddsSocket.js`, `index.cjs`
-
----
-
-## FEAT-001: Batch Broadcast — 10→1 Request 🟢 LOW
-
-**目標**: odds_collector 每輪 10 races 140 個 fetch() → 1 個 batched request
-
-### Sub-tasks
-
-- [ ] **1.1** Server: 新增 `POST /api/odds/batch-snapshot` endpoint
-- [ ] **1.2** Server: Broadcast all races' snapshots in one `io.to()` loop
-- [ ] **1.3** Scraper: Collect all races' odds → one fetch() call
-- [ ] **1.4** Test: 確認 WS clients 收到所有 races' snapshots
-
-**技術**: `server/index.cjs`, `odds_collector.js`
 
 ---
 
@@ -119,10 +136,14 @@
 
 ### Sub-tasks
 
-- [ ] **2.1** 測量: 現有 cache 大小 (`Object.keys(oddsCache).length`)
-- [ ] **2.2** 設計: TTL (每場比賽 N 小時後過期) 或 max-races limit
-- [ ] **2.3** 實現: `setInterval` cleanup 或每次 write 時 check
-- [ ] **2.4** Test: 長期運行確認無 memory leak
+- [ ] **2.1** 測量現有 cache 大小
+  - **Test**: `Object.keys(oddsCache).length` log over 1 hour
+- [ ] **2.2** 設計 TTL 或 max-races limit eviction
+  - **Test**: Mock data 觸發 eviction，確認 old keys removed
+- [ ] **2.3** 實現 cleanup
+  - **Test**: `npm run build` + `npm run dev` 無 error
+- [ ] **2.4** 長期運行確認無 memory leak
+  - **Test**: Scraper 運行 24h，memory stable (no growth)
 
 **技術**: `server/index.cjs` oddsCache
 
@@ -130,14 +151,18 @@
 
 ## FEAT-003: cloudflared launchd Auto-Restart 🟢 LOW
 
-**目標**: cloudflared tunnel 加入 launchd plist，開機自動重連
+**目標**: cloudflared tunnel 加入 launchd plist
 
 ### Sub-tasks
 
-- [ ] **3.1** 確認 cloudflared config path (`~/.cloudflared/config.yml`)
+- [ ] **3.1** 確認 cloudflared config path
+  - **Test**: `cat ~/.cloudflared/config.yml`
 - [ ] **3.2** 創建 plist: `com.fatlung.cloudflared.plist`
-- [ ] **3.3** Test: `launchctl load/unload`
-- [ ] **3.4** Verify auto-restart after reboot (manual test)
+  - **Test**: `launchctl load/unload` 無 error
+- [ ] **3.3** Verify auto-restart after crash
+  - **Test**: `kill cloudflared PID`，確認自動重啟
+- [ ] **3.4** Reboot test (manual)
+  - **Test**: 重啟 Mac，確認 tunnel 自動連接
 
 **技術**: `launchd`, `cloudflared`
 
@@ -145,47 +170,49 @@
 
 ## FEAT-004: Odds Drift Alert 🟢 LOW
 
-**目標**: 當馬匹 WIN odds 偏離開盤赔率 >X% 時通知
+**目標**: 馬匹 WIN odds 偏離 >X% 時通知
 
 ### Sub-tasks
 
-- [ ] **4.1** 設計: 門檻值 (e.g., >20% drift)
-- [ ] **4.2** 實現: `odds_collector.js` compare current vs opening odds
-- [ ] **4.3** Alert 方式: WebSocket emit `odds_drift` event
+- [ ] **4.1** 設計 drift threshold (e.g., >20%)
+  - **Test**: 人手計算 2 個 timepoint 的 odds 變化%
+- [ ] **4.2** 實現: compare current vs opening odds
+  - **Test**: Mock data 觸發 alert，確認 threshold 計算正確
+- [ ] **4.3** WebSocket emit `odds_drift` event
+  - **Test**: `curl /api/odds/:raceId` 確認 event payload 格式
 - [ ] **4.4** Webapp: 顯示 drift badge 或 notification
-- [ ] **4.5** 測試 with live data
+  - **Test**: DevTools WS frames 確認 drift event 收到
+- [ ] **4.5** End-to-end test
+  - **Test**: Scraper 實時運行，odds 變化 >20% 時 UI 顯示 alert
 
 **技術**: `odds_collector.js`, `useOddsSocket.js`, UI notification
 
 ---
 
-## Task Management Tools
+## Testing Guide
 
-### VSCode Extensions to Consider
-- **Todo Tree** — Shows all TODO/FIXME/X-TAG in sidebar
-- **Task Manager** — Visual task board in VSCode
-- **Project Manager** — Switch between project workspaces
-- **Markdown All in One** — Better .md editing
-- **Open in VSCode** — Workspace-level task files
+### 快速本地測試
+```bash
+# Build + serve
+cd web-app && npm run build
+curl http://localhost:3001/
 
-### Alternative: Plain Text / Markdown
-- Keep this `TASKS.md` as source of truth
-- Check off items as completed
-- Update `memory/YYYY-MM-DD.md` when done
+# Mobile viewport test
+# DevTools → Toggle device toolbar → iPhone 14 / 390x844
 
-### Alternative: Linear / Notion (External)
-- 如果想要 web-based task board
-- Linear: API-driven, fast keyboard shortcuts
-- Notion: Flexible databases
+# API test
+curl http://localhost:3001/api/fixtures
+curl http://localhost:3001/api/racecards?date=2026-03-22
+curl http://localhost:3001/api/odds/history/2026-03-22_ST_R1
 
-### Recommendation
-**VSCode Todo Tree + 本 `TASKS.md` file**
-
-在 VSCode 安裝 **Todo Tree** extension，然後喺每個 sub-task 加上 tag:
-
-```javascript
-// TODO.9.1  Audit current App.jsx layout
-// TODO.11.2 Race change 時寫入 localStorage
+# WebSocket test
+node -e "const io=require('./node_modules/socket.io-client');const s=io('http://localhost:3001',{path:'/socket.io/'});s.on('connect',()=>{console.log('WS OK');s.disconnect();process.exit(0)})"
 ```
 
-Todo Tree 會自動 crawl 所有檔案，喺 sidebar 顯示所有 tasks ✅
+### Mobile Testing Checklist
+- [ ] iPhone SE (375px) — 最小 viewport
+- [ ] iPhone 14 (390px) — 主要 mobile
+- [ ] iPad (768px) — tablet breakpoint
+- [ ] Desktop 1440px — 確認 desktop layout 未受影响
+- [ ] Console 無 red errors
+- [ ] Network tab 無 failed requests
