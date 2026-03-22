@@ -248,6 +248,70 @@ body {
   display: none;
 }
 
+/* Mobile boost panel */
+.mob-boost {
+  margin-top: 12px;
+  padding: 0 8px;
+}
+
+.mob-boost-toggle {
+  width: 100%;
+  padding: 10px;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mob-boost-panel {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 10px 12px;
+}
+
+.mob-boost-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mob-boost-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.mob-boost-row input[type=range] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 4px;
+}
+
+.mob-boost-val {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  width: 28px;
+  text-align: right;
+}
+
+.mob-boost-reset {
+  margin-top: 6px;
+  padding: 5px 12px;
+  background: #444;
+  border: none;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
 .conf-dot {
   margin-left: auto;
   padding: 2px 8px;
@@ -329,9 +393,9 @@ body {
   margin: 0 auto;
 }
 
-.rank-1 { background: var(--gold); color: #000; }
-.rank-2 { background: var(--silver); color: #000; }
-.rank-3 { background: var(--bronze); color: #fff; }
+.rank-1 { background: #22c55e; color: #fff; }
+.rank-2 { background: #3b82f6; color: #fff; }
+.rank-3 { background: #f97316; color: #fff; }
 .rank-4 { background: #1e40af; color: #fff; }
 .rank-5, .rank-6 { background: #444; color: #fff; }
 .rank-7, .rank-8, .rank-9, .rank-10,

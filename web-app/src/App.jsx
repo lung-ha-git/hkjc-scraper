@@ -528,6 +528,33 @@ function App() {
           oddsHistory={oddsHistory}
           connected={connected}
         />
+
+        {/* Mobile: AI factor adjustment */}
+        <div className="mob-boost">
+          <button className="mob-boost-toggle" onClick={() => setShowBoost(!showBoost)}>
+            {showBoost ? '🔼 隱藏因子' : '🔽 因子調整'}
+          </button>
+          {showBoost && (
+            <div className="mob-boost-panel">
+              {Object.entries(boosting).map(([key, val]) => (
+                <div key={key} className="mob-boost-row">
+                  <span className="mob-boost-label">{key}</span>
+                  <input
+                    type="range"
+                    min="0" max="3" step="0.5"
+                    value={val}
+                    onChange={e => handleBoostChange(key, parseFloat(e.target.value))}
+                  />
+                  <span className="mob-boost-val">{val.toFixed(1)}</span>
+                </div>
+              ))}
+              <button className="mob-boost-reset" onClick={() => {
+                const reset = Object.fromEntries(Object.keys(boosting).map(k => [k, 1.0]));
+                setBoosting(reset);
+              }}>重置</button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
