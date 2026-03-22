@@ -518,10 +518,6 @@ body {
   font-size: 1.1rem;
 }
 
-.rank-1 { color: var(--gold); }
-.rank-2 { color: var(--silver); }
-.rank-3 { color: var(--bronze); }
-
 /* Horse Jersey Number */
 .horse-number {
   width: 28px;
