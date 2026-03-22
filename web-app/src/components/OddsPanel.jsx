@@ -46,7 +46,7 @@ export default function OddsPanel({ oddsData, oddsHistory, entries, connected, e
   const [selectedHorses, setSelectedHorses] = useState(new Set()); // which horses to show on chart
   const [chartType, setChartType] = useState('win'); // 'win' or 'place'
 
-  // Load history from MongoDB when raceId changes
+  // Load history from MongoDB when expanded or raceId changes
   useEffect(() => {
     if (!raceId) return;
     setHistoryData(null);
@@ -54,10 +54,23 @@ export default function OddsPanel({ oddsData, oddsHistory, entries, connected, e
     setSelectedHorses(new Set());
     fetchOddsHistory(raceId)
       .then(data => {
+        if (!data) { setHistoryLoading(false); return; }
         setHistoryData(data);
         setHistoryLoading(false);
+        // Auto-select top 4 horses by lowest win odds
+        if (data && data.horses) {
+          const entries = Object.entries(data.horses)
+            .map(([h, v]) => ({ horse: h, latestWin: v.win?.[v.win.length - 1] ?? 999 }))
+            .sort((a, b) => a.latestWin - b.latestWin)
+            .slice(0, 4)
+            .map(e => e.horse);
+          setSelectedHorses(new Set(entries));
+        }
       })
-      .catch(() => setHistoryLoading(false));
+      .catch(err => {
+        console.error('History fetch error:', err);
+        setHistoryLoading(false);
+      });
   }, [raceId]);
 
   // Toggle horse selection for chart
@@ -86,8 +99,8 @@ export default function OddsPanel({ oddsData, oddsHistory, entries, connected, e
     const selected = selectedHorses.size > 0 ? Array.from(selectedHorses) : Object.keys(horses).slice(0, 6);
     const oddsKey = chartType; // 'win' or 'place'
 
-    // Sample times: aim for ~60 labels
-    const maxBars = 60;
+    // Sample times: aim for ~30 bars max for readability
+    const maxBars = 30;
     const step = Math.max(1, Math.floor(times.length / maxBars));
     const sampledIndices = [];
     for (let i = 0; i < times.length; i += step) sampledIndices.push(i);
