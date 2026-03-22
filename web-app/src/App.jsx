@@ -501,12 +501,23 @@ function App() {
 
       {/* Mobile unified table (outside main-layout, controlled by CSS */}
       <div className="unified-table-wrap">
+        <div className="ut-race-tabs">
+          {racecardData?.racecards?.map(rc => (
+            <button
+              key={rc.race_no}
+              className={`ut-race-tab ${selectedRaceNo === rc.race_no ? 'active' : ''}`}
+              onClick={() => setSelectedRaceNo(rc.race_no)}
+            >
+              R{rc.race_no}
+            </button>
+          ))}
+        </div>
         <div className="ut-mobile-header">
           <span>第 {selectedRaceNo || '-'} 場</span>
           <span>{currentRaceCards?.distance ? `${currentRaceCards.distance}m` : ''}</span>
           {raceConfidence != null && (
             <span className={`conf-dot ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
-              {raceConfidence}
+              信心 {raceConfidence}
             </span>
           )}
         </div>
@@ -517,11 +528,6 @@ function App() {
           oddsHistory={oddsHistory}
           connected={connected}
         />
-        <div style={{color:'#aaa',fontSize:11,padding:'8px 12px',textAlign:'center'}}>
-          {selectedRaceNo
-            ? `R${selectedRaceNo} · 行=${predictions?.length || 0} · 連接=${String(connected)}`
-            : '揀一場賽事'}
-        </div>
       </div>
     </div>
   );
