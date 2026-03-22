@@ -81,7 +81,7 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
           <tr>
             <th>預</th>
             <th>#</th>
-            <th>馬匹 / 騎師</th>
+            <th>馬匹</th>
             <th>WIN</th>
             <th>WIN走</th>
             <th>PLA</th>
@@ -102,7 +102,7 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
               </td>
               <td className="ut-name">
                 <div className="ut-horse">{p.horse_name}</div>
-                <div className="ut-jk">{p.jockey_name}</div>
+                <div className="ut-jk">{p.jockey_name} - {p.trainer_name}</div>
               </td>
               <td className="ut-win">
                 <div className="ut-odds">{fmt(odds.win)}</div>
@@ -117,8 +117,8 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
                 <TinySparkline hist={hist} color="#60a5fa" />
               </td>
               <td className="ut-draw">{entry?.draw ?? '-'}</td>
-              <td className="ut-rating">{entry?.rating_change || '-'}</td>
-              <td className="ut-recent">{entry?.recent_form || '-'}</td>
+              <td className="ut-rating">{entry?.rating_change ?? '-'}</td>
+              <td className="ut-recent">{entry?.recent_form ?? '-'}</td>
             </tr>
           ))}
         </tbody>

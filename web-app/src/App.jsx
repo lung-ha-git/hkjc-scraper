@@ -96,7 +96,6 @@ function App() {
     if (!raceId) return;
     setPredictions([]);
     setRaceConfidence(null);
-    setRacecardData(null);
   }, [raceId]);
 
   // WebSocket for real-time odds
