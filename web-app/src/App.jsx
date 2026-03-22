@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import './index.css';
 import OddsPanel from './components/OddsPanel';
+import UnifiedRaceTable from './components/UnifiedRaceTable';
 import { useOddsSocket } from './hooks/useOddsSocket';
 
 // Fallback colors when no jersey_url
@@ -490,6 +491,28 @@ function App() {
           raceId={raceId}
         />
       </div>
+
+      {/* Mobile unified table (outside main-layout, controlled by CSS */}
+      {selectedFixture && selectedRaceNo && (
+        <div className="unified-table-wrap">
+          <div className="ut-mobile-header">
+            <span>第 {selectedRaceNo} 場</span>
+            <span>{currentRaceCards?.distance ? `${currentRaceCards.distance}m` : ''}</span>
+            {raceConfidence != null && (
+              <span className={`conf-dot ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
+                {raceConfidence}
+              </span>
+            )}
+          </div>
+          <UnifiedRaceTable
+            predictions={predictions}
+            currentEntries={currentEntries}
+            oddsData={oddsData}
+            oddsHistory={oddsHistory}
+            connected={connected}
+          />
+        </div>
+      )}
     </div>
   );
 }
