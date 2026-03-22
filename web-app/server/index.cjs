@@ -75,7 +75,20 @@ async function connect() {
   db = client.db(dbName);
   console.log('Connected');
 }
-connect().catch(console.error);
+connect()
+  .then(() => {
+    httpServer.listen(PORT, () => console.log('Server:', PORT));
+  })
+  .catch((err) => {
+    console.error('MongoDB connection failed:', err.message);
+    // Retry after 5s instead of crashing
+    setTimeout(() => {
+      console.log('Retrying MongoDB connection...');
+      connect()
+        .then(() => httpServer.listen(PORT, () => console.log('Server (retry):', PORT)))
+        .catch(e => console.error('Retry also failed:', e.message));
+    }, 5000);
+  });
 
 app.get('/api/health', (req, res) => res.json({ok: 1}));
 
@@ -268,8 +281,6 @@ app.get('/api/horses/best-times', async (req, res) => {
   
   res.json(bestTimes);
 });
-
-httpServer.listen(PORT, () => console.log('Server:', PORT));
 
 // Save AI prediction
 app.post('/api/predictions', async (req, res) => {
