@@ -417,10 +417,20 @@ body {
 .ut-jk {
   font-size: 0.6rem;
   color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ut-jk span {
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 66px;
   white-space: nowrap;
+  max-width: 66px;
+}
+
+.ut-tr {
+  color: #888;
 }
 
 .ut-odds {

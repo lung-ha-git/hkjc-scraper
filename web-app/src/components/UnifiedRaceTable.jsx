@@ -100,7 +100,10 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
               </td>
               <td className="ut-name">
                 <div className="ut-horse">{p.horse_name}</div>
-                <div className="ut-jk">{p.jockey_name} - {p.trainer_name}</div>
+                <div className="ut-jk">
+                  <span>{p.jockey_name}</span>
+                  <span className="ut-tr">{p.trainer_name}</span>
+                </div>
               </td>
               <td className="ut-odds-cell">
                 <div className="ut-win-spark"><TinySparkline hist={hist} color="#fbbf24" /></div>
