@@ -7,8 +7,8 @@
  * Usage:
  *   node odds_collector.js [date] [venue]
  *   node odds_collector.js 2026-03-22 ST
- * 
- * Run on a schedule or continuously during race day.
+ *   node odds_collector.js 2026-03-22 ST --continuous
+ *   node odds_collector.js 2026-03-22 ST --races 1,2,3 --interval 5000
  */
 
 const { chromium } = require('playwright');
@@ -24,7 +24,8 @@ function buildRaceId(date, venue, raceNo) {
 }
 
 /**
- * Intercept GraphQL response to get odds
+ * Intercept GraphQL response to get odds.
+ * Listener is attached BEFORE navigation (listener-first pattern).
  */
 async function fetchRaceOdds(page, date, venue, raceNo) {
   return new Promise((resolve) => {
@@ -59,22 +60,23 @@ async function fetchRaceOdds(page, date, venue, raceNo) {
 }
 
 /**
- * Parse odds from GraphQL response
- * Returns { win: { horse_no, odds }, place: { horse_no, odds } }
+ * Parse odds from GraphQL response.
+ * Returns { win: { "01": 3.5, ... }, place: { "01": 1.23, ... } }
  */
-function parseOdds(data, raceNo) {
+function parseOdds(data) {
   if (!data?.data?.raceMeetings?.[0]?.pmPools) return null;
 
   const meeting = data.data.raceMeetings[0];
-  const result = { race_id: null, win: {}, place: {} };
+  const result = { win: {}, place: {} };
 
-  meeting.pmPools?.forEach(pool => {
+  meeting.pmPools.forEach(pool => {
     const target = pool.oddsType === 'WIN' ? result.win
                  : pool.oddsType === 'PLA' ? result.place
                  : null;
     if (!target) return;
 
     pool.oddsNodes?.forEach(node => {
+      // combString is "01", "02", etc.
       target[node.combString] = parseFloat(node.oddsValue);
     });
   });
@@ -93,7 +95,7 @@ async function broadcastOddsUpdate(raceId, horseNo, win, place) {
       body: JSON.stringify({ race_id: raceId, horse_no: horseNo, win, place })
     });
   } catch (e) {
-    console.error(`  ⚠️  Broadcast failed for ${raceId} #${horseNo}: ${e.message}`);
+    // Silent failure to not block scraping
   }
 }
 
@@ -108,7 +110,7 @@ async function broadcastSnapshot(raceId, odds) {
       body: JSON.stringify({ race_id: raceId, odds })
     });
   } catch (e) {
-    console.error(`  ⚠️  Snapshot broadcast failed for ${raceId}: ${e.message}`);
+    // Silent failure
   }
 }
 
@@ -131,35 +133,13 @@ async function saveToMongoDB(docs) {
 }
 
 /**
- * Scrape all races and return array of parsed results
+ * Scrape all races one by one using the established browser session.
+ * Each race gets its own navigation + listener cycle.
  */
 async function scrapeAllRaces(browser, date, venue, races) {
   const page = await browser.newPage();
 
-  // Intercept all responses
-  const responseMap = {}; // raceNo -> parsed data
-  page.on('response', async (response) => {
-    const url = response.url();
-    if (!url.includes('graphql') || !url.includes('info.cld.hkjc.com')) return;
-
-    try {
-      const body = await response.text();
-      if (!body.includes('"pmPools"') || !body.includes('"oddsNodes"')) return;
-
-      const json = JSON.parse(body);
-      const pools = json?.data?.raceMeetings?.[0]?.pmPools;
-      if (!pools) return;
-
-      // Extract race number from the URL
-      const match = url.match(/\/(ST|HV)\/(\d+)$/);
-      if (!match) return;
-      const raceNo = match[2];
-
-      responseMap[raceNo] = json;
-    } catch (e) {}
-  });
-
-  // Establish session first
+  // Establish session first (visit race 1)
   console.log('🔐 Establishing session...');
   await page.goto(`https://bet.hkjc.com/ch/racing/wp/${date}/${venue}/1`, {
     waitUntil: 'domcontentloaded',
@@ -168,51 +148,46 @@ async function scrapeAllRaces(browser, date, venue, races) {
   await page.waitForTimeout(3000);
   console.log('✅ Session ready\n');
 
-  // Fetch each race
+  const results = [];
+
+  // Fetch each race sequentially
   for (const raceNo of races) {
-    await fetchRaceOdds(page, date, venue, raceNo);
-    await page.waitForTimeout(500);
+    process.stdout.write(`  Race ${raceNo}... `);
+
+    const data = await fetchRaceOdds(page, date, venue, raceNo);
+
+    if (!data) {
+      console.log('❌ no data');
+      continue;
+    }
+
+    const odds = parseOdds(data);
+    if (!odds || (Object.keys(odds.win).length === 0 && Object.keys(odds.place).length === 0)) {
+      console.log('❌ empty odds');
+      continue;
+    }
+
+    const raceId = buildRaceId(date, venue, raceNo);
+    results.push({
+      race_id: raceId,
+      date,
+      venue,
+      race_no: parseInt(raceNo),
+      win: odds.win,
+      place: odds.place,
+      scraped_at: new Date()
+    });
+
+    const winTop = Object.entries(odds.win).slice(0, 2).map(([k, v]) => `${k}=${v}`).join(',');
+    const plaTop = Object.entries(odds.place).slice(0, 2).map(([k, v]) => `${k}=${v}`).join(',');
+    console.log(`✅ WIN [${winTop}] PLA [${plaTop}]`);
+
+    // Small delay between races
+    await page.waitForTimeout(300);
   }
 
   await page.close();
-
-  // Parse all intercepted responses
-  const results = [];
-  for (const raceNo of races) {
-    const data = responseMap[raceNo];
-    if (!data) continue;
-
-    const parsed = parseOdds(data, raceNo);
-    if (!parsed) continue;
-
-    const raceId = buildRaceId(date, venue, raceNo);
-    parsed.race_id = raceId;
-    parsed.date = date;
-    parsed.venue = venue;
-    parsed.race_no = parseInt(raceNo);
-    parsed.scraped_at = new Date();
-
-    results.push(parsed);
-  }
-
   return results;
-}
-
-/**
- * Get list of active races from MongoDB fixtures
- */
-async function getActiveRaces(date, venue) {
-  const client = new MongoClient(MONGODB_URI);
-  try {
-    await client.connect();
-    const racecards = await client.db(DB_NAME).collection('racecards')
-      .find({ race_date: date })
-      .project({ race_no: 1 })
-      .toArray();
-    return racecards.map(r => String(r.race_no));
-  } finally {
-    await client.close();
-  }
 }
 
 /**
@@ -223,42 +198,42 @@ async function runCollector(date, venue, races, intervalMs = 5000) {
   console.log(`📅 ${date} ${venue} | 🏃 Races: ${races.join(', ')}`);
   console.log(`⏱️  Interval: ${intervalMs}ms | 🌐 ${API_BASE}\n`);
 
-  const browser = await chromium.launch({
-    headless: true,
-    channel: 'chrome'
-  });
-
   let isFirstRun = true;
-  let snapshotSent = {};
+  const snapshotSent = new Set();
 
   const run = async () => {
+    // Create a fresh browser for each scrape cycle (avoids HKJC blocking reused sessions)
+    let localBrowser = null;
     const startTime = Date.now();
-    process.stdout.write(`[${new Date().toLocaleTimeString()}] Scraping... `);
+    const timestamp = new Date().toLocaleTimeString();
 
     try {
-      const results = await scrapeAllRaces(browser, date, venue, races);
+      localBrowser = await chromium.launch({
+        headless: true,
+        channel: 'chrome'
+      });
+      const results = await scrapeAllRaces(localBrowser, date, venue, races);
       const elapsed = Date.now() - startTime;
 
       if (results.length === 0) {
-        console.log(`❌ (${elapsed}ms) - no data`);
+        console.log(`[${timestamp}] ❌ No data scraped (${elapsed}ms)`);
         return;
       }
 
-      console.log(`✅ ${results.length}/${races.length} races (${elapsed}ms)`);
+      console.log(`[${timestamp}] Scraped ${results.length}/${races.length} races in ${elapsed}ms`);
 
       // Save to MongoDB
       try {
-        await saveToMongoDB(results);
+        const saved = await saveToMongoDB(results);
+        console.log(`[${timestamp}] 💾 MongoDB: ${saved} docs`);
       } catch (e) {
-        console.error(`  ⚠️  MongoDB save failed: ${e.message}`);
+        console.error(`[${timestamp}] ⚠️  MongoDB: ${e.message}`);
       }
 
       // Broadcast to WebSocket clients
       for (const race of results) {
-        const raceId = race.race_id;
-
-        if (isFirstRun || !snapshotSent[raceId]) {
-          // Send full snapshot on first run
+        if (isFirstRun || !snapshotSent.has(race.race_id)) {
+          // Send full snapshot
           const odds = {};
           const allHorseNos = new Set([
             ...Object.keys(race.win),
@@ -270,20 +245,24 @@ async function runCollector(date, venue, races, intervalMs = 5000) {
               place: race.place[h] ?? null
             };
           }
-          await broadcastSnapshot(raceId, odds);
-          snapshotSent[raceId] = true;
-          console.log(`  📡 Snapshot → ${raceId}`);
+          await broadcastSnapshot(race.race_id, odds);
+          snapshotSent.add(race.race_id);
+          console.log(`[${timestamp}] 📡 Snapshot → ${race.race_id}`);
         } else {
-          // Send incremental updates
-          for (const [horseNo, win] of Object.entries(race.win)) {
-            await broadcastOddsUpdate(raceId, horseNo, win, race.place[horseNo] ?? null);
+          // Send incremental updates per horse
+          for (const [horseNo, winOdds] of Object.entries(race.win)) {
+            await broadcastOddsUpdate(race.race_id, horseNo, winOdds, race.place[horseNo] ?? null);
           }
         }
       }
 
       isFirstRun = false;
     } catch (e) {
-      console.error(`❌ Error: ${e.message}`);
+      console.error(`[${timestamp}] ❌ Error: ${e.message}`);
+    } finally {
+      if (localBrowser) {
+        await localBrowser.close().catch(() => {});
+      }
     }
   };
 
@@ -304,7 +283,6 @@ async function runOnce(date, venue, races) {
   });
 
   const results = await scrapeAllRaces(browser, date, venue, races);
-
   await browser.close();
 
   if (results.length > 0) {
@@ -344,15 +322,14 @@ Usage:
   node odds_collector.js <date> <venue> [options]
 
 Options:
-  --continuous    Run continuously (default: false, one-shot)
+  --continuous    Run continuously (default: one-shot)
   --interval N    Scrape every N ms (default: 5000)
   --races N,...   Specific races (default: 1-10)
-  --help, -h      Show this help
 
 Examples:
   node odds_collector.js 2026-03-22 ST
-  node odds_collector.js 2026-03-22 ST --continuous --interval 5000
-  node odds_collector.js 2026-03-22 ST --races 1,2,3,4,5
+  node odds_collector.js 2026-03-22 ST --continuous
+  node odds_collector.js 2026-03-22 ST --continuous --interval 5000 --races 1,2,3
 `);
   process.exit(0);
 }
@@ -374,7 +351,7 @@ if (continuous) {
   runCollector(date, venue, races, intervalMs).then((timer) => {
     console.log(`\n🟢 Collector running. Press Ctrl+C to stop.\n`);
     process.on('SIGINT', () => {
-      console.log('\n\n🛑 Stopping collector...');
+      console.log('\n🛑 Stopping collector...');
       clearInterval(timer);
       process.exit(0);
     });
