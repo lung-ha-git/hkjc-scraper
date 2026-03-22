@@ -86,6 +86,14 @@ function App() {
     }
   }, [selectedRaceNo, selectedFixture]);
 
+  // FEAT-010: clear predictions + racecard on race change
+  useEffect(() => {
+    if (!raceId) return;
+    setPredictions([]);
+    setRaceConfidence(null);
+    setRacecardData(null);
+  }, [raceId]);
+
   // Compute race ID for WebSocket subscription
   const raceId = selectedFixture && selectedRaceNo
     ? `${selectedFixture.date}_${selectedFixture.venue}_R${selectedRaceNo}`

@@ -261,10 +261,12 @@ body {
   white-space: nowrap;
 }
 
-.ut-no { text-align: center; width: 28px; }
-.ut-name { min-width: 60px; max-width: 80px; }
-.ut-draw { text-align: center; width: 24px; }
+.ut-no { text-align: center; width: 26px; }
+.ut-name { min-width: 65px; max-width: 75px; }
+.ut-draw { text-align: center; width: 22px; }
 .ut-pred { text-align: center; width: 26px; }
+.ut-rating { text-align: center; width: 28px; font-size: 0.72rem; color: var(--text-muted); }
+.ut-recent { text-align: center; width: 36px; font-size: 0.7rem; color: var(--text-muted); }
 
 .badge {
   width: 24px;
@@ -305,23 +307,34 @@ body {
 }
 
 .ut-horse {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 70px;
+  max-width: 68px;
+  white-space: nowrap;
 }
 
 .ut-jk {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 70px;
+  max-width: 68px;
+  white-space: nowrap;
+}
+
+.ut-tr {
+  font-size: 0.58rem;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 68px;
+  white-space: nowrap;
 }
 
 .ut-odds {
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
 
 .ut-win .ut-odds { color: #fbbf24; }

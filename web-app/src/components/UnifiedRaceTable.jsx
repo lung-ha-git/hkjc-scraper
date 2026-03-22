@@ -24,7 +24,7 @@ function fmt(v) {
 
 function TinySparkline({ hist, color }) {
   if (!hist || hist.length < 2) return null;
-  const max = 8;
+  const max = 6;
   const step = Math.max(1, Math.floor(hist.length / max));
   const pts = hist.filter((_, i) => i % step === 0);
   const data = {
@@ -39,7 +39,7 @@ function TinySparkline({ hist, color }) {
     }]
   };
   return (
-    <div style={{ width: 28, height: 16 }}>
+    <div style={{ width: 24, height: 14 }}>
       <Line
         data={data}
         options={{
@@ -80,10 +80,12 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
         <thead>
           <tr>
             <th>#</th>
-            <th>馬 / 練</th>
-            <th>檔</th>
             <th>WIN</th>
             <th>PLA</th>
+            <th className="ut-name-col">馬匹 / 騎師 / 練馬師</th>
+            <th>檔</th>
+            <th>評</th>
+            <th>近</th>
             <th>預</th>
           </tr>
         </thead>
@@ -93,11 +95,6 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
               <td className="ut-no">
                 <div className="badge" style={{ background: color }}>{p.horse_no}</div>
               </td>
-              <td className="ut-name">
-                <div className="ut-horse">{p.horse_name}</div>
-                <div className="ut-jk">{p.trainer_name}</div>
-              </td>
-              <td className="ut-draw">{entry?.draw ?? '-'}</td>
               <td className="ut-win">
                 <div className="ut-odds">{fmt(odds.win)}</div>
                 <TinySparkline hist={hist} color="#fbbf24" />
@@ -106,6 +103,14 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
                 <div className="ut-odds">{fmt(odds.place)}</div>
                 <TinySparkline hist={hist} color="#60a5fa" />
               </td>
+              <td className="ut-name">
+                <div className="ut-horse">{p.horse_name}</div>
+                <div className="ut-jk">{p.jockey_name}</div>
+                <div className="ut-tr">{p.trainer_name}</div>
+              </td>
+              <td className="ut-draw">{entry?.draw ?? '-'}</td>
+              <td className="ut-rating">{entry?.rating_change || '-'}</td>
+              <td className="ut-recent">{entry?.recent_form || '-'}</td>
               <td className="ut-pred">
                 <div className={`rank rank-${p.predicted_rank}`}>{p.predicted_rank}</div>
               </td>
