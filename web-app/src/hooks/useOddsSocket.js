@@ -72,25 +72,27 @@ export function useOddsSocket(raceId) {
       const point = { time: timestamp, win, place };
       setOddsHistory(prev => {
         const existing = prev[hk] || [];
-        // Keep last 60 points (~5 minutes at 5s intervals)
-        const updated = [...existing, point].slice(-60);
+        // Keep last 300 points (~50 minutes at 10s scrape interval)
+        const updated = [...existing, point].slice(-300);
         return { ...prev, [hk]: updated };
       });
       historyRef.current = { ...historyRef.current, [hk]: [...(historyRef.current[hk] || []), point].slice(-60) };
     });
 
     // Receive full snapshot: { odds: { [horse_no]: { win, place } } }
+    // Only seed horses that don't have history yet (preserve accumulated history on reconnect)
     socket.on('odds_snapshot', (data) => {
       const { odds } = data;
-      const newData = {};
       const now = Date.now();
       Object.entries(odds).forEach(([horse_no, odds_val]) => {
-        // Normalize key to string (JSON always stringifies numeric object keys)
         const hk = String(horse_no);
-        newData[hk] = { ...odds_val, updated_at: now };
-        historyRef.current[hk] = [{ time: now, win: odds_val.win, place: odds_val.place }];
+        // Seed history ONLY for horses we haven't seen before
+        if (!historyRef.current[hk]) {
+          historyRef.current[hk] = [{ time: now, win: odds_val.win, place: odds_val.place }];
+        }
+        // Always update oddsData (snapshot is the freshest)
+        setOddsData(prev => ({ ...prev, [hk]: { win: odds_val.win, place: odds_val.place, updated_at: now } }));
       });
-      setOddsData(newData);
       setOddsHistory({ ...historyRef.current });
     });
 
