@@ -758,13 +758,20 @@ body {
 
 .odds-table-header {
   display: grid;
-  grid-template-columns: 36px 1fr 60px 60px 28px;
-  gap: 8px;
+  grid-template-columns: 36px 1fr 60px 52px 60px 52px;
+  gap: 6px;
   padding: 6px 8px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
+}
+
+.odds-col-spark {
+  display: flex;
+  align-items: center;
+  font-size: 0.65rem;
+  color: var(--text-muted);
 }
 
 .odds-row {
@@ -784,8 +791,8 @@ body {
 
 .odds-row-main {
   display: grid;
-  grid-template-columns: 36px 1fr 60px 60px 28px;
-  gap: 8px;
+  grid-template-columns: 36px 1fr 60px 52px 60px 52px;
+  gap: 6px;
   padding: 8px;
   align-items: center;
 }
@@ -853,9 +860,20 @@ body {
   background: currentColor;
 }
 
-.odds-row-chart {
-  padding: 8px 8px 12px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+/* Sparkline (inline mini chart) */
+.sparkline-wrap {
+  width: 56px;
+  height: 28px;
+}
+
+.sparkline-empty {
+  width: 56px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.7rem;
 }
 
 .odds-chart-empty {
@@ -873,106 +891,7 @@ body {
   padding: 32px;
 }
 
-/* Full chart (expanded) */
-.odds-fullchart {
-  margin-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 16px;
-}
-
-.odds-chart-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.chart-type-toggle {
-  display: flex;
-  gap: 4px;
-}
-
-.chart-type-toggle button {
-  padding: 4px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.chart-type-toggle button.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.chart-horse-controls {
-  display: flex;
-  gap: 4px;
-}
-
-.btn-sm {
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-sm:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.chart-info {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-left: auto;
-}
-
-.odds-chart-container {
-  background: rgba(0,0,0,0.2);
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.odds-horse-toggles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.horse-toggle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid;
-  background: transparent;
-  font-size: 0.75rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.expand-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 4px;
-  transition: color 0.15s;
-}
-
-.expand-btn:hover {
+.history-loading {
+  font-size: 0.7rem;
   color: var(--accent);
 }
