@@ -4,7 +4,7 @@
 
 ---
 
-## FEAT-009: Webapp Mobile UI — Compact Unified Table 🔴 HIGH
+## FEAT-009: Webapp Mobile UI — Compact Unified Table 🔴 HIGH ✅ DONE
 
 **目標**: Racecard + Odds + Predictions 整合成一個 mobile-friendly compact table
 
@@ -111,7 +111,7 @@
 
 ---
 
-## FEAT-008: Odds Service Start/End Times 🟢 LOW
+## FEAT-008: Odds Service Start/End Times 🟢 LOW ✅ DONE
 
 **目標**: 顯示 odds scraper 為每場賽事的服務時間
 
