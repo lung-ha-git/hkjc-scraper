@@ -1,0 +1,33 @@
+{
+  "data": {
+    "generalBettingRemarks": [
+      {
+        "categories": [
+          "HR",
+          "FB",
+          "LY",
+          "GL"
+        ],
+        "dt": "2026-03-20 18:19:43",
+        "locations": [
+          "YellowBanner",
+          "MessageBox"
+        ],
+        "contents": [
+          {
+            "lang": "en-us",
+            "content": "The Club will conduct system upgrades from 5:30 am to 7:30 am (2 hours) on 24 March (Tuesday). During this period, betting services, odds and information updates, funds transfer, betting accounts maintenance, betting account opening services, and Telebet and 1886 Telebet Automated Services will be temporarily suspended. Customers are advised to make any necessary deposits or withdrawals in advance of this system maintenance window. Please refer to the Club’s website for the latest announcements, or contact our Customer Care hotline at 1817 or 1818 for enquiries."
+          },
+          {
+            "lang": "zh-hk",
+            "content": "本會將於3月24日（星期二）凌晨5時30分至上午7時30分（共2小時）進行系統提升，期間投注、賠率及資訊更新、轉賬、投注戶口管理、開戶服務、電話投注及1886電話投注自動服務將會暫停。顧客如有需要可提前進行網上或現金存款及提款。顧客可留意本會網頁之最新公佈，或致電1817或1818查詢。"
+          },
+          {
+            "lang": "zh-cn",
+            "content": "undefined"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "data": {
+    "peNotes": {
+      "JCBWButtonEnabled": true
+    },
+    "jcbwControl": {
+      "mainlineOnTopDisplay": true,
+      "CWAButtonEnabled": false,
+      "CWBButtonEnabled": false,
+      "CWCButtonEnabled": false,
+      "enableFeaturedMatches": false,
+      "enableGlassBox": true,
+      "headToHeadIconEnabled": true,
+      "earlySettlementEnabled": true,
+      "earlySettlementIndicatorEnabled": true,
+      "enableEarlySettlementUIMessage": false,
+      "earlySettlementFilterDisplayEnabled": true,
+      "liveTIconEnabled": true,
+      "enableFOBetTypesFilterTab": true,
+      "enableOddsPushButton": true
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "data": {
+    "betConfirmationFeatureShortcut": {
+      "btnLabel_ch": "",
+      "btnLabel_en": "",
+      "content_ch": "",
+      "content_en": "",
+      "title_ch": "",
+      "title_en": ""
+    },
+    "jcbwControl": {
+      "enableBetConfirmationFeatureShortcut4e": false
+    }
+  }
+}

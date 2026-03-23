@@ -96,9 +96,9 @@
 
 ### Sub-tasks
 
-- [ ] **7.1** Inspect full odds GraphQL response structure
+- [x] **7.1** Inspect full odds GraphQL response structure
   - **Test**: Playwright intercept response，完整 JSON 存檔分析
-- [ ] **7.2** 確認 HKJC odds page 有咩額外 data (draw, wt., etc.)
+- [x] **7.2** 確認 HKJC odds page 有咩額外 data (draw, wt., etc.)
   - **Test**: 對照 racecards.py 現有 fields
 - [ ] **7.3** 寫 prototype script 測試
   - **Test**: Script 輸出 racecard JSON，與現有 API `/api/racecards` 對比

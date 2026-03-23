@@ -1,0 +1,379 @@
+{
+  "data": {
+    "timeOffset": {
+      "fb": 0
+    },
+    "fullTourns": [
+      {
+        "frontEndId": "FB7124",
+        "nameProfileId": "50000119"
+      },
+      {
+        "frontEndId": "FB3397",
+        "nameProfileId": "50000051"
+      },
+      {
+        "frontEndId": "FB3742",
+        "nameProfileId": "50000100"
+      },
+      {
+        "frontEndId": "FB3874",
+        "nameProfileId": "50000063"
+      },
+      {
+        "frontEndId": "FB3875",
+        "nameProfileId": "50000058"
+      },
+      {
+        "frontEndId": "FB3876",
+        "nameProfileId": "50000069"
+      },
+      {
+        "frontEndId": "FB3810",
+        "nameProfileId": "50000064"
+      },
+      {
+        "frontEndId": "FB4697",
+        "nameProfileId": "50000095"
+      },
+      {
+        "frontEndId": "FB3811",
+        "nameProfileId": "50000046"
+      },
+      {
+        "frontEndId": "FB5548",
+        "nameProfileId": "50000112"
+      },
+      {
+        "frontEndId": "FB3534",
+        "nameProfileId": "50000114"
+      },
+      {
+        "frontEndId": "FB4508",
+        "nameProfileId": "50000113"
+      },
+      {
+        "frontEndId": "FB8782",
+        "nameProfileId": "50000056"
+      },
+      {
+        "frontEndId": "FB5119",
+        "nameProfileId": "50232587"
+      }
+    ],
+    "chpTypes": [
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "0"
+          }
+        ]
+      },
+      {
+        "foPools": [
+          {
+            "chpType": "3"
+          }
+        ]
+      }
+    ],
+    "tournaments": [
+      {
+        "nameProfileId": "50000119",
+        "name_en": "WC Qualifiers",
+        "name_ch": "世盃外圍賽",
+        "sequence": "35.WC Qualifiers                                                                                                                   .2026-04-02.000"
+      },
+      {
+        "nameProfileId": "50000051",
+        "name_en": "Eng Premier",
+        "name_ch": "英格蘭超級聯賽",
+        "sequence": "12.Eng Premier                                                                                                                     .2026-05-26.000"
+      }
+    ],
+    "tournamentResult": [
+      {
+        "id": "50063718",
+        "name_en": "Women Asian Cup",
+        "name_ch": "女子亞洲盃",
+        "sequence": "07.Women Asian Cup                                                                                                                 .2026-03-22.000"
+      },
+      {
+        "id": "50052660",
+        "name_en": "UE Champions",
+        "name_ch": "歐洲聯賽冠軍盃",
+        "sequence": "11.UE Champions                                                                                                                    .2026-06-02.000"
+      },
+      {
+        "id": "50051300",
+        "name_en": "Asian Champions League Elite",
+        "name_ch": "亞冠精英盃",
+        "sequence": "15.Asian Champions League Elite                                                                                                    .2026-05-05.000"
+      },
+      {
+        "id": "50051301",
+        "name_en": "Asian Champions League 2",
+        "name_ch": "亞冠盃2",
+        "sequence": "19.Asian Champions League 2                                                                                                        .2026-05-19.000"
+      },
+      {
+        "id": "50053663",
+        "name_en": "UE Cup",
+        "name_ch": "歐霸盃",
+        "sequence": "27.UE Cup                                                                                                                          .2026-05-22.000"
+      },
+      {
+        "id": "50054465",
+        "name_en": "UE Conference",
+        "name_ch": "歐洲協會聯賽",
+        "sequence": "28.UE Conference                                                                                                                   .2026-06-01.000"
+      },
+      {
+        "id": "50061460",
+        "name_en": "Copa Libertadores",
+        "name_ch": "南美自由盃",
+        "sequence": "33.Copa Libertadores                                                                                                               .2026-03-20.000"
+      },
+      {
+        "id": "50061459",
+        "name_en": "CONCACAF Champions Cup",
+        "name_ch": "中北美洲冠軍盃",
+        "sequence": "34.CONCACAF Champions Cup                                                                                                          .2026-06-02.000"
+      },
+      {
+        "id": "50063758",
+        "name_en": "Copa Sudamericana",
+        "name_ch": "南美球會盃",
+        "sequence": "34.Copa Sudamericana                                                                                                               .2026-03-07.000"
+      },
+      {
+        "id": "50052073",
+        "name_en": "Women UE Champions",
+        "name_ch": "女子歐洲聯賽冠軍盃",
+        "sequence": "43.Women UE Champions                                                                                                              .2026-05-26.000"
+      },
+      {
+        "id": "50052509",
+        "name_en": "Qatar Stars Cup",
+        "name_ch": "卡塔爾星盃",
+        "sequence": "47.Qatar Stars Cup                                                                                                                 .2026-04-01.000"
+      },
+      {
+        "id": "50053770",
+        "name_en": "Saudi King's Cup",
+        "name_ch": "沙特國王盃",
+        "sequence": "49.Saudi King's Cup                                                                                                                .2026-06-02.000"
+      },
+      {
+        "id": "50056019",
+        "name_en": "UAE President Cup",
+        "name_ch": "阿聯酋總統盃",
+        "sequence": "51.UAE President Cup                                                                                                               .2026-06-08.000"
+      },
+      {
+        "id": "50056140",
+        "name_en": "FA Cup",
+        "name_ch": "英格蘭足總盃",
+        "sequence": "54.FA Cup                                                                                                                          .2026-05-19.000"
+      },
+      {
+        "id": "50050387",
+        "name_en": "Eng League Cup",
+        "name_ch": "英格蘭聯賽盃",
+        "sequence": "55.Eng League Cup                                                                                                                  .2026-03-24.000"
+      },
+      {
+        "id": "50052584",
+        "name_en": "Eng League Trophy",
+        "name_ch": "英格蘭聯賽錦標",
+        "sequence": "59.Eng League Trophy                                                                                                               .2026-04-14.000"
+      },
+      {
+        "id": "50060650",
+        "name_en": "Chilean Super Cup",
+        "name_ch": "智利超級盃",
+        "sequence": "62.Chilean Super Cup                                                                                                               .2026-01-27.000"
+      },
+      {
+        "id": "50056185",
+        "name_en": "Spanish Cup",
+        "name_ch": "西班牙盃",
+        "sequence": "68.Spanish Cup                                                                                                                     .2026-05-25.000"
+      },
+      {
+        "id": "50051293",
+        "name_en": "Italian Cup",
+        "name_ch": "意大利盃",
+        "sequence": "69.Italian Cup                                                                                                                     .2026-05-27.000"
+      },
+      {
+        "id": "50051260",
+        "name_en": "German Cup",
+        "name_ch": "德國盃",
+        "sequence": "70.German Cup                                                                                                                      .2026-05-25.000"
+      },
+      {
+        "id": "50057475",
+        "name_en": "French FA Cup",
+        "name_ch": "法國足總盃",
+        "sequence": "71.French FA Cup                                                                                                                   .2026-05-26.000"
+      },
+      {
+        "id": "50062705",
+        "name_en": "Swedish Cup",
+        "name_ch": "瑞典盃",
+        "sequence": "73.Swedish Cup                                                                                                                     .2026-05-16.000"
+      },
+      {
+        "id": "50064045",
+        "name_en": "Norwegian Cup",
+        "name_ch": "挪威盃",
+        "sequence": "74.Norwegian Cup                                                                                                                   .2026-05-12.000"
+      },
+      {
+        "id": "50056117",
+        "name_en": "Dutch Cup",
+        "name_ch": "荷蘭盃",
+        "sequence": "76.Dutch Cup                                                                                                                       .2026-04-21.000"
+      },
+      {
+        "id": "50055627",
+        "name_en": "Portuguese Cup",
+        "name_ch": "葡萄牙盃",
+        "sequence": "77.Portuguese Cup                                                                                                                  .2026-06-01.000"
+      },
+      {
+        "id": "50060552",
+        "name_en": "Scottish FA Cup",
+        "name_ch": "蘇格蘭足總盃",
+        "sequence": "79.Scottish FA Cup                                                                                                                 .2026-05-26.000"
+      },
+      {
+        "id": "50056380",
+        "name_en": "Belgian Cup",
+        "name_ch": "比利時盃",
+        "sequence": "81.Belgian Cup                                                                                                                     .2026-05-24.000"
+      },
+      {
+        "id": "50060623",
+        "name_en": "Argentine Cup",
+        "name_ch": "阿根廷盃",
+        "sequence": "82.Argentine Cup                                                                                                                   .2026-11-09.000"
+      },
+      {
+        "id": "50065165",
+        "name_en": "Brazilian Cup",
+        "name_ch": "巴西盃",
+        "sequence": "83.Brazilian Cup                                                                                                                   .2026-12-30.000"
+      },
+      {
+        "id": "50060028",
+        "name_en": "Brazilian Paulista League",
+        "name_ch": "巴西聖保羅省聯賽",
+        "sequence": "83.Brazilian Paulista League                                                                                                       .2026-03-10.000"
+      },
+      {
+        "id": "50059205",
+        "name_en": "Women Spanish Cup",
+        "name_ch": "女子西班牙盃",
+        "sequence": "86.Women Spanish Cup                                                                                                               .2026-06-01.000"
+      },
+      {
+        "id": "50059200",
+        "name_en": "Women Italian Cup",
+        "name_ch": "女子意大利盃",
+        "sequence": "88.Women Italian Cup                                                                                                               .2026-05-26.000"
+      },
+      {
+        "id": "50064902",
+        "name_en": "Women French Cup",
+        "name_ch": "女子法國盃",
+        "sequence": "91.Women French Cup                                                                                                                .2026-05-27.000"
+      },
+      {
+        "id": "50057488",
+        "name_en": "Women German Cup",
+        "name_ch": "女子德國盃",
+        "sequence": "99.Women German Cup                                                                                                                .2026-05-18.000"
+      }
+    ],
+    "featuredMatches": []
+  }
+}

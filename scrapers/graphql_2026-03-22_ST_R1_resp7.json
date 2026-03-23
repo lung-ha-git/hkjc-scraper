@@ -1,0 +1,48 @@
+{
+  "data": {
+    "raceMeetings": [
+      {
+        "pmPools": [
+          {
+            "id": "MTG_20260325_0001PLA1",
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "PLA",
+            "lastUpdateTime": null,
+            "guarantee": null,
+            "minTicketCost": null,
+            "name_en": null,
+            "name_ch": null,
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "cWinSelections": [],
+            "oddsNodes": []
+          },
+          {
+            "id": "MTG_20260325_0001WIN1",
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "WIN",
+            "lastUpdateTime": null,
+            "guarantee": null,
+            "minTicketCost": null,
+            "name_en": null,
+            "name_ch": null,
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "cWinSelections": [],
+            "oddsNodes": []
+          }
+        ]
+      }
+    ]
+  }
+}

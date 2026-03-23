@@ -1,0 +1,162 @@
+{
+  "data": {
+    "raceMeetings": [
+      {
+        "totalInvestment": "0",
+        "poolInvs": [
+          {
+            "id": "MTG_20260325_0001DBL1",
+            "leg": {
+              "number": 1,
+              "races": [
+                1,
+                2
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "DBL",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001FCT1",
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "FCT",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001FF1",
+            "leg": {
+              "number": 1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "FF",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001PLA1",
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "PLA",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001QIN1",
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "QIN",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001QPL1",
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "QPL",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001QTT1",
+            "leg": {
+              "number": 1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "QTT",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001TCE1",
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "TCE",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001TRI1",
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "TRI",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          },
+          {
+            "id": "MTG_20260325_0001WIN1",
+            "leg": {
+              "number": -1,
+              "races": [
+                1
+              ]
+            },
+            "status": "INITIAL",
+            "sellStatus": "STOP_SELL",
+            "oddsType": "WIN",
+            "investment": null,
+            "mergedPoolId": null,
+            "lastUpdateTime": null
+          }
+        ]
+      }
+    ]
+  }
+}
