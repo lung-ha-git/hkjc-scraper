@@ -112,12 +112,23 @@ function App() {
 
   const fetchFixtures = async () => {
     try {
-      const res = await axios.get('/api/fixtures?mode=upcoming');
-      // Get first upcoming race
-      if (res.data && res.data.length > 0) {
-        setFixtures([res.data[0]]);
-        setSelectedFixture(res.data[0]);
-      }
+      const res = await axios.get('/api/fixtures');
+      if (!res.data || res.data.length === 0) { setLoading(false); return; }
+      // Parallel check dates to find one with racecards
+      const datesToTry = [...new Set([
+        ...res.data.slice(0, 5).map(f => f.date)
+      ])].slice(0, 8);
+      const results = await Promise.all(
+        datesToTry.map(d => axios.get(`/api/racecards?date=${d}`).then(r => ({
+          date: d, hasData: !!(r.data?.racecards?.length > 0)
+        })).catch(() => ({ date: d, hasData: false })))
+      );
+      const match = results.find(r => r.hasData);
+      const pick = match
+        ? res.data.find(f => f.date === match.date) || { date: match.date, venue: 'ST' }
+        : res.data[0];
+      setFixtures([pick]);
+      setSelectedFixture(pick);
       setLoading(false);
     } catch (error) {
       console.log('Error fetching fixtures:', error);
