@@ -130,7 +130,7 @@
 
 ---
 
-## FEAT-002: oddsCache TTL Cleanup 🟢 LOW
+## FEAT-002: oddsCache TTL Cleanup 🟢 LOW ✅ DONE
 
 **目標**: Server `oddsCache` 無限增長 → 加上 TTL/LRU eviction
 
@@ -149,7 +149,7 @@
 
 ---
 
-## FEAT-003: cloudflared launchd Auto-Restart 🟢 LOW
+## FEAT-003: cloudflared launchd Auto-Restart 🟢 LOW ✅ DONE
 
 **目標**: cloudflared tunnel 加入 launchd plist
 
