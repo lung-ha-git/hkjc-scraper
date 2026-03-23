@@ -1,9 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 import './index.css';
-import OddsPanel from './components/OddsPanel';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import UnifiedRaceTable from './components/UnifiedRaceTable';
 import { useOddsSocket } from './hooks/useOddsSocket';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement);
 
 // Fallback colors when no jersey_url
 const JERSEY_COLORS = [
@@ -238,6 +247,40 @@ function App() {
   };
 
   // 獲取馬匹 Icon - use jersey_url from predictions directly
+  // Inline sparkline for desktop table
+  function DtSparkline({ history, color }) {
+    const data = useMemo(() => {
+      if (!history || history.length < 2) return null;
+      const maxPts = 15;
+      const step = Math.max(1, Math.floor(history.length / maxPts));
+      const pts = history.filter((_, i) => i % step === 0);
+      return {
+        labels: pts.map(() => ''),
+        datasets: [{
+          data: pts.map(p => p.win ?? p.place ?? 0),
+          borderColor: color,
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+        }]
+      };
+    }, [history, color]);
+    if (!data) return <div style={{ height: 20 }} />;
+    return (
+      <div className="dt-spark-wrap">
+        <div style={{ width: 32, height: 20 }}>
+          <Line data={data} options={{
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 0 },
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: { x: { display: false }, y: { display: false } },
+          }} />
+        </div>
+      </div>
+    );
+  }
+
   const getJerseyInfo = (horseNo, horseName) => {
     // Find prediction entry for this horse
     const pred = predictions.find(p => p.horse_no === horseNo && p.horse_name === horseName);
@@ -324,6 +367,12 @@ function App() {
                     <th className="desktop-only">騎師</th>
                     <th className="desktop-only">練馬師</th>
                     <th className="desktop-only">檔位</th>
+                    <th className="desktop-only dt-odds-th dt-win-th">
+                      WIN<span className="dt-odds-sub">走·值</span>
+                    </th>
+                    <th className="desktop-only dt-odds-th dt-pla-th">
+                      PLA<span className="dt-odds-sub">走·值</span>
+                    </th>
                     <th className="desktop-only">評分</th>
                     <th className="desktop-only">近績</th>
                   </tr>
@@ -391,6 +440,28 @@ function App() {
                         <td className="desktop-only">{pred.jockey_name}</td>
                         <td className="desktop-only">{pred.trainer_name}</td>
                         <td className="desktop-only">{pred.draw}</td>
+                        <td className="desktop-only dt-odds-cell">
+                          <DtSparkline
+                            history={oddsHistory[String(pred.horse_no)] || []}
+                            color="#fbbf24"
+                          />
+                          <div className="dt-odds-val dt-win-val">
+                            {oddsData[String(pred.horse_no)]?.win != null
+                              ? parseFloat(oddsData[String(pred.horse_no)].win).toFixed(2)
+                              : '-'}
+                          </div>
+                        </td>
+                        <td className="desktop-only dt-odds-cell">
+                          <DtSparkline
+                            history={oddsHistory[String(pred.horse_no)] || []}
+                            color="#60a5fa"
+                          />
+                          <div className="dt-odds-val dt-pla-val">
+                            {oddsData[String(pred.horse_no)]?.place != null
+                              ? parseFloat(oddsData[String(pred.horse_no)].place).toFixed(2)
+                              : '-'}
+                          </div>
+                        </td>
                         <td className="desktop-only">{entry?.rating_change || '-'}</td>
                         <td className="desktop-only">{entry?.recent_form || '-'}</td>
                       </tr>
@@ -405,7 +476,7 @@ function App() {
           )}
         </div>
 
-        {/* 右側：AI 預測控制面板 */}
+        {/* 右側：AI 預測控制面板（2-column layout，不再需要 odds-panel 列） */}
         <div className="prediction-panel">
           <h3>📊 AI 預測 {predicting && <span className="predicting-spinner">⟳</span>}</h3>
           {raceConfidence != null && (
@@ -488,15 +559,6 @@ function App() {
           </div>
         </div>
 
-        {/* 右側：即時賠率面板 */}
-        <OddsPanel
-          oddsData={oddsData}
-          oddsHistory={oddsHistory}
-          entries={currentEntries}
-          connected={connected}
-          error={oddsError}
-          raceId={raceId}
-        />
       </div>
 
       {/* Mobile unified table (outside main-layout, controlled by CSS */}
