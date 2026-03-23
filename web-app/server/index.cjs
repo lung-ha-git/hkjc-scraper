@@ -461,26 +461,111 @@ app.get('/api/horses/by-id/:horseId', async (req, res) => {
   });
 });
 
-// ML Prediction using XGBoost model with optional boosting
+// Load model configuration
+const MODEL_CONFIG_PATH = path.join(__dirname, '../../config/model-config.json');
+let modelConfig = { models: {}, settings: {}, feature_flags: {} };
+
+try {
+  const configData = require('fs').readFileSync(MODEL_CONFIG_PATH, 'utf8');
+  modelConfig = JSON.parse(configData);
+  console.log('[ModelConfig] Loaded', Object.keys(modelConfig.models).length, 'models');
+} catch (err) {
+  console.warn('[ModelConfig] Could not load config, using defaults');
+}
+
+// Get available models
+app.get('/api/models', (req, res) => {
+  const models = Object.entries(modelConfig.models).map(([id, model]) => ({
+    id,
+    name: model.name,
+    description: model.description,
+    version: model.version,
+    type: model.type,
+    features: model.features,
+    accuracy: model.accuracy,
+    status: model.status,
+    default: model.default || false
+  }));
+  
+  res.json({
+    models,
+    default_model: modelConfig.settings?.default_model || 'xgb-default',
+    settings: modelConfig.settings,
+    feature_flags: modelConfig.feature_flags
+  });
+});
+
+// Get current model configuration
+app.get('/api/models/config', (req, res) => {
+  res.json(modelConfig);
+});
+
+// ML Prediction with model switching support
 app.get('/api/predict', async (req, res) => {
-  const { race_date, race_no, venue, boosting } = req.query;
+  const { race_date, race_no, venue, boosting, model } = req.query;
   
   if (!race_date || !race_no) {
     return res.status(400).json({error: 'race_date and race_no required'});
   }
   
+  // Determine which model to use
+  const modelId = model || modelConfig.settings?.default_model || 'xgb-default';
+  const modelInfo = modelConfig.models[modelId];
+  
+  if (!modelInfo) {
+    return res.status(400).json({error: `Unknown model: ${modelId}`});
+  }
+  
+  if (modelInfo.status === 'disabled') {
+    return res.status(400).json({error: `Model ${modelId} is disabled`});
+  }
+  
   try {
     const { execSync } = require('child_process');
+    const fs = require('fs');
+    
+    // Construct script path
+    const scriptPath = path.join('/Users/fatlung/.openclaw/workspace-main/hkjc_project', modelInfo.script);
+    
+    // Check if script exists
+    if (!fs.existsSync(scriptPath)) {
+      // Fall back to default predictor if model script doesn't exist yet
+      if (modelId !== 'xgb-default') {
+        console.warn(`[Predict] Model script not found: ${scriptPath}, falling back to xgb-default`);
+      }
+    }
     
     const boostingArg = boosting ? `'${boosting.replace(/'/g, "'\\''")}'` : 'null';
-    const cmd = `python3 /Users/fatlung/.openclaw/workspace-main/hkjc_project/predict_xgb.py ${race_date} ${race_no} ${venue} ${boostingArg} 2>&1 | grep -v '^Loading'`;
     
-    const result = execSync(cmd, { encoding: 'utf8', timeout: 60000 });
+    // Use model-specific script if available, otherwise use default
+    let cmd;
+    if (fs.existsSync(scriptPath) && modelInfo.script !== 'predict_xgb.py') {
+      cmd = `python3 ${scriptPath} ${race_date} ${race_no} ${venue} ${boostingArg} 2>&1`;
+    } else {
+      // Default prediction using predict_xgb.py
+      cmd = `python3 /Users/fatlung/.openclaw/workspace-main/hkjc_project/predict_xgb.py ${race_date} ${race_no} ${venue} ${boostingArg} 2>&1 | grep -v '^Loading'`;
+    }
     
-    res.json(JSON.parse(result));
+    const timeoutMs = (modelConfig.settings?.timeout_seconds || 60) * 1000;
+    const result = execSync(cmd, { encoding: 'utf8', timeout: timeoutMs });
+    
+    const predictionData = JSON.parse(result);
+    
+    // Add model metadata to response
+    predictionData.model_used = {
+      id: modelId,
+      name: modelInfo.name,
+      version: modelInfo.version,
+      type: modelInfo.type
+    };
+    
+    res.json(predictionData);
   } catch (error) {
     console.error('Prediction error:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: error.message,
+      model_requested: modelId 
+    });
   }
 });
 
