@@ -41,6 +41,28 @@ const oddsCache = {};
 // { "2026-03-22_ST_R7": { started_at: timestamp, finished_at: null } }
 const oddsSessions = {};
 
+// Sweep interval: clean up finished/old races every 30 min
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours after finished_at
+const SWEEP_INTERVAL_MS = 30 * 60 * 1000;
+
+function sweepOddsCache() {
+  const now = Date.now();
+  const before = Object.keys(oddsCache);
+  let cleaned = 0;
+  before.forEach(race_id => {
+    const sess = oddsSessions[race_id];
+    // Clean if: race has ended AND (no TTL or TTL exceeded)
+    if (sess?.finished_at && (now - sess.finished_at > CACHE_TTL_MS)) {
+      delete oddsCache[race_id];
+      cleaned++;
+    }
+  });
+  if (cleaned > 0) console.log(`[cache sweep] cleaned ${cleaned} races`);
+}
+
+// Start periodic sweep
+setInterval(sweepOddsCache, SWEEP_INTERVAL_MS);
+
 io.on('connection', (socket) => {
   console.log('[WS] Client connected:', socket.id);
 
@@ -244,7 +266,30 @@ app.post('/api/odds/session/end', (req, res) => {
     oddsSessions[race_id].finished_at = Date.now();
     req.io.to(race_id).emit('odds_session_end', { session: oddsSessions[race_id] });
   }
+  // Clean up oddsCache immediately on race end
+  if (oddsCache[race_id]) {
+    delete oddsCache[race_id];
+    console.log(`[cache] removed ${race_id} on session end`);
+  }
   res.json({ ok: 1, session: oddsSessions[race_id] || null });
+});
+
+// Cache: POST /api/odds/cache/sweep — manual cache cleanup
+app.post('/api/odds/cache/sweep', (req, res) => {
+  const before = Object.keys(oddsCache).length;
+  sweepOddsCache();
+  const after = Object.keys(oddsCache).length;
+  res.json({ ok: 1, before, after, freed: before - after });
+});
+
+// Cache: GET /api/odds/cache/stats — show cache size
+app.get('/api/odds/cache/stats', (req, res) => {
+  const races = Object.keys(oddsCache);
+  res.json({
+    ok: 1,
+    races_count: races.length,
+    races: races.map(id => ({ race_id: id, horses_count: Object.keys(oddsCache[id] || {}).length }))
+  });
 });
 
 // Session: GET /api/odds/session/:raceId — get session info
