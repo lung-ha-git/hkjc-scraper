@@ -334,3 +334,88 @@ node -e "const io=require('./node_modules/socket.io-client');const s=io('http://
 | 三T | t3_jackpot |
 | 六環彩 | six_ring |
 | 騎師王/練馬師王 | jockey_win / trainer_win |
+
+---
+
+## FEAT-014: ML Model Enhancement — Advanced Prediction Features 🔴 HIGH
+
+**目標**: 增強賽馬預測 ML Model，提升準確度和信心指數計算
+
+### Current Model Analysis
+- **Model**: XGBoost Classifier
+- **Features**: 23 features (rating, career stats, distance stats, jockey-trainer combos, etc.)
+- **Accuracy**: ~56.7% (top-4 prediction)
+- **Issues**:
+  - No ensemble method (single model)
+  - Limited feature engineering
+  - No real-time odds integration
+  - Static confidence scoring
+
+### Enhancement Plan
+
+#### Phase 1: Feature Engineering
+- [ ] **14.1** Add odds-based features (opening vs current odds drift)
+- [ ] **14.2** Add pace analysis features (early speed, closing ability)
+- [ ] **14.3** Add track condition features (wet/dry performance)
+- [ ] **14.4** Add class level features (same-class historical performance)
+
+#### Phase 2: Model Architecture
+- [ ] **14.5** Implement ensemble (XGBoost + LightGBM + Neural Network)
+- [ ] **14.6** Add cross-validation with time-series split
+- [ ] **14.7** Implement model stacking/blending
+- [ ] **14.8** Add feature importance tracking
+
+#### Phase 3: Confidence & Calibration
+- [ ] **14.9** Implement probability calibration (Platt scaling/isotonic)
+- [ ] **14.10** Add uncertainty quantification (MC dropout/conformal prediction)
+- [ ] **14.11** Dynamic confidence based on prediction consensus
+- [ ] **14.12** Backtesting framework with ROI analysis
+
+### Technical Approach
+
+**New Features to Add:**
+```python
+# Odds features
+odds_drift = (current_odds - opening_odds) / opening_odds
+odds_volatility = std(odds_history_last_30min)
+market_confidence = 1 / sum(all_horses_win_odds)  # Bookmaker margin indicator
+
+# Pace features
+early_speed_score = average(first_400m_position)
+closing ability = average(last_400m_position_change)
+pace_figure = early_speed_score - closing_ability
+
+# Track condition
+tracks_wet_performance = wins_on_wet / total_runs_on_wet
+tracks_dry_performance = wins_on_dry / total_runs_on_dry
+tracks_condition_advantage = tracks_wet_performance - tracks_dry_performance
+
+# Class level
+same_class_wins = wins_in_same_class / runs_in_same_class
+class_rating_trend = current_rating - average_rating_last_3_races
+```
+
+**Ensemble Architecture:**
+```
+Raw Features
+    │
+    ├──► XGBoost ──┐
+    ├──► LightGBM ─┼──► Stacker ──► Final Prediction
+    └──► Neural Net ─┘
+```
+
+### Success Metrics
+- Accuracy target: >60% (top-4)
+- ROI target: >-10% (currently ~-92%)
+- Confidence calibration: Brier score <0.2
+
+### Files to Create/Modify
+- `src/ml/enhanced_predictor.py` - New ensemble predictor
+- `src/ml/feature_engineering.py` - Feature engineering pipeline
+- `src/ml/model_trainer.py` - Training with CV and ensemble
+- `src/ml/backtester.py` - Backtesting framework
+- `web-app/server/index.cjs` - Enhanced prediction API
+
+**Priority**: HIGH
+**Estimated Time**: 2-3 days
+**Dependencies**: FEAT-012 (for odds features)
