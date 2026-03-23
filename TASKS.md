@@ -189,6 +189,71 @@
 
 ---
 
+## FEAT-012: Hybrid Odds Scraper — Race-Aware Auto Start/Stop 🟡 MEDIUM
+
+**目標**: Scraping 智能化 — 賽前有赔率先開始，賽後有結果就停止；Hybrid storage (change-only + periodic snapshot)
+
+### Context
+- **問題**: `odds_collector.js --continuous` 永遠 loop，hardcoded date，冇 start/stop logic
+- **問題**: 每 10s 寫一次 `live_odds`，storage 快速膨脹（12k+ docs/day）
+- **問題**: Sparkline 需要均勻時間間距，但 change-only 會導致空白
+
+### Hybrid 設計
+
+**Storage Strategy:**
+1. **Change-only**: 只寫 odds 實際變動的記錄 (`live_odds_changes`)
+2. **Periodic snapshot**: 每 30s 寫一次 full snapshot（確保 sparkline 有均勻間距）
+3. **Initial snapshot**: 每次 scrape 開始 / reconnect 時寫 full snapshot
+
+**Workflow:**
+```
+Racecard API 發布馬票
+    ↓
+Racecard 馬匹出現在 odds page（即時 detect 或 cron check）
+    ↓ 依賴 FEAT-007 (Odds Page Racecard API)
+Scraper 自動啟動（date/venue/race_no 動態）
+    ↓
+Change-based 寫入 live_odds_changes
++ 每 30s 寫入 periodic snapshot 到 live_odds
+    ↓
+Race 結果出爐（detect via HKJC results API 或 cron）
+    ↓
+Scraper 自動停止，寫入 final snapshot
+```
+
+### Sub-tasks
+
+- [ ] **12.1** Detect race start: odds appear on HKJC odds page
+  - **Trigger**: Cron job 或 FEAT-007 webhook 通知
+  - **Test**: 馬票出 + odds page 有 data → scraper 啟動
+  - **依賴**: FEAT-007 (Odds Racecard API)
+- [ ] **12.2** Detect race end: results published on HKJC
+  - **Trigger**: `racecards` collection `results_status: 'final'` 或 results page scrape
+  - **Test**: 比賽完成後 scraper 收到停止信號
+  - **依賴**: pipeline results scraper
+- [ ] **12.3** 实现 change-based write (vs current time-series)
+  - **Change**: `odds_collector.js` — compare prev vs current，only insert when diff
+  - **Test**: Mock odds 固定值 → 0 inserts；odds 變動 → 1 insert
+- [ ] **12.4** Add periodic snapshot (every 30s)
+  - **Purpose**: 確保 sparkline 有均勻間距，唔會因為長穩定而出現空白
+  - **Implementation**: `live_odds` collection，flag `is_periodic: true`
+  - **Test**: 30s 後睇 MongoDB 有 periodic snapshot
+- [ ] **12.5** 实现 dynamic race selection (remove hardcoded date/venue)
+  - **Change**: `odds_collector.js` — args 變成 `date venue race_no`動態
+  - **Change**: launchd plist — 變成 event-driven 而非 always-on
+  - **Test**: API trigger scraper 跑指定 R1，唔跑其他場
+- [ ] **12.6** API endpoint: `POST /api/scraper/start` + `POST /api/scraper/stop`
+  - **Purpose**: Webapp / cron 觸發 scraper
+  - **Test**: `curl -X POST /api/scraper/start -d '{"date":"2026-03-25","venue":"ST","race_no":"1"}'`
+- [ ] **12.7** cleanup: archive/delete `live_odds` old records (>24h)
+  - **Test**: `live_odds` 保持合理大小（每場 ~100 docs max）
+
+**技術**: `odds_collector.js`, `index.cjs`, `launchd`, MongoDB
+
+**相關**: FEAT-007 (Odds Racecard API), FEAT-008 (Start/End Times)
+
+---
+
 ## Testing Guide
 
 ### 快速本地測試
