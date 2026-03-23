@@ -546,3 +546,55 @@ app.get('/api/validations/:date/:venue/:raceNo', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// FEAT-012: Hybrid Scraper API endpoints
+// Proxy to hybrid scraper control server (port 3002)
+const HYBRID_SCRAPER_PORT = 3002;
+const HYBRID_SCRAPER_HOST = 'localhost';
+
+app.post('/api/scraper/start', async (req, res) => {
+  try {
+    const { date, venue, races } = req.body;
+    if (!date || !venue || !races) {
+      return res.status(400).json({ error: 'date, venue, and races required' });
+    }
+    
+    const response = await fetch(`http://${HYBRID_SCRAPER_HOST}:${HYBRID_SCRAPER_PORT}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, venue, races })
+    });
+    
+    const result = await response.json();
+    res.status(response.status).json(result);
+  } catch (error) {
+    console.error('Scraper start error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/scraper/stop', async (req, res) => {
+  try {
+    const response = await fetch(`http://${HYBRID_SCRAPER_HOST}:${HYBRID_SCRAPER_PORT}/stop`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const result = await response.json();
+    res.status(response.status).json(result);
+  } catch (error) {
+    console.error('Scraper stop error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/scraper/status', async (req, res) => {
+  try {
+    const response = await fetch(`http://${HYBRID_SCRAPER_HOST}:${HYBRID_SCRAPER_PORT}/status`);
+    const result = await response.json();
+    res.status(response.status).json(result);
+  } catch (error) {
+    console.error('Scraper status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
