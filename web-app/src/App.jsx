@@ -108,7 +108,12 @@ function App() {
   }, [raceId]);
 
   // WebSocket for real-time odds
-  const { oddsData, oddsHistory, connected, error: oddsError } = useOddsSocket(raceId);
+  const { oddsData, oddsHistory, connected, error: oddsError, session } = useOddsSocket(raceId);
+
+  function fmtTime(ts) {
+    if (!ts) return '-';
+    return new Date(ts).toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
+  }
 
   const fetchFixtures = async () => {
     try {
@@ -342,6 +347,11 @@ function App() {
                   <span>第 {selectedRaceNo} 場</span>
                   <span>{currentRaceCards?.distance || '-'}m</span>
                   <span>{currentRaceCards?.class || '-'}</span>
+                  {session?.started_at && (
+                    <span className="odds-service-time">
+                      📡 {fmtTime(session.started_at)}{session.finished_at ? ` – ${fmtTime(session.finished_at)}` : ' – ...'}
+                    </span>
+                  )}
                 </div>
               </div>
               

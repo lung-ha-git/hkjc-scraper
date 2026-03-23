@@ -170,10 +170,49 @@ async function broadcastBatch(races) {
   } catch (e) { /* silent */ }
 }
 
+// ─── Session tracking ────────────────────────────────────────────────────────
+async function sessionStart(raceId) {
+  try {
+    await fetch(`${API_BASE}/api/odds/session/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ race_id: raceId })
+    });
+  } catch (e) { /* silent */ }
+}
+
+async function sessionEnd(raceId) {
+  try {
+    await fetch(`${API_BASE}/api/odds/session/end`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ race_id: raceId })
+    });
+  } catch (e) { /* silent */ }
+}
+
 // ─── Continuous collector loop ───────────────────────────────────────────────────
 async function runCollector(date, venue, races, intervalMs = 10000) {
   console.log(`\n🚀 HKJC Odds Collector (Fresh Browser Per Cycle) starting...`);
   console.log(`📅 ${date} ${venue} | 🏃 Races: ${races.join(', ')} | ⏱️  Interval: ${intervalMs}ms\n`);
+
+  // Register session start for each race
+  for (const raceNo of races) {
+    const raceId = buildRaceId(date, venue, raceNo);
+    await sessionStart(raceId);
+  }
+
+  // Graceful shutdown: record session end
+  const shutdown = async () => {
+    console.log('\n🛑 Shutting down... recording session end');
+    for (const raceNo of races) {
+      const raceId = buildRaceId(date, venue, raceNo);
+      await sessionEnd(raceId);
+    }
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 
   const runOnce = async () => {
     const ts = new Date().toLocaleTimeString('en-GB');

@@ -17,6 +17,7 @@ export function useOddsSocket(raceId) {
   const [oddsHistory, setOddsHistory] = useState({}); // { horse_no: [{ time, win, place }] }
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState(null);
+  const [session, setSession] = useState(null); // { started_at, finished_at }
   
   const socketRef = useRef(null);
   const historyRef = useRef({}); // Keep history in ref to avoid stale state in callbacks
@@ -79,10 +80,11 @@ export function useOddsSocket(raceId) {
       historyRef.current = { ...historyRef.current, [hk]: [...(historyRef.current[hk] || []), point].slice(-60) };
     });
 
-    // Receive full snapshot: { odds: { [horse_no]: { win, place } } }
+    // Receive full snapshot: { odds: { [horse_no]: { win, place } }, session: { started_at, finished_at } }
     // Only seed horses that don't have history yet (preserve accumulated history on reconnect)
     socket.on('odds_snapshot', (data) => {
-      const { odds } = data;
+      const { odds, session: sess } = data;
+      if (sess) setSession(sess);
       const now = Date.now();
       Object.entries(odds).forEach(([horse_no, odds_val]) => {
         const hk = String(horse_no);
@@ -96,6 +98,10 @@ export function useOddsSocket(raceId) {
       setOddsHistory({ ...historyRef.current });
     });
 
+    socket.on('odds_session_end', (data) => {
+      if (data.session) setSession(data.session);
+    });
+
     return () => {
       socket.emit('unsubscribe', { race_id: raceId });
       socket.disconnect();
@@ -103,5 +109,5 @@ export function useOddsSocket(raceId) {
     };
   }, [raceId]);
 
-  return { oddsData, oddsHistory, connected, error };
+  return { oddsData, oddsHistory, connected, error, session };
 }

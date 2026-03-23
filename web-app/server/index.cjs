@@ -37,6 +37,10 @@ let db;
 // { "2026-03-22_ST_R7": { 1: { win, place, timestamp }, ... } }
 const oddsCache = {};
 
+// In-memory session tracking per race
+// { "2026-03-22_ST_R7": { started_at: timestamp, finished_at: null } }
+const oddsSessions = {};
+
 io.on('connection', (socket) => {
   console.log('[WS] Client connected:', socket.id);
 
@@ -47,7 +51,10 @@ io.on('connection', (socket) => {
     
     // Send cached snapshot if available
     if (oddsCache[race_id]) {
-      socket.emit('odds_snapshot', { odds: oddsCache[race_id] });
+      socket.emit('odds_snapshot', {
+        odds: oddsCache[race_id],
+        session: oddsSessions[race_id] || null
+      });
     }
   });
 
@@ -209,9 +216,41 @@ app.post('/api/odds/snapshot', (req, res) => {
   req.oddsCache[race_id] = cached;
 
   // Broadcast snapshot
-  req.io.to(race_id).emit('odds_snapshot', { odds: cached });
+  req.io.to(race_id).emit('odds_snapshot', {
+    odds: cached,
+    session: oddsSessions[race_id] || null
+  });
 
   res.json({ ok: 1, count: Object.keys(odds).length });
+});
+
+// Session: POST /api/odds/session/start — record scraping start time
+// Body: { race_id }
+app.post('/api/odds/session/start', (req, res) => {
+  const { race_id } = req.body;
+  if (!race_id) return res.status(400).json({ error: 'race_id required' });
+  if (!oddsSessions[race_id]) {
+    oddsSessions[race_id] = { started_at: Date.now(), finished_at: null };
+  }
+  res.json({ ok: 1, session: oddsSessions[race_id] });
+});
+
+// Session: POST /api/odds/session/end — record scraping end time
+// Body: { race_id }
+app.post('/api/odds/session/end', (req, res) => {
+  const { race_id } = req.body;
+  if (!race_id) return res.status(400).json({ error: 'race_id required' });
+  if (oddsSessions[race_id]) {
+    oddsSessions[race_id].finished_at = Date.now();
+    req.io.to(race_id).emit('odds_session_end', { session: oddsSessions[race_id] });
+  }
+  res.json({ ok: 1, session: oddsSessions[race_id] || null });
+});
+
+// Session: GET /api/odds/session/:raceId — get session info
+app.get('/api/odds/session/:raceId', (req, res) => {
+  const { raceId } = req.params;
+  res.json({ ok: 1, session: oddsSessions[raceId] || null });
 });
 
 // Batch broadcast: receive all races at once, emit to each race room
@@ -235,8 +274,11 @@ app.post('/api/odds/batch-snapshot', (req, res) => {
     });
     req.oddsCache[race_id] = cached;
 
-    // Broadcast to race room
-    req.io.to(race_id).emit('odds_snapshot', { odds: cached });
+    // Broadcast to race room (with session info)
+    req.io.to(race_id).emit('odds_snapshot', {
+      odds: cached,
+      session: oddsSessions[race_id] || null
+    });
     count++;
   });
 
