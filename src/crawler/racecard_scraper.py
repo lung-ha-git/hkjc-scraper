@@ -72,12 +72,6 @@ class RaceCardScraper:
         Args:
             race_date: Format YYYY-MM-DD (informational — may return next meeting)
             venue: HV or ST
-        """
-        Scrape all race cards for a given day via GraphQL.
-
-        Args:
-            race_date: Format YYYY-MM-DD
-            venue: HV or ST
 
         Returns:
             List of race card dicts, each with race metadata + 'horses' list.

@@ -69,24 +69,41 @@
 
 ---
 
-## FEAT-006: Racecard vs Actual Entries Validation 🟡 MEDIUM
+## FEAT-006: Racecard vs Actual Entries Validation 🟡 MEDIUM ✅ DONE
+
+> ✅ **DONE** 2026-03-23 — Complete validation system with Node.js + Python integration
 
 **目標**: 每日 workflow 比對 racecard_entries 同 odds page entries，標記差異
 
+### Files Created
+- `scrapers/validate_entries.js` — Node.js validation script
+- `src/pipeline/entry_validator.py` — Python integration module
+
+### Features
+- Detects added horses (in odds but not racecard)
+- Detects removed horses (in racecard but not odds)
+- Detects substitute horses (standby horses with `standby_no`)
+- Detects changed details (jockey, trainer, draw, weight changes)
+- Saves validation results to `racecard_validations` collection
+
+### Usage
+```bash
+# Standalone validation
+node scrapers/validate_entries.js 2026-03-22 ST --races 1,2,3
+
+# Python integration
+python src/pipeline/entry_validator.py 2026-03-22 ST
+```
+
 ### Sub-tasks
+- [x] **6.1** 研究 odds GraphQL response — 找出 actual entries fields ✅
+- [x] **6.2** 寫 script 比對 `racecard_entries` vs `odds_entries` ✅
+- [x] **6.3** 整合進 daily pipeline (Python) ✅
+- [x] **6.4** Output 報告：新增/移除/替補馬匹 ✅
+- [ ] **6.5** Webapp 顯示 "馬匹有變動" warning 🔄 PENDING
+  - **Depends**: FEAT-007 for API endpoint
 
-- [ ] **6.1** 研究 odds GraphQL response — 找出 actual entries fields
-  - **Test**: `node scrapers/odds_collector.js` 單場，log 完整 response 結構
-- [ ] **6.2** 寫 script 比對 `racecard_entries` vs `odds_entries`
-  - **Test**: MongoDB query 確認兩邊 horse_no 集合差異
-- [ ] **6.3** 整合進 daily pipeline (Python)
-  - **Test**: `python racecards.py 2026-03-22` 確認 output 有 mismatch 報告
-- [ ] **6.4** Output 報告：新增/移除/替補馬匹
-  - **Test**: 對照 HKJC 官網賽事資料驗證
-- [ ] **6.5** Webapp 顯示 "馬匹有變動" warning
-  - **Test**: Mobile + Desktop 確認 warning badge 出現
-
-**技術**: Python (racecards.py), MongoDB
+**技術**: Node.js (Playwright), Python, MongoDB
 
 ---
 

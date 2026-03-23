@@ -34,6 +34,7 @@ from src.pipeline.racecards import scrape_next_racecards, scrape_race_day
 from src.pipeline.history import sync_past_race_results, get_race_gaps
 from src.pipeline.deep_sync import sync_single_horse, get_horses_needing_sync
 from src.pipeline.completeness import completeness_check_and_sync
+from src.pipeline.entry_validator import run_validation
 from src.scheduler.queue_worker import QueueWorker
 
 # ============================================================================
@@ -94,6 +95,9 @@ class FutureRacePipeline:
         
         # Step 3 & 4: Scrape racecards
         self._scrape_racecards(next_race)
+        
+        # Step 5: FEAT-006 - Validate racecard entries vs odds page (only on race day)
+        self._validate_entries(next_race)
         
         self._log_summary()
         return len(self.results.get("errors", [])) == 0
@@ -217,6 +221,62 @@ class FutureRacePipeline:
                     # Keep status as pending - will retry tomorrow
             
             self.results["racecards"] = count
+
+        except Exception as e:
+            logger.error(f"   ❌ Racecard 抓取失败: {e}")
+            self.results.setdefault("errors", []).append(str(e))
+            # Reset status to pending so it will retry next run
+            try:
+                db = DatabaseConnection()
+                if db.connect():
+                    db.db["fixtures"].update_one(
+                        {"date": race_date, "venue": venue},
+                        {"$set": {"scrape_status": "pending"}}
+                    )
+                    db.disconnect()
+            except Exception:
+                pass
+
+    def _validate_entries(self, fixture: dict):
+        """5. FEAT-006: Validate racecard entries vs odds page (only on race day)"""
+        race_date = fixture["date"]
+        venue = fixture.get("venue", "ST")
+        
+        # Only validate on race day (when entries are finalized)
+        from datetime import datetime as dt
+        today_str = dt.now().strftime("%Y-%m-%d")
+        is_race_day = (race_date == today_str)
+        
+        if not is_race_day:
+            logger.info(f"\n🔍 Step 5 (FEAT-006): 跳過驗證 (非賽日: {race_date})")
+            return
+        
+        logger.info(f"\n🔍 Step 5 (FEAT-006): 驗證 Racecard vs 即時賠率頁面馬匹")
+        logger.info(f"   賽日: {race_date} ({venue})")
+        
+        if self.dry_run:
+            logger.info("   [DRY RUN] 跳過驗證")
+            return
+        
+        try:
+            import asyncio
+            result = asyncio.run(run_validation(race_date, venue))
+            
+            summary = result.get("summary", {})
+            self.results["entry_validation"] = summary
+            
+            if summary.get("races_with_changes", 0) > 0:
+                logger.warning(f"   ⚠️ 發現 {summary['races_with_changes']} 場有馬匹變動!")
+                logger.warning(f"      新增: {summary.get('total_added', 0)}")
+                logger.warning(f"      移除: {summary.get('total_removed', 0)}")
+                logger.warning(f"      替補: {summary.get('total_substituted', 0)}")
+                logger.warning(f"      變更: {summary.get('total_changed', 0)}")
+            else:
+                logger.info(f"   ✅ 所有場次馬匹資料一致")
+                
+        except Exception as e:
+            logger.error(f"   ❌ 驗證失敗: {e}")
+            self.results.setdefault("errors", []).append(f"validation: {e}")
 
         except Exception as e:
             logger.error(f"   ❌ Racecard 抓取失败: {e}")
