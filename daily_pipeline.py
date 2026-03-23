@@ -481,8 +481,8 @@ class HistoricalOptimizationPipeline:
                 "race_date": race_date,
                 "venue": venue,
                 "race_no": race_no,
-                "result": result.get("results"),
-                "payouts": result.get("payouts"),
+                "results": result.get("results"),
+                "payout": result.get("payout"),
                 "scrape_time": datetime.now().isoformat()
             }
             

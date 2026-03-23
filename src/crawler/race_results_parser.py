@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
+from src.constants.payout_map import normalize_payout_keys
 
 
 class RaceResultsParser:
@@ -47,7 +48,7 @@ class RaceResultsParser:
             "race_id": metadata.get("race_id"),
             "metadata": metadata,
             "results": results,
-            "payouts": payouts,
+            "payout": payouts,  # normalized to English keys
             "incidents": incidents,
             "scraped_at": datetime.now().isoformat()
         }
@@ -242,7 +243,7 @@ class RaceResultsParser:
                         amount = parts[1] if len(parts) > 1 else ""
                         payouts[current_pool][combo] = amount
         
-        return payouts
+        return normalize_payout_keys(payouts)
     
     def _parse_incidents(self, text: str) -> List[Dict]:
         """Parse incident reports"""
@@ -326,10 +327,10 @@ class RaceResultsParser:
         # 3. Save payouts
         db.db["race_payouts"].replace_one(
             {"race_id": race_id},
-            {"race_id": race_id, "pools": race_data["payouts"], "scraped_at": race_data["scraped_at"]},
+            {"race_id": race_id, "pools": race_data["payout"], "scraped_at": race_data["scraped_at"]},
             upsert=True
         )
-        print(f"   ✅ race_payouts: {len(race_data['payouts'])} pools")
+        print(f"   ✅ race_payouts: {len(race_data['payout'])} pools")
         
         # 4. Save incidents
         db.db["race_incidents"].delete_many({"race_id": race_id})

@@ -41,8 +41,8 @@ async def sync_race_result(race_date: str, venue: str, race_no: int) -> bool:
                 "race_date": race_date,
                 "venue": venue,
                 "race_no": race_no,
-                "result": result.get("result"),
-                "payouts": result.get("payouts"),
+                "results": result.get("results"),
+                "payout": result.get("payout"),
                 "scrape_time": datetime.now().isoformat()
             }
             

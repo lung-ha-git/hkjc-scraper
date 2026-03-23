@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.database.connection import DatabaseConnection
+from src.constants.payout_map import normalize_payout_keys
 
 
 class RaceResultsScraper:
@@ -89,7 +90,7 @@ class RaceResultsScraper:
                 "race_id": race_meta.get("race_id"),
                 "metadata": race_meta,
                 "results": results,
-                "payouts": payouts,
+                "payout": payouts,  # normalized to English keys
                 "incidents": incidents,
                 "scraped_at": datetime.now().isoformat()
             }
@@ -273,7 +274,7 @@ class RaceResultsScraper:
                     print(f"   ✅ Found {len(payouts)} payout pools")
                     break
             
-            return payouts
+            return normalize_payout_keys(payouts)
             
         except Exception as e:
             print(f"Error scraping payouts: {e}")
@@ -365,10 +366,10 @@ class RaceResultsScraper:
         # 3. Save payouts
         db.db["race_payouts"].replace_one(
             {"race_id": race_id},
-            {"race_id": race_id, "pools": race_data["payouts"], "scraped_at": race_data["scraped_at"]},
+            {"race_id": race_id, "pools": race_data["payout"], "scraped_at": race_data["scraped_at"]},
             upsert=True
         )
-        print(f"   ✅ race_payouts: {len(race_data['payouts'])} pools")
+        print(f"   ✅ race_payouts: {len(race_data['payout'])} pools")
         
         # 4. Save incidents
         db.db["race_incidents"].delete_many({"race_id": race_id})
