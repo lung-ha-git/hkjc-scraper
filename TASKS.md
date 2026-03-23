@@ -281,3 +281,38 @@ node -e "const io=require('./node_modules/socket.io-client');const s=io('http://
 - [ ] Desktop 1440px — 確認 desktop layout 未受影响
 - [ ] Console 無 red errors
 - [ ] Network tab 無 failed requests
+
+---
+
+## FEAT-013: races Collection — Unify payout Keys to English 🟢 DONE
+
+**Status**: ✅ DONE (edad90f1)
+
+**Problem**: races collection had Chinese payout keys (獨贏, 位置, etc.) and inconsistent field names (result vs results, payouts vs payout)
+
+**Changes**:
+- `src/constants/payout_map.py`: Chinese→English pool name mapping (POOL_NAME_MAP + normalize_payout_keys())
+- `race_results_parser.py`: returns `payout` (English keys) instead of `payouts` (Chinese)
+- `race_results_scraper.py`: same, normalized keys
+- `daily_pipeline.py`: save `results` + `payout`
+- `history.py`: save `results` + `payout`
+- `scripts/migrate_races_schema.py`: one-time migration (53 docs)
+
+**Mapping**:
+| 中文 | 英文 |
+|------|------|
+| 獨贏 | win |
+| 位置 | place |
+| 連贏 | quinella |
+| 位置Q | quinella_place |
+| 二重彩 | double |
+| 三重彩 | treble |
+| 單T | trio |
+| 四連環 | first_4 |
+| 四重彩 | quartet |
+| 第一/二口孖寶 | double_1, double_2... |
+| 第一/二口孖T | quinella_trio_1, ... |
+| 第一/二口三寶 | treble_1, treble_2... |
+| 三T | t3_jackpot |
+| 六環彩 | six_ring |
+| 騎師王/練馬師王 | jockey_win / trainer_win |
