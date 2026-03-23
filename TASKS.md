@@ -100,11 +100,11 @@
   - **Test**: Playwright intercept response，完整 JSON 存檔分析
 - [x] **7.2** 確認 HKJC odds page 有咩額外 data (draw, wt., etc.)
   - **Test**: 對照 racecards.py 現有 fields
-- [ ] **7.3** 寫 prototype script 測試
+- [x] **7.3** 寫 prototype script 測試
   - **Test**: Script 輸出 racecard JSON，與現有 API `/api/racecards` 對比
-- [ ] **7.4** 評估：係咪值得替換
+- [x] **7.4** 評估：係咪值得替換
   - **Test**: 比較 field coverage + scrape speed
-- [ ] **7.5** 實現 (如值得)
+- [x] **7.5** 實現 (如值得)
   - **Test**: 新舊 API output diff 為空
 
 **技術**: Playwright intercept, GraphQL response parsing
