@@ -483,3 +483,66 @@ app.get('/api/predict', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// FEAT-006: Racecard vs Actual Entries Validation API
+// Get latest validation for a race day
+app.get('/api/validations/:date/:venue', async (req, res) => {
+  const { date, venue } = req.params;
+  
+  try {
+    const validation = await db.collection('racecard_validations')
+      .findOne(
+        { date, venue },
+        { sort: { validated_at: -1 } }
+      );
+    
+    if (!validation) {
+      return res.json({ has_changes: false, races: [], summary: null });
+    }
+    
+    res.json({
+      has_changes: validation.summary?.races_with_changes > 0,
+      validated_at: validation.validated_at,
+      summary: validation.summary,
+      races: validation.races || []
+    });
+  } catch (error) {
+    console.error('Validation API error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get validation for a specific race
+app.get('/api/validations/:date/:venue/:raceNo', async (req, res) => {
+  const { date, venue, raceNo } = req.params;
+  
+  try {
+    const validation = await db.collection('racecard_validations')
+      .findOne(
+        { date, venue },
+        { sort: { validated_at: -1 } }
+      );
+    
+    if (!validation || !validation.races) {
+      return res.json({ has_changes: false });
+    }
+    
+    const race = validation.races.find(r => r.race_no === parseInt(raceNo));
+    
+    if (!race) {
+      return res.json({ has_changes: false });
+    }
+    
+    res.json({
+      race_no: race.race_no,
+      has_changes: race.has_changes,
+      added: race.added || [],
+      removed: race.removed || [],
+      substituted: race.substituted || [],
+      changed: race.changed || []
+    });
+  } catch (error) {
+    console.error('Validation API error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});

@@ -100,10 +100,11 @@ python src/pipeline/entry_validator.py 2026-03-22 ST
 - [x] **6.2** 寫 script 比對 `racecard_entries` vs `odds_entries` ✅
 - [x] **6.3** 整合進 daily pipeline (Python) ✅
 - [x] **6.4** Output 報告：新增/移除/替補馬匹 ✅
-- [ ] **6.5** Webapp 顯示 "馬匹有變動" warning 🔄 PENDING
-  - **Depends**: FEAT-007 for API endpoint
+- [x] **6.5** Webapp 顯示 "馬匹有變動" warning ✅
+  - **API**: `GET /api/validations/:date/:venue`
+  - **UI**: Badge shown when `validationData.has_changes` is true
 
-**技術**: Node.js (Playwright), Python, MongoDB
+**技術**: Node.js (Playwright), Python, MongoDB, React
 
 ---
 

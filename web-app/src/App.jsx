@@ -45,6 +45,9 @@ function App() {
     pace: 1.0,
   });
   
+  // FEAT-006: Racecard validation data
+  const [validationData, setValidationData] = useState(null);
+  
   // Debounced re-predict when boosting sliders change
   const predictControllerRef = useRef(null);
   const lastPredictRef = useRef(0);
@@ -109,6 +112,30 @@ function App() {
 
   // WebSocket for real-time odds
   const { oddsData, oddsHistory, connected, error: oddsError, session } = useOddsSocket(raceId);
+
+  // FEAT-006: Fetch validation data when fixture changes
+  useEffect(() => {
+    if (!selectedFixture) {
+      setValidationData(null);
+      return;
+    }
+    
+    const fetchValidation = async () => {
+      try {
+        const res = await axios.get(`/api/validations/${selectedFixture.date}/${selectedFixture.venue}`);
+        if (res.data && res.data.has_changes) {
+          setValidationData(res.data);
+        } else {
+          setValidationData(null);
+        }
+      } catch (err) {
+        console.error('Validation fetch error:', err);
+        setValidationData(null);
+      }
+    };
+    
+    fetchValidation();
+  }, [selectedFixture]);
 
   function fmtTime(ts) {
     if (!ts) return '-';
@@ -370,6 +397,11 @@ function App() {
                 {raceConfidence != null && (
                   <div className={`conf-tab-badge ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
                     信心 {raceConfidence}
+                  </div>
+                )}
+                {validationData && (
+                  <div className="validation-warning-badge" title="馬匹資料有變動">
+                    ⚠️ 馬匹變動
                   </div>
                 )}
               </div>
