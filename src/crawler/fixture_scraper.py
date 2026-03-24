@@ -120,10 +120,17 @@ class FixtureScraper:
                             if date_match and current_month:
                                 day = int(date_match.group(1))
                                 
-                                # Venue: "田" = ST, "谷" = HV
-                                venue = 'ST'
-                                if '谷' in text:
+                                # Venue: "沙田" = ST, "跑馬地" = HV
+                                # Check for specific venue names, not just characters
+                                if '沙田' in text:
+                                    venue = 'ST'
+                                elif '跑馬地' in text:
                                     venue = 'HV'
+                                else:
+                                    # Fallback: try individual characters
+                                    # Note: "谷" alone doesn't reliably indicate HV
+                                    venue = 'ST'
+                                    logger.warning(f"  Unknown venue for {date_str}: '{text[:50]}...'")
                                 
                                 # Get approximate race count from fixture
                                 fixture_race_count = max(int(r) for r in race_nums)
