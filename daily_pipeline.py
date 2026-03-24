@@ -577,8 +577,8 @@ class HistoricalOptimizationPipeline:
             self.results.setdefault("errors", []).append(f"horse {horse_id}: {e}")
     
     def _train_model(self):
-        """5. 训练模型并 Push 到 GitHub"""
-        logger.info("\n🤖 Step 5: 训练预测模型")
+        """5. Online learning model update - incremental training"""
+        logger.info("\n🤖 Step 5: 在线学习模型更新")
         
         if self.results["scraped_results"] == 0 and len(self.results["unique_horses_synced"]) == 0:
             logger.info("   ℹ️ 没有新数据，跳过模型训练")
@@ -589,16 +589,34 @@ class HistoricalOptimizationPipeline:
             return
         
         try:
-            # Run training script
-            train_script = PROJECT_ROOT / "train_model_v4.py"
+            # Try online learning (incremental update) first
+            from src.ml.online_trainer import run_daily_update
+            
+            logger.info("   运行增量学习更新...")
+            success = run_daily_update()
+            
+            if success:
+                self.results["model_trained"] = True
+                logger.info("   ✅ 增量模型更新完成")
+                self._git_push()
+                return
+            else:
+                logger.warning("   增量更新失败，尝试完整训练...")
+                
+        except Exception as e:
+            logger.warning(f"   在线学习模块出错: {e}, 回退到完整训练")
+        
+        # Fallback: Full retraining
+        try:
+            train_script = PROJECT_ROOT / "train_ensemble.py"
             
             if not train_script.exists():
                 logger.warning("   ⚠️ 训练脚本不存在")
                 return
             
-            logger.info("   运行训练...")
+            logger.info("   运行完整训练...")
             result = subprocess.run(
-                ["python3", str(train_script)],
+                ["python3", str(train_script), "--days", "365"],
                 cwd=PROJECT_ROOT,
                 capture_output=True,
                 text=True,
@@ -607,9 +625,7 @@ class HistoricalOptimizationPipeline:
             
             if result.returncode == 0:
                 self.results["model_trained"] = True
-                logger.info("   ✅ 模型训练完成")
-                
-                # Git commit and push
+                logger.info("   ✅ 完整模型训练完成")
                 self._git_push()
             else:
                 logger.error(f"   ❌ 训练失败: {result.stderr}")
@@ -619,7 +635,7 @@ class HistoricalOptimizationPipeline:
         except Exception as e:
             logger.error(f"   ❌ 训练异常: {e}")
     
-    def _git_push(self):
+    def _git_push(self):    def _git_push(self):
         """Git commit and push"""
         try:
             logger.info("   📤 Git commit and push...")
