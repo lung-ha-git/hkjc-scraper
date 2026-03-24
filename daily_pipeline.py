@@ -635,7 +635,7 @@ class HistoricalOptimizationPipeline:
         except Exception as e:
             logger.error(f"   ❌ 训练异常: {e}")
     
-    def _git_push(self):    def _git_push(self):
+    def _git_push(self):
         """Git commit and push"""
         try:
             logger.info("   📤 Git commit and push...")
