@@ -28,8 +28,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
-const mongoUrl = 'mongodb://localhost:27017/';
-const dbName = 'hkjc_racing_dev';
+const mongoUrl = process.env.MONGODB_URI || 'mongodb://mongodb:27017/';
+const dbName = process.env.MONGODB_DATABASE || 'horse_racing';
 
 let db;
 
@@ -159,9 +159,30 @@ app.get('/api/racecards', async (req, res) => {
     .toArray();
   
   // Get horse entries
-  const entries = await db.collection('racecard_entries')
+  let entries = await db.collection('racecard_entries')
     .find(query)
     .toArray();
+  
+  // Fallback: if racecard_entries is empty, extract from racecards' embedded horses
+  if (entries.length === 0 && racecards.length > 0) {
+    entries = [];
+    for (const rc of racecards) {
+      if (rc.horses && Array.isArray(rc.horses)) {
+        for (const horse of rc.horses) {
+          // Skip standby/non-declared horses (horse_no=0 or status=Standby)
+          if (horse.status === 'Standby' || horse.horse_no === 0 || horse.horse_no === '0') {
+            continue;
+          }
+          entries.push({
+            ...horse,
+            race_date: rc.race_date,
+            race_no: rc.race_no,
+            venue: rc.venue,
+          });
+        }
+      }
+    }
+  }
   
   // Add jersey_url to each entry (lookup by hkjc_horse_id)
   for (const entry of entries) {
@@ -524,8 +545,8 @@ app.get('/api/predict', async (req, res) => {
     const { execSync } = require('child_process');
     const fs = require('fs');
     
-    // Construct script path
-    const scriptPath = path.join('/Users/fatlung/.openclaw/workspace-main/hkjc_project', modelInfo.script);
+    // Construct script path (use /app for Docker container)
+    const scriptPath = path.join('/app', modelInfo.script);
     
     // Check if script exists
     if (!fs.existsSync(scriptPath)) {
@@ -543,7 +564,7 @@ app.get('/api/predict', async (req, res) => {
       cmd = `python3 ${scriptPath} ${race_date} ${race_no} ${venue} ${boostingArg} 2>&1`;
     } else {
       // Default prediction using predict_xgb.py
-      cmd = `python3 /Users/fatlung/.openclaw/workspace-main/hkjc_project/predict_xgb.py ${race_date} ${race_no} ${venue} ${boostingArg} 2>&1 | grep -v '^Loading'`;
+      cmd = `python3 /app/predict_xgb.py ${race_date} ${race_no} ${venue} ${boostingArg} 2>/dev/null`;
     }
     
     const timeoutMs = (modelConfig.settings?.timeout_seconds || 60) * 1000;

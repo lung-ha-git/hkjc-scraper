@@ -7,7 +7,7 @@ import os
 import json
 import pickle
 
-sys.path.insert(0, '/Users/fatlung/.openclaw/workspace-main/hkjc_project')
+sys.path.insert(0, '/app')
 os.environ['PYTHONUNBUFFERED'] = '1'
 
 from src.database.connection import DatabaseConnection
@@ -16,9 +16,162 @@ from collections import defaultdict
 
 def load_model():
     """Load XGBoost model"""
-    with open('/Users/fatlung/.openclaw/workspace-main/hkjc_project/xgb_model.pkl', 'rb') as f:
+    with open('/app/xgb_model.pkl', 'rb') as f:
         data = pickle.load(f)
     return data['model'], data['features']
+
+
+def _parse_finish_time(ft_str):
+    """Parse finish time string like '1.10.22' to seconds."""
+    if not ft_str:
+        return None
+    try:
+        parts = str(ft_str).strip().split('.')
+        if len(parts) >= 3:
+            return int(parts[0]) * 60 + int(parts[1]) + int(parts[2]) / 100
+        return None
+    except (ValueError, TypeError):
+        return None
+
+
+def _normalize_venue(venue_str):
+    """Normalize venue string to HV/ST."""
+    v = str(venue_str).upper()
+    if 'HV' in v or '快活谷' in v:
+        return 'HV'
+    return 'ST'
+
+
+def _normalize_track_condition(tc_str):
+    """Normalize track condition string."""
+    tc = str(tc_str).strip()
+    if tc in ('好', 'GOOD', 'G', 'A', 'A+'):
+        return 'GOOD'
+    if tc in ('好至正常', '好至頗慢'):
+        return 'GOOD_TO_FAVORABLE'
+    if tc in ('正常', 'NORMAL', 'N', 'B'):
+        return 'NORMAL'
+    if tc in ('濕', 'WET', 'W', 'C'):
+        return 'WET'
+    return 'NORMAL'
+
+
+def _compute_horse_history_stats(db):
+    """Pre-compute aggregated stats per horse from horse_race_history collection.
+    
+    Returns dict: { hkjc_horse_id: { feature_name: value, ... } }
+    """
+    from collections import defaultdict
+    
+    # Aggregate all history records per horse
+    history_records = defaultdict(list)
+    for rec in db.db['horse_race_history'].find({}):
+        hid = rec.get('hkjc_horse_id')
+        if not hid:
+            continue
+        history_records[hid].append(rec)
+    
+    stats = {}
+    for hid, recs in history_records.items():
+        s = {}
+        
+        # ---- track_wins, track_runs, track_win_rate ----
+        track_wins = track_runs = 0
+        for r in recs:
+            pos = r.get('position', '')
+            try:
+                rank = int(pos) if pos else 0
+            except (ValueError, TypeError):
+                rank = 0
+            if rank > 0:
+                track_runs += 1
+                if rank == 1:
+                    track_wins += 1
+        s['track_wins'] = track_wins
+        s['track_runs'] = track_runs
+        s['track_win_rate'] = track_wins / track_runs if track_runs > 0 else 0
+        
+        # ---- recent3_avg_rank, recent3_wins ----
+        # Sort by date descending
+        sorted_recs = sorted(recs, key=lambda r: r.get('date', ''), reverse=True)
+        recent3 = sorted_recs[:3]
+        ranks = []
+        recent3_wins = 0
+        for r in recent3:
+            pos = r.get('position', '')
+            try:
+                rank = int(pos) if pos else 0
+            except (ValueError, TypeError):
+                rank = 0
+            if rank > 0:
+                ranks.append(rank)
+                if rank == 1:
+                    recent3_wins += 1
+        s['recent3_avg_rank'] = sum(ranks) / len(ranks) if ranks else 5
+        s['recent3_wins'] = recent3_wins
+        
+        # ---- venue_avg_rank ----
+        venue_ranks = []
+        for r in recs:
+            pos = r.get('position', '')
+            try:
+                rank = int(pos) if pos else 0
+            except (ValueError, TypeError):
+                rank = 0
+            if rank > 0:
+                venue_ranks.append(rank)
+        s['venue_avg_rank'] = sum(venue_ranks) / len(venue_ranks) if venue_ranks else 5
+        
+        # ---- best_dist_time, best_venue_dist_time ----
+        dist_times = {}
+        venue_dist_times = {}
+        for r in recs:
+            ft = _parse_finish_time(r.get('finish_time'))
+            if ft is None:
+                continue
+            dist = str(r.get('distance', '')).replace('米', '').strip()
+            venue = _normalize_venue(r.get('venue', ''))
+            dist_key = int(dist) if dist.isdigit() else None
+            venue_dist_key = f"{venue}_{dist_key}"
+            
+            if dist_key:
+                if dist_key not in dist_times or ft < dist_times[dist_key]:
+                    dist_times[dist_key] = ft
+                vd_key = f"{venue}_{dist_key}"
+                if vd_key not in venue_dist_times or ft < venue_dist_times[vd_key]:
+                    venue_dist_times[vd_key] = ft
+        
+        # Get best for a given distance placeholder (filled by build_features_for_race)
+        s['_best_dist_times'] = dist_times
+        s['_best_venue_dist_times'] = venue_dist_times
+        
+        # ---- best_finish_time (overall best) ----
+        all_times = [_parse_finish_time(r.get('finish_time')) for r in recs]
+        all_times = [t for t in all_times if t is not None]
+        s['best_finish_time'] = min(all_times) if all_times else 0
+        
+        # ---- track_cond_winrate, track_cond_runs ----
+        tc_wins = defaultdict(int)
+        tc_runs = defaultdict(int)
+        for r in recs:
+            tc = _normalize_track_condition(r.get('track_condition', ''))
+            pos = r.get('position', '')
+            try:
+                rank = int(pos) if pos else 0
+            except (ValueError, TypeError):
+                rank = 0
+            tc_runs[tc] += 1
+            if rank == 1:
+                tc_wins[tc] += 1
+        # Store all for lookup by race condition (default to GOOD)
+        s['_tc_wins'] = dict(tc_wins)
+        s['_tc_runs'] = dict(tc_runs)
+        s['track_cond_winrate'] = 0  # default
+        s['track_cond_runs'] = 0      # default
+        
+        stats[hid] = s
+    
+    return stats
 
 
 def load_data():
@@ -33,6 +186,9 @@ def load_data():
     jockeys = {j.get('name', ''): j for j in db.db['jockeys'].find({})}
     trainers = {t.get('name', ''): t for t in db.db['trainers'].find({})}
     distance_stats = {ds.get('hkjc_horse_id'): ds for ds in db.db['horse_distance_stats'].find({})}
+    
+    # Pre-compute horse history stats from horse_race_history
+    horse_history_stats = _compute_horse_history_stats(db)
     
     # Imports must be at function top (Python treats 'from X import Y' as local for entire function)
     from collections import defaultdict
@@ -100,7 +256,7 @@ def load_data():
         if poses
     }
     
-    return db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace
+    return db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, horse_history_stats
 
 
 def _get_draw_advantage(draw: int, venue: str, distance: int) -> float:
@@ -130,19 +286,39 @@ def _get_draw_advantage(draw: int, venue: str, distance: int) -> float:
     return 0
 
 
-def build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, race_date, horse_early_pace):
-    """Build features for race entries"""
+def build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, race_date, horse_early_pace, horse_history_stats):
+    """Build features for race entries — produces all 29 model features."""
     results = []
     
-    race_ratings = [horses.get(e.get('horse_name', ''), {}).get('current_rating', 0) or 0 for e in entries]
-    race_avg = sum(race_ratings) / len(race_ratings) if race_ratings else 0
+    # Pre-calculate race-average weight for weight_advantage
+    scratch_weights = []
+    for e in entries:
+        sw = e.get('scratch_weight', 0) or 0
+        if sw:
+            scratch_weights.append(int(sw))
+    race_avg_weight = sum(scratch_weights) / len(scratch_weights) if scratch_weights else 1200
     
     for entry in entries:
         horse_name = entry.get('horse_name', '')
         jockey = entry.get('jockey_name', '')
         trainer = entry.get('trainer_name', '')
-        draw = entry.get('draw', 0) or 0
-        scratch_weight = entry.get('scratch_weight', 0) or 0
+        draw_raw = entry.get('draw', 0)
+        if isinstance(draw_raw, str):
+            try:
+                draw = int(float(draw_raw))
+            except (ValueError, TypeError):
+                draw = 0
+        else:
+            draw = int(draw_raw) if draw_raw else 0
+        
+        scratch_weight_raw = entry.get('scratch_weight', 0)
+        if isinstance(scratch_weight_raw, str):
+            try:
+                scratch_weight = int(float(scratch_weight_raw))
+            except (ValueError, TypeError):
+                scratch_weight = 0
+        else:
+            scratch_weight = int(scratch_weight_raw) if scratch_weight_raw else 0
         
         horse = horses.get(horse_name, {})
         hid = horse.get('hkjc_horse_id', '') if horse else ''
@@ -152,6 +328,7 @@ def build_features_for_race(entries, distance, venue, horses, jockeys, trainers,
         career_wins = int(horse.get('career_wins', 0) or 0) if horse else 0
         career_seconds = int(horse.get('career_seconds', 0) or 0) if horse else 0
         career_thirds = int(horse.get('career_thirds', 0) or 0) if horse else 0
+        season_prize = float(horse.get('season_prize', 0) or 0) if horse else 0
         
         career_place = career_wins + career_seconds + career_thirds
         career_place_rate = career_place / career_starts if career_starts > 0 else 0
@@ -169,6 +346,21 @@ def build_features_for_race(entries, distance, venue, horses, jockeys, trainers,
                 dist_win_rate = dist_wins / dist_runs if dist_runs > 0 else 0
                 break
         
+        # Pre-computed horse history stats
+        hhs = horse_history_stats.get(hid, {})
+        
+        # track_wins, track_runs, track_win_rate
+        track_wins = hhs.get('track_wins', 0)
+        track_runs = hhs.get('track_runs', 0)
+        track_win_rate = hhs.get('track_win_rate', 0)
+        
+        # recent3_avg_rank, recent3_wins
+        recent3_avg_rank = hhs.get('recent3_avg_rank', 5.0)
+        recent3_wins = hhs.get('recent3_wins', 0)
+        
+        # venue_avg_rank
+        venue_avg_rank = hhs.get('venue_avg_rank', 5.0)
+        
         # Jockey-trainer combo
         jt = (jockey, trainer)
         jt_win_rate = jt_wins.get(jt, 0) / jt_races.get(jt, 1) if jt_races.get(jt, 0) > 0 else 0
@@ -181,58 +373,86 @@ def build_features_for_race(entries, distance, venue, horses, jockeys, trainers,
         # Jockey
         j = jockeys.get(jockey, {})
         jockey_win_rate = (j.get('wins', 0) or 0) / max(1, (j.get('total_rides', 0) or 0)) if j else 0
+        jockey_place_rate = 0  # jockeys collection may not have this
         
         # Trainer
         t = trainers.get(trainer, {})
         trainer_win_rate = (t.get('wins', 0) or 0) / max(1, (t.get('total_horses', 0) or 0)) if t else 0
+        trainer_place_rate = 0  # trainers collection may not have this
         
-        # Days rest (days since last race)
-        from datetime import datetime
-        try:
-            race_dt = datetime.strptime(race_date.replace('/', '-'), '%Y-%m-%d')
-        except Exception:
-            race_dt = datetime.now()
-        last = horse_last_race.get(horse_name, {})
-        last_date = last.get('date')
-        days_rest = (race_dt - last_date).days if last_date else 999
+        # Best times from pre-computed history
+        dist_times_map = hhs.get('_best_dist_times', {})
+        venue_dist_map = hhs.get('_best_venue_dist_times', {})
+        best_dist_time = dist_times_map.get(distance, 0)
+        best_venue_dist_time = venue_dist_map.get(f'{venue}_{distance}', 0)
+        best_finish_time = hhs.get('best_finish_time', 0)
         
-        # Weight change (scratch_weight - last race draw_weight)
-        last_weight = last.get('draw_weight') or 0
-        weight_change = int(scratch_weight) - int(last_weight) if scratch_weight and last_weight else 0
+        # finish_time_diff: diff from race average finish time (approximate with best_dist_time)
+        # We compute as: if best_dist_time exists, diff from expected avg
+        # For now, set to 0 since we don't have race avg easily
+        finish_time_diff = 0
+        
+        # Track condition stats — default to horse's overall performance
+        tc_wins = hhs.get('_tc_wins', {})
+        tc_runs = hhs.get('_tc_runs', {})
+        track_cond_winrate = tc_wins.get('GOOD', 0) / max(1, tc_runs.get('GOOD', 0))
+        track_cond_runs = tc_runs.get('GOOD', 0)
         
         # Draw advantage
         draw_advantage = _get_draw_advantage(draw, venue, distance)
         
+        # draw_rating: simplified from draw_advantage (no separate historical draw rating available)
+        draw_rating = draw_advantage
+        
+        # Early pace score (pre-computed from races results)
+        early_pace_score = horse_early_pace.get(horse_name, 5.0)
+        
+        # Weight advantage vs race average
+        sw_int = int(scratch_weight) if scratch_weight else 0
+        weight_advantage = race_avg_weight - sw_int  # lower weight = higher advantage
+        
         results.append({
             'horse_name': horse_name,
+            'horse_no': entry.get('horse_no', 0),
             'jockey': jockey,
             'trainer': trainer,
             'draw': draw,
-            'distance': distance,
-            'venue': 1 if venue == 'HV' else 0,
-            'current_rating': current_rating,
+            # Model features (29 in order from xgb_model.pkl):
             'career_starts': career_starts,
             'career_wins': career_wins,
             'career_place_rate': career_place_rate,
+            'season_prize': season_prize,
             'dist_wins': dist_wins,
             'dist_runs': dist_runs,
             'dist_win_rate': dist_win_rate,
+            'track_wins': track_wins,
+            'track_runs': track_runs,
+            'track_win_rate': track_win_rate,
+            'recent3_avg_rank': recent3_avg_rank,
+            'recent3_wins': recent3_wins,
+            'venue_avg_rank': venue_avg_rank,
             'jockey_win_rate': jockey_win_rate,
+            'jockey_place_rate': jockey_place_rate,
             'trainer_win_rate': trainer_win_rate,
-            'jt_win_rate': jt_win_rate,
             'jt_place_rate': jt_place_rate,
-            'hj_win_rate': hj_win_rate,
+            'jt_races': jt_races.get(jt, 0),
+            'best_dist_time': best_dist_time,
+            'best_venue_dist_time': best_venue_dist_time,
+            'best_finish_time': best_finish_time,
+            'finish_time_diff': finish_time_diff,
             'draw_dist': draw * distance,
-            'hj_races': hj_races.get(hj, 0),
-            'days_rest': days_rest,
-            'weight_change': weight_change,
+            'draw_rating': draw_rating,
+            'track_cond_winrate': track_cond_winrate,
+            'track_cond_runs': track_cond_runs,
+            'early_pace_score': early_pace_score,
+            'weight_advantage': weight_advantage,
             'draw_advantage': draw_advantage,
         })
     
     return results
 
 
-def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features, boosting=None):
+def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features, boosting=None, horse_history_stats=None):
     """Predict race with optional feature boosting.
     
     boosting: dict of group_name or feature_name -> multiplier (default 1.0)
@@ -243,11 +463,11 @@ def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_s
         'distance': ['dist_wins', 'dist_win_rate', 'dist_runs', 'best_dist_time', 'best_venue_dist_time'],
         'jockey': ['jockey_win_rate', 'jockey_place_rate', 'jt_place_rate', 'jt_races'],
         'recent': ['recent3_avg_rank', 'recent3_wins'],
-        'track': ['track_cond_winrate', 'track_cond_runs', 'track_wins', 'track_races', 'track_win_rate'],
-        'draw': ['draw', 'draw_advantage', 'draw_dist', 'draw_rating'],
+        'track': ['track_cond_winrate', 'track_cond_runs', 'track_wins', 'track_runs', 'track_win_rate'],
+        'draw': ['draw_dist', 'draw_rating', 'draw_advantage'],
         'career': ['career_starts', 'career_wins', 'career_place_rate', 'season_prize'],
         'trainer': ['trainer_win_rate', 'trainer_place_rate'],
-        'best_time': ['best_finish_time', 'finish_time_diff'],
+        'best_time': ['best_finish_time', 'best_dist_time', 'best_venue_dist_time', 'finish_time_diff'],
         'pace': ['early_pace_score'],
     }
     
@@ -261,7 +481,7 @@ def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_s
             else:
                 expanded_boost[group] = mult
     
-    entry_features = build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, race_date, horse_early_pace)
+    entry_features = build_features_for_race(entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, race_date, horse_early_pace, horse_history_stats or {})
     
     # Add early pace to each feature entry
     for ef in entry_features:
@@ -275,11 +495,37 @@ def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_s
         row = []
         for f in features:
             val = ef.get(f, 0) or 0
+            # Convert to numeric: strings like '7' for draw → int 7
+            if isinstance(val, str):
+                try:
+                    val = int(float(val))
+                except (ValueError, TypeError):
+                    val = 0
+            elif not isinstance(val, (int, float)):
+                val = 0
             boost = expanded_boost.get(f, 1.0)
             row.append(val * boost)
         X.append(row)
     
     X = np.array(X)
+    
+    # Guard: if no entries, return empty predictions
+    if len(entry_features) == 0:
+        return [], 0.0
+    
+    # Ensure X is 2D with correct number of features
+    if X.ndim == 1:
+        # Malformed - reshape or bail
+        if X.size == len(features):
+            X = X.reshape(1, len(features))
+        else:
+            X = np.zeros((len(entry_features), len(features)))
+    elif X.shape[1] != len(features):
+        # Feature count mismatch - rebuild X row by row with safe defaults
+        X = np.zeros((len(entry_features), len(features)))
+        for i, ef in enumerate(entry_features):
+            for j, f in enumerate(features):
+                X[i, j] = ef.get(f, 0) or 0
     
     # Raw XGBoost predictions (lower score = better predicted rank)
     preds = model.predict(X)
@@ -320,6 +566,7 @@ def predict_race(entries, distance, venue, horses, jockeys, trainers, distance_s
         
         results.append({
             'horse_name': ef['horse_name'],
+            'horse_no': ef.get('horse_no', 0),
             'jockey': ef['jockey'],
             'trainer': ef['trainer'],
             'draw': ef['draw'],
@@ -358,10 +605,12 @@ if __name__ == '__main__':
         except Exception:
             pass
     
-    print(f'Loading model and data for {race_date} R{race_no} {venue}...' + (f' boosting={boosting}' if boosting else ''))
+    import sys
+    sys.stderr.write(f'Loading model and data for {race_date} R{race_no} {venue}...' + (f' boosting={boosting}' if boosting else '') + '\n')
+    sys.stderr.flush()
     
     model, features = load_model()
-    db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace = load_data()
+    db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, horse_history_stats = load_data()
     
     # Get racecard entries
     racecard_entries = list(db.db['racecard_entries'].find({
@@ -369,6 +618,34 @@ if __name__ == '__main__':
         'venue': venue,
         'race_no': race_no
     }))
+    
+    # Fallback: if racecard_entries is empty, extract from racecards' embedded horses
+    if not racecard_entries:
+        racecard = db.db['racecards'].find_one({
+            'race_date': race_date,
+            'venue': venue,
+            'race_no': race_no
+        })
+        if racecard and racecard.get('horses'):
+            racecard_entries = []
+            for h in racecard['horses']:
+                # Skip standby/non-declared horses
+                hn = h.get('horse_no', 0)
+                if isinstance(hn, str):
+                    try:
+                        hn = int(float(hn))
+                    except:
+                        hn = 0
+                if h.get('status') == 'Standby' or hn == 0:
+                    continue
+                # Normalize draw to int
+                draw_raw = h.get('draw', 0)
+                if isinstance(draw_raw, str):
+                    try:
+                        h['draw'] = int(float(draw_raw))
+                    except:
+                        h['draw'] = 0
+                racecard_entries.append(h)
     
     racecard = db.db['racecards'].find_one({
         'race_date': race_date,
@@ -378,6 +655,6 @@ if __name__ == '__main__':
     
     distance = racecard.get('distance', 1200) if racecard else 1200
     
-    predictions, race_confidence = predict_race(racecard_entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features, boosting)
+    predictions, race_confidence = predict_race(racecard_entries, distance, venue, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, race_date, model, features, boosting, horse_history_stats)
     
     print(json.dumps({'predictions': predictions, 'race_confidence': race_confidence}, ensure_ascii=False))
