@@ -12,9 +12,9 @@
 const { chromium } = require('playwright');
 const { MongoClient } = require('mongodb');
 
-const MONGODB_URI = 'mongodb://localhost:27017/';
-const DB_NAME = 'hkjc_racing_dev';
-const API_BASE = 'http://localhost:3001';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/';
+const DB_NAME = process.env.MONGODB_DATABASE || 'horse_racing';
+const API_BASE = process.env.API_BASE || 'http://localhost:3001';
 
 function buildRaceId(date, venue, raceNo) {
   return `${date}_${venue}_R${raceNo}`;
@@ -68,7 +68,7 @@ function parseOdds(data) {
 
 // ─── Scrape all races using fresh browser ─────────────────────────────────────
 async function scrapeAllRaces(date, venue, races) {
-  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
+  const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage();
 

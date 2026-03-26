@@ -1,0 +1,14 @@
+{
+  "name": "hkjc-odds-collector",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node odds_collector.js"
+  },
+  "dependencies": {
+    "playwright": "^1.41.0",
+    "mongodb": "^7.1.0",
+    "axios": "^1.6.2",
+    "dotenv": "^17.3.1"
+  }
+}
