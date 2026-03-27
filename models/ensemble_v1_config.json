@@ -46,8 +46,8 @@
   ],
   "win_model": "models/ensemble_v1_win.pkl",
   "top4_model": "models/ensemble_v1_top4.pkl",
-  "trained_at": "2026-03-24T00:53:08.519184",
-  "n_samples": 8006,
-  "top4_accuracy": 0.6741573033707865,
-  "avg_uncertainty": 0.04162525431869446
+  "trained_at": "2026-03-27T11:00:08.786913",
+  "n_samples": 5372,
+  "top4_accuracy": 0.68,
+  "avg_uncertainty": 0.0
 }

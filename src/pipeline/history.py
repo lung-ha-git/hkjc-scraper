@@ -80,38 +80,47 @@ async def sync_past_race_results(days_back: int = 7) -> int:
         return 0
     
     try:
-        # Get past race days from fixtures
+        # Get past race days from races collection (not fixtures!)
         today = datetime.now()
         start_date = (today - timedelta(days=days_back)).strftime("%Y-%m-%d")
         
-        fixtures = list(db.db["fixtures"].find({
-            "race_date": {"$gte": start_date, "$lt": today.strftime("%Y-%m-%d")},
-            "venue": {"$in": ["HV", "ST"]}
-        }))
+        # Query races collection for past races
+        past_races = list(db.db["races"].find({
+            "race_date": {"$gte": start_date, "$lt": today.strftime("%Y-%m-%d")}
+        }).sort("race_date", 1))
         
-        if not fixtures:
-            logger.info("No recent fixtures found")
+        if not past_races:
+            logger.info("No past races found in races collection")
             return 0
+        
+        # Group by race_date and venue
+        race_days = {}
+        for race in past_races:
+            key = f"{race['race_date']}_{race['venue']}"
+            if key not in race_days:
+                race_days[key] = {
+                    "race_date": race["race_date"],
+                    "venue": race["venue"],
+                    "races": []
+                }
+            race_days[key]["races"].append(race)
         
         synced = 0
         
-        for fixture in fixtures:
-            race_date = fixture["race_date"]
-            venue = fixture["venue"]
-            expected_races = fixture.get("race_count", 8)
+        for key, data in race_days.items():
+            race_date = data["race_date"]
+            venue = data["venue"]
+            races = data["races"]
             
-            logger.info(f"Checking {race_date} ({venue}) - {expected_races} races")
+            logger.info(f"Checking {race_date} ({venue}) - {len(races)} races")
             
-            # Gap analysis: check which races are missing
-            for race_no in range(1, expected_races + 1):
-                race_id = f"{race_date.replace('-', '_')}_{venue}_{race_no}"
+            for race in races:
+                race_id = race.get("race_id")
+                race_no = race.get("race_no")
                 
-                # Check if race result exists
-                exists = db.db["races"].find_one({"race_id": race_id})
-                
-                if not exists:
-                    # Missing - try to scrape
-                    logger.info(f"   Missing race {race_no}, attempting scrape...")
+                # Check if race has complete results
+                if not race.get("results") or not race.get("payout"):
+                    logger.info(f"   Incomplete race {race_no} ({race_id}), attempting re-scrape...")
                     
                     db.disconnect()
                     
@@ -121,6 +130,7 @@ async def sync_past_race_results(days_back: int = 7) -> int:
                         synced += 1
                     
                     await asyncio.sleep(2)  # Rate limiting
+                    db.connect()
                     
                     db.connect()
         

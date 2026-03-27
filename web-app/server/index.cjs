@@ -120,6 +120,7 @@ connect()
   });
 
 app.get('/api/health', (req, res) => res.json({ok: 1}));
+app.get('/health', (req, res) => res.json({ok: 1}));
 
 // Fixtures - upcoming and past race days
 app.get('/api/fixtures', async (req, res) => {

@@ -22,7 +22,7 @@ PROCESSED_DATA_DIR.mkdir(exist_ok=True)
 
 # MongoDB Configuration
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
-MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "hkjc_racing")
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "horse_racing")
 
 # HKJC URLs
 HKJC_BASE_URL = "https://racing.hkjc.com"
