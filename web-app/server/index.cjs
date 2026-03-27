@@ -705,3 +705,57 @@ app.get('/api/scraper/status', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Models download API
+const fs = require('fs');
+
+const MODELS_DIR = '/app/models';
+
+// List all available models
+app.get('/api/models/list', (req, res) => {
+  try {
+    if (!fs.existsSync(MODELS_DIR)) {
+      return res.json({ models: [], updated: null });
+    }
+    
+    const files = fs.readdirSync(MODELS_DIR);
+    const models = files
+      .filter(f => f.endsWith('.pkl') || f.endsWith('.json'))
+      .map(f => {
+        const filepath = path.join(MODELS_DIR, f);
+        const stats = fs.statSync(filepath);
+        return {
+          name: f,
+          size: stats.size,
+          modified: stats.mtime.toISOString()
+        };
+      })
+      .sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    
+    // Get latest update time
+    const updated = models.length > 0 ? models[0].modified : null;
+    
+    res.json({ models, updated });
+  } catch (error) {
+    console.error('Models list error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Download a specific model file
+app.get('/api/models/download/:filename', (req, res) => {
+  const { filename } = req.params;
+  
+  // Security: only allow .pkl and .json files
+  if (!filename.endsWith('.pkl') && !filename.endsWith('.json')) {
+    return res.status(400).json({ error: 'Only .pkl and .json files allowed' });
+  }
+  
+  const filepath = path.join(MODELS_DIR, filename);
+  
+  if (!fs.existsSync(filepath)) {
+    return res.status(404).json({ error: 'Model not found' });
+  }
+  
+  res.download(filepath, filename);
+});

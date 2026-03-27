@@ -35,8 +35,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Paths
-MODELS_DIR = PROJECT_ROOT / "models"
+# Paths - Fix: add extra parent since file is in src/ml/ not root
+MODELS_DIR = PROJECT_ROOT.parent / "models"
 CHECKPOINTS_DIR = MODELS_DIR / "checkpoints"
 CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
 

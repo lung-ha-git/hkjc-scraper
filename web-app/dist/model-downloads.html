@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏇 HKJC 模型下載</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { text-align: center; margin: 30px 0; color: #ffd700; }
+    .model-card { background: #16213e; border-radius: 12px; padding: 20px; margin: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+    .model-info h3 { color: #4ecdc4; margin-bottom: 5px; }
+    .model-info p { color: #888; font-size: 14px; }
+    .model-meta { text-align: right; color: #666; font-size: 12px; }
+    .download-btn { background: #4ecdc4; color: #1a1a2e; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: all 0.3s; }
+    .download-btn:hover { background: #45b7d1; transform: translateY(-2px); }
+    .refresh-btn { background: #333; color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 20px; }
+    .refresh-btn:hover { background: #444; }
+    .loading { text-align: center; padding: 20px; color: #888; }
+    .error { background: #ff6b6b; color: #fff; padding: 15px; border-radius: 8px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏇 HKJC AI 模型下載</h1>
+    <button class="refresh-btn" onclick="loadModels()">🔄 刷新列表</button>
+    <div id="models"></div>
+  </div>
+  
+  <script>
+    const BASE_URL = '/api/models';
+    
+    async function loadModels() {
+      const container = document.getElementById('models');
+      container.innerHTML = '<div class="loading">載入中...</div>';
+      
+      try {
+        const res = await fetch(`${BASE_URL}/list`);
+        const data = await res.json();
+        
+        if (!data.models || data.models.length === 0) {
+          container.innerHTML = '<div class="error">暫無可用模型</div>';
+          return;
+        }
+        
+        container.innerHTML = data.models.map(m => `
+          <div class="model-card">
+            <div class="model-info">
+              <h3>${m.name}</h3>
+              <p>${formatSize(m.size)}</p>
+            </div>
+            <div class="model-meta">
+              <div>${formatDate(m.modified)}</div>
+              <a href="${BASE_URL}/download/${m.name}" class="download-btn" download>⬇️ 下載</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<div class="error">載入失敗: ${err.message}</div>`;
+      }
+    }
+    
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+    
+    function formatDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return d.toLocaleString('zh-HK', { 
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+    
+    loadModels();
+  </script>
+</body>
+</html>

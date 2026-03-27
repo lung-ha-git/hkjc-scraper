@@ -598,7 +598,8 @@ class HistoricalOptimizationPipeline:
             if success:
                 self.results["model_trained"] = True
                 logger.info("   ✅ 增量模型更新完成")
-                self._git_push()
+                # Save timestamped backup for download
+                self._save_timestamped_models()
                 return
             else:
                 logger.warning("   增量更新失败，尝试完整训练...")
@@ -626,7 +627,8 @@ class HistoricalOptimizationPipeline:
             if result.returncode == 0:
                 self.results["model_trained"] = True
                 logger.info("   ✅ 完整模型训练完成")
-                self._git_push()
+                # Save timestamped backup for download
+                self._save_timestamped_models()
             else:
                 logger.error(f"   ❌ 训练失败: {result.stderr}")
                 
@@ -668,6 +670,36 @@ class HistoricalOptimizationPipeline:
             logger.warning(f"   ⚠️ Git 操作失败: {e}")
         except Exception as e:
             logger.warning(f"   ⚠️ Git 异常: {e}")
+    
+    def _save_timestamped_models(self):
+        """Save timestamped copies of trained models for download"""
+        try:
+            models_dir = PROJECT_ROOT / "models"
+            if not models_dir.exists():
+                logger.warning("   ⚠️ Models directory not found")
+                return
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # Save timestamped copies
+            for f in models_dir.glob("*.pkl"):
+                ts_name = f"{f.stem}_{timestamp}{f.suffix}"
+                ts_path = models_dir / ts_name
+                import shutil
+                shutil.copy2(f, ts_path)
+                logger.info(f"   📦 Saved: {ts_name}")
+            
+            # Keep only last 7 days of timestamped models
+            import time
+            cutoff = time.time() - 7 * 24 * 60 * 60
+            for f in models_dir.glob("*_[0-9]*_[0-9]*.pkl"):
+                if f.stat().st_mtime < cutoff:
+                    f.unlink()
+                    logger.info(f"   🗑️ Removed old: {f.name}")
+            
+            logger.info("   📥 模型已就緒，可通過 /models/downloads 下載")
+        except Exception as e:
+            logger.warning(f"   ⚠️ 保存時間戳模型失敗: {e}")
     
     def _log_summary(self):
         logger.info("\n" + "=" * 70)
