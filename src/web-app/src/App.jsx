@@ -111,7 +111,7 @@ function App() {
   }, [raceId]);
 
   // WebSocket for real-time odds
-  const { oddsData, oddsHistory, connected, error: oddsError, session } = useOddsSocket(raceId);
+  const { oddsData, oddsHistory, connected, error: oddsError, session, scratched } = useOddsSocket(raceId);
 
   // Direct history fetch for sparklines (backup when socket hook doesn't populate history)
   const [sparklineHistory, setSparklineHistory] = useState({});
@@ -378,7 +378,9 @@ function App() {
   }
 
   const currentRaceCards = racecardData?.racecards?.find(rc => rc.race_no === selectedRaceNo);
-  const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo) || [];
+  const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo && !scratched.includes(e.horse_no)) || [];
+  // Filter predictions to exclude scratched horses
+  const activePredictions = predictions.filter(p => !scratched.includes(p.horse_no));
 
   return (
     <div className="app">
@@ -464,7 +466,7 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {predictions
+                  {activePredictions
                     .slice()
                     .sort((a, b) => a.horse_no - b.horse_no)
                     .map((pred) => {
@@ -615,7 +617,7 @@ function App() {
           )}
           
           <div className="prediction-list">
-            {predictions
+            {activePredictions
               .sort((a,b) => a.predicted_rank - b.predicted_rank)
               .map((pred, idx) => {
               const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
@@ -670,7 +672,7 @@ function App() {
           )}
         </div>
         <UnifiedRaceTable
-          predictions={predictions}
+          predictions={activePredictions}
           currentEntries={currentEntries}
           oddsData={oddsData}
           oddsHistory={mergedOddsHistory}
