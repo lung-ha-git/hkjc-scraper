@@ -142,25 +142,18 @@ function buildRaceId(date, venue, raceNo) {
 }
 
 // ─── Check if race has results (finished) ──────────────────────────────────────
-async function checkRaceFinished(page, date, venue, raceNo) {
+// Check race status from GraphQL response: RESULT=finished, DECLARED=in-progress
+function isRaceFinished(data, date, venue, raceNo) {
   try {
-    await page.goto(
-      `https://bet.hkjc.com/ch/racing/results/${date}/${venue}/${raceNo}`,
-      { waitUntil: 'domcontentloaded', timeout: 8000 }
-    );
-    const body = await page.content();
-    // Look for result markers like dividend info or "已結算" / "Race Result"
-    const hasResults = /result|dividend|結算|派彩/i.test(body);
-    if (hasResults) {
-      const raceId = buildRaceId(date, venue, raceNo);
-      finishedRaces.add(raceId);
+    const meet = data?.data?.raceMeetings?.[0]?.activeRaceMeeting;
+    if (!meet) return false;
+    if (meet.status === 'RESULT') {
+      finishedRaces.add(buildRaceId(date, venue, raceNo));
       console.log(`⏭ 已結算`);
       return true;
     }
     return false;
-  } catch (e) {
-    return false;
-  }
+  } catch (e) { return false; }
 }
 
 // ─── Intercept GraphQL ─────────────────────────────────────────────────────
@@ -233,12 +226,10 @@ async function scrapeAllRaces(date, venue, races, total) {
       
       process.stdout.write(`  Race ${raceNo}/${total}... `);
       
-      // Check if race has results
-      if (await checkRaceFinished(page, date, venue, raceNo)) {
-        continue;  // Marked as finished in checkRaceFinished
-      }
-      
       const data = await fetchRaceOdds(page, date, venue, raceNo);
+      if (!data) { console.log('❌'); continue; }
+      
+      if (isRaceFinished(data, date, venue, raceNo)) continue;
       if (!data) { console.log('❌'); continue; }
 
       const odds = parseOdds(data);
