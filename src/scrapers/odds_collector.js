@@ -357,7 +357,8 @@ async function scrapeCycle() {
     }
     
     const { venue, races, total } = raceInfo;
-    log(`[${new Date().toLocaleTimeString()}] 🚀 Scraping ${venue} races [${races.join(', ')}] (${total - races.length}/${total} 已結算)`);
+    const finished = total - races.length;
+    log(`[${new Date().toLocaleTimeString()}] 🚀 Scraping ${venue} races [${races.join(', ')}]${finished > 0 ? ` (${finished} finished)` : ''}`);
     
     // Session start
     await sessionStart(races.map(r => ({ race_id: buildRaceId(today, venue, r) })));
