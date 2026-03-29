@@ -10,11 +10,14 @@
 
 const { chromium } = require('playwright');
 const { MongoClient } = require('mongodb');
+const fs = require('fs');
+const path = require('path');
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/';
 const DB_NAME = process.env.MONGODB_DATABASE || 'horse_racing';
 const API_BASE = process.env.API_BASE || 'http://localhost:3001';
 const TZ = 'Asia/Hong_Kong';
+const LOGS_DIR = '/app/scrapers/logs';
 
 // ─── Timing constants ───────────────────────────────────────────────────────
 const SCRAPE_INTERVAL_RACE_DAY = 5 * 1000;    // 5 seconds
@@ -25,8 +28,32 @@ const RACE_DAY_CHECK_HOUR = 12;               // Check if race day at noon
 // ─── State ─────────────────────────────────────────────────────────────────
 let lastScrapeTime = 0;
 let isScraping = false;
+let finishedRaces = new Set();  // races that have results - never scrape again
+let raceScratched = {};                 // race_id -> [scratched horse nos]
+let hasSynced = false;                  // sync runner status only once
 let currentSchedule = SCRAPE_INTERVAL_NON_RACE_DAY;
 let scheduledTimeout = null;
+let logStream = null;
+
+// ─── File Logger ─────────────────────────────────────────────────────────
+function getLogStream() {
+  if (!logStream) {
+    const logDir = LOGS_DIR;
+    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+    const logFile = path.join(logDir, `odds_${new Date().toISOString().split('T')[0]}.log`);
+    logStream = fs.createWriteStream(logFile, { flags: 'a' });
+    log(`[Logger] Writing to ${logFile}`);
+  }
+  return logStream;
+}
+
+function log(...args) {
+  const msg = args.join(' ');
+  const ts = new Date().toLocaleTimeString('en-GB');
+  console.log(msg);
+  const stream = getLogStream();
+  stream.write(`[${ts}] ${msg}\n`);
+}
 
 // ─── MongoDB ────────────────────────────────────────────────────────────────
 let mongoClient = null;
@@ -45,6 +72,8 @@ async function isRaceDay() {
   const today = now.toISOString().split('T')[0];
   
   try {
+
+    
     const db = await getMongo();
     const fixtures = await db.collection('fixtures')
       .find({ date: today, scrape_status: 'completed' })
@@ -52,7 +81,7 @@ async function isRaceDay() {
       .toArray();
     
     if (fixtures.length > 0) {
-      console.log(`[${now.toLocaleTimeString()}] 📅 Race day confirmed: ${fixtures[0].venue}`);
+      log(`[${now.toLocaleTimeString()}] 📅 Race day confirmed: ${fixtures[0].venue}`);
       return { isRaceDay: true, venue: fixtures[0].venue, raceCount: fixtures[0].race_count };
     }
     
@@ -66,7 +95,7 @@ async function isRaceDay() {
       .toArray();
     
     if (tomorrowFixtures.length > 0 && now.getHours() >= 12) {
-      console.log(`[${now.toLocaleTimeString()}] 📅 Tomorrow is race day (${tomorrowFixtures[0].venue})`);
+      log(`[${now.toLocaleTimeString()}] 📅 Tomorrow is race day (${tomorrowFixtures[0].venue})`);
       return { isRaceDay: true, venue: tomorrowFixtures[0].venue, raceCount: tomorrowFixtures[0].race_count };
     }
     
@@ -83,6 +112,8 @@ async function getTodayRaces() {
   const today = now.toISOString().split('T')[0];
   
   try {
+
+    
     const db = await getMongo();
     const fixtures = await db.collection('fixtures')
       .find({ date: today, scrape_status: 'completed' })
@@ -92,9 +123,20 @@ async function getTodayRaces() {
     if (fixtures.length === 0) return null;
     
     const fixture = fixtures[0];
-    const races = Array.from({ length: fixture.race_count }, (_, i) => i + 1);
+    const allRaces = Array.from({ length: fixture.race_count }, (_, i) => i + 1);
     
-    return { venue: fixture.venue, races };
+    // Filter out already finished races
+    const unfinished = allRaces.filter(no => {
+      const raceId = buildRaceId(today, fixture.venue, no);
+      return !finishedRaces.has(raceId);
+    });
+    
+    if (unfinished.length === 0) {
+      log(`[${new Date().toLocaleTimeString()}] 🎉 全部 ${allRaces.length} 場已結算，停止 Collector`);
+      return null;
+    }
+    
+    return { venue: fixture.venue, races: unfinished, total: allRaces.length };
   } catch (e) {
     return null;
   }
@@ -105,25 +147,111 @@ function buildRaceId(date, venue, raceNo) {
   return `${date}_${venue}_R${raceNo}`;
 }
 
+// ─── Check if race has results (finished) ──────────────────────────────────────
+// Check race status from races[] array (may be in data._raceStatuses or raceScratched cache)
+function isRaceFinished(data, date, venue, raceNo) {
+  const raceId = buildRaceId(date, venue, raceNo);
+  // Check races[] from the data we just fetched
+  const races = data?.data?.raceMeetings?.[0]?._raceStatuses || data?._raceStatuses;
+  if (races) {
+    const race = races.find(r => String(r.no) === String(raceNo));
+    if (race && race.status === 'RESULT') {
+      finishedRaces.add(raceId);
+      // Collect scratched horses from races[] data
+      const scratched = [];
+      if (race.runners) {
+        race.runners.forEach(runner => {
+          if (runner.status === 'Scratched') {
+            scratched.push(Number(runner.no));
+          }
+        });
+      }
+      if (scratched.length > 0) {
+        raceScratched[raceId] = scratched;
+        saveScratchedToMongoDB(raceId, scratched);
+      }
+      console.log(`⏭ 已結算`);
+      return true;
+    }
+  }
+  // RESULT race already in our finished set (from previous cycle)
+  if (finishedRaces.has(raceId)) {
+    console.log(`⏭ 已結算`);
+    return true;
+  }
+  return false;
+}
+
 // ─── Intercept GraphQL ─────────────────────────────────────────────────────
 async function fetchRaceOdds(page, date, venue, raceNo) {
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
+    let resolved = false;
+    let raceStatuses = null;
+    let meetWithPools = null;
+    
+    // Check if this race is RESULT (no pmPools will come)
+    const isResultRace = () => {
+      if (!raceStatuses) return false;
+      const race = raceStatuses.find(r => String(r.no) === String(raceNo));
+      return race && race.status === 'RESULT';
+    };
+    
+    const resolveIfReady = () => {
+      if (resolved) return;
+      // Need pmPools AND races[] for normal races, OR just races[] for RESULT races
+      if (!raceStatuses) return;
+      if (!meetWithPools) {
+        // No pmPools - could be RESULT race or still loading
+        if (isResultRace()) {
+          // RESULT race - resolve immediately with races[] data
+          resolved = true;
+          clearTimeout(timeout);
+          page.removeListener('response', responseHandler);
+          resolve({ data: { raceMeetings: [{ _raceStatuses: raceStatuses }] } });
+        }
+        return;
+      }
+      resolved = true;
+      clearTimeout(timeout);
       page.removeListener('response', responseHandler);
-      resolve(null);
+      meetWithPools._raceStatuses = raceStatuses;
+      resolve({ data: { raceMeetings: [meetWithPools] } });
+    };
+    
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        page.removeListener('response', responseHandler);
+        // No pmPools - resolve with races[] if available (RESULT races have no odds)
+        if (raceStatuses) {
+          resolved = true;
+          const meet = meetWithPools || {};
+          meet._raceStatuses = raceStatuses;
+          resolve({ data: { raceMeetings: [meet] } });
+        } else {
+          resolve(null);
+        }
+      }
     }, 8000);
 
     const responseHandler = async (response) => {
       const url = response.url();
       if (!url.includes('graphql') || !url.includes('info.cld.hkjc.com')) return;
+      if (resolved) return;
       try {
         const body = await response.text();
-        if (!body.includes('"pmPools"') || !body.includes('"oddsNodes"')) return;
         const json = JSON.parse(body);
-        if (!json?.data?.raceMeetings?.[0]?.pmPools) return;
-        clearTimeout(timeout);
-        page.removeListener('response', responseHandler);
-        resolve(json);
+        const meet = json?.data?.raceMeetings?.[0];
+        if (!meet) return;
+        
+        if (meet.races) {
+          raceStatuses = meet.races;
+          resolveIfReady();
+        }
+        
+        if (meet.pmPools && meet.pmPools.length > 0) {
+          meetWithPools = meet;
+          resolveIfReady();
+        }
       } catch (e) {}
     };
 
@@ -152,7 +280,7 @@ function parseOdds(data) {
 }
 
 // ─── Scrape all races ───────────────────────────────────────────────────────
-async function scrapeAllRaces(date, venue, races) {
+async function scrapeAllRaces(date, venue, races, total) {
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage();
@@ -165,8 +293,18 @@ async function scrapeAllRaces(date, venue, races) {
 
     const results = [];
     for (const raceNo of races) {
-      process.stdout.write(`  Race ${raceNo}... `);
+      const raceId = buildRaceId(date, venue, raceNo);
+      
+      // Skip if already finished (from previous scrape cycle)
+      if (finishedRaces.has(raceId)) {
+        console.log(`  Race ${raceNo}/${total}... ⏭ 已結算`);
+        continue;
+      }
+      
+      process.stdout.write(`  Race ${raceNo}/${total}... `);
       const data = await fetchRaceOdds(page, date, venue, raceNo);
+      
+      if (isRaceFinished(data, date, venue, raceNo)) { console.log(''); continue; }
       if (!data) { console.log('❌'); continue; }
 
       const odds = parseOdds(data);
@@ -175,18 +313,38 @@ async function scrapeAllRaces(date, venue, races) {
       const winKeys = Object.keys(odds.win);
       const plaKeys = Object.keys(odds.place);
       if (winKeys.length === 0 && plaKeys.length === 0) { console.log('❌'); continue; }
+      
+      // Collect scratched horses from races data
+      const scratchedHorses = [];
+      const racesData = data?.data?.raceMeetings?.[0]?._raceStatuses;
+      const raceInfo = racesData?.find(r => String(r.no) === String(raceNo));
+      if (raceInfo?.runners) {
+        raceInfo.runners.forEach(runner => {
+          if (runner.status === 'Scratched') {
+            scratchedHorses.push(Number(runner.no));
+          }
+        });
+      }
+      // Store globally so we can broadcast even for RESULT races
+      raceScratched[raceId] = scratchedHorses;
+      
+      // Persist to MongoDB
+      if (scratchedHorses.length > 0) {
+        saveScratchedToMongoDB(raceId, scratchedHorses);
+      }
 
-      const raceId = buildRaceId(date, venue, raceNo);
-      results.push({
+      const result = {
         race_id: raceId,
         date, venue,
         race_no: parseInt(raceNo),
         win: Object.fromEntries(Object.entries(odds.win).map(([k, v]) => [Number(k), v])),
         place: Object.fromEntries(Object.entries(odds.place).map(([k, v]) => [Number(k), v])),
+        scratched: scratchedHorses,
         scraped_at: new Date()
-      });
+      };
+      results.push(result);
 
-      console.log(`✅`);
+      console.log('✅');
     }
 
     await browser.close();
@@ -194,6 +352,40 @@ async function scrapeAllRaces(date, venue, races) {
   } catch (e) {
     await browser.close();
     throw e;
+  }
+}
+
+// ─── Save scratched horses to MongoDB ────────────────────────────────────
+async function saveScratchedToMongoDB(raceId, scratched) {
+  if (!scratched || scratched.length === 0) return;
+  try {
+    const db = await getMongo();
+    const today = raceId.substring(0, 10);  // YYYY-MM-DD
+    const venue = raceId.includes('_ST_') ? 'ST' : 'HV';
+    const raceNo = parseInt(raceId.split('_R').pop());
+    
+    // Save to scratched_horses collection
+    await db.collection('scratched_horses').updateOne(
+      { race_id: raceId },
+      { $set: { race_id: raceId, horses: scratched, updated_at: new Date() } },
+      { upsert: true }
+    );
+    
+    // Update racecard_entries collection with correct status
+    await db.collection('racecard_entries').updateMany(
+      { race_id: raceId, horse_no: { $in: scratched } },
+      { $set: { status: 'Scratched' } }
+    );
+    
+    // Also update embedded horses in racecards collection
+    for (const hn of scratched) {
+      await db.collection('racecards').updateOne(
+        { race_date: today, race_no: raceNo, 'horses.horse_no': hn },
+        { $set: { 'horses.$.status': 'Scratched' } }
+      );
+    }
+  } catch (e) {
+    console.error('saveScratchedToMongoDB error:', e.message);
   }
 }
 
@@ -208,19 +400,46 @@ async function saveToMongoDB(docs) {
 }
 
 // ─── Broadcast batch ───────────────────────────────────────────────────────
-async function broadcastBatch(races) {
+async function broadcastBatch(races, allRaceIds) {
   if (races.length === 0) return;
   try {
+    // Build odds payload for scraped races
     const body = races.map(race => ({
       race_id: race.race_id,
-      odds: race.win  // already normalized
+      odds: Object.fromEntries(
+        Object.keys(race.win).map(hk => [
+          Number(hk),
+          { win: race.win[hk], place: race.place?.[hk] }
+        ])
+      ),
+      scratched: race.scratched || raceScratched[race.race_id] || []
     }));
+    
+    // Also broadcast scratched for RESULT races (not scraped this cycle)
+    if (allRaceIds) {
+      allRaceIds.forEach(raceId => {
+        const scratched = raceScratched[raceId];
+        if (scratched && scratched.length > 0) {
+          // Check if already in body
+          if (!body.find(r => r.race_id === raceId)) {
+            body.push({
+              race_id: raceId,
+              odds: {},
+              scratched: scratched
+            });
+          }
+        }
+      });
+    }
+    
     await fetch(`${API_BASE}/api/odds/batch-snapshot`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ races: body })
     });
-  } catch (e) { /* silent */ }
+  } catch (e) {
+    console.error(`[${new Date().toLocaleTimeString()}] ⚠️ Broadcast failed: ${e.message}`);
+  }
 }
 
 // ─── Session tracking ───────────────────────────────────────────────────────
@@ -252,9 +471,15 @@ async function sessionEnd(races) {
 async function scrapeCycle() {
   const now = Date.now();
   
+  // Sync runner status from HKJC GraphQL to MongoDB (first cycle only)
+  if (!hasSynced) {
+    hasSynced = true;
+    syncRunnerStatus().catch(() => {});
+  }
+  
   // Skip if another scrape in progress
   if (isScraping) {
-    console.log(`[${new Date().toLocaleTimeString()}] ⏳ Scrape in progress, skipping...`);
+    log(`[${new Date().toLocaleTimeString()}] ⏳ Scrape in progress, skipping...`);
     return;
   }
   
@@ -271,28 +496,29 @@ async function scrapeCycle() {
     const raceInfo = await getTodayRaces();
     
     if (!raceInfo) {
-      console.log(`[${new Date().toLocaleTimeString()}] 📅 No race today, sleeping 12h`);
+      log(`[${new Date().toLocaleTimeString()}] 📅 No race today, sleeping 12h`);
       isScraping = false;
       lastScrapeTime = now;
       scheduleNext(SCRAPE_INTERVAL_NON_RACE_DAY);
       return;
     }
     
-    const { venue, races } = raceInfo;
-    console.log(`[${new Date().toLocaleTimeString()}] 🚀 Scraping ${venue} races [${races.join(', ')}]`);
+    const { venue, races, total } = raceInfo;
+    const finished = total - races.length;
+    log(`[${new Date().toLocaleTimeString()}] 🚀 Scraping ${venue} races [${races.join(', ')}]${finished > 0 ? ` (${finished} finished)` : ''}`);
     
     // Session start
     await sessionStart(races.map(r => ({ race_id: buildRaceId(today, venue, r) })));
     
-    const results = await scrapeAllRaces(today, venue, races);
+    const results = await scrapeAllRaces(today, venue, races, total);
     
     if (results.length === 0) {
-      console.log(`[${new Date().toLocaleTimeString()}] ❌ No data`);
+      log(`[${new Date().toLocaleTimeString()}] ❌ No data`);
     } else {
-      console.log(`[${new Date().toLocaleTimeString()}] ✅ Scraped ${results.length} races in ${Date.now() - startTime}ms`);
+      log(`[${new Date().toLocaleTimeString()}] ✅ Scraped ${results.length} races in ${Date.now() - startTime}ms`);
       
       await saveToMongoDB(results);
-      await broadcastBatch(results);
+      await broadcastBatch(results, races.map(r => buildRaceId(today, venue, r)));
     }
     
     lastScrapeTime = Date.now();
@@ -330,7 +556,7 @@ process.on('SIGTERM', shutdown);
 
 // ─── Start ─────────────────────────────────────────────────────────────────
 async function main() {
-  console.log(`
+  log(`
 ╔══════════════════════════════════════════════════════╗
 ║   🏇 HKJC Odds Collector - Smart Schedule           ║
 ╠══════════════════════════════════════════════════════╣
@@ -342,11 +568,11 @@ async function main() {
   
   // Check race day status periodically
   const checkRaceDay = async () => {
-    const { isRaceDay, venue } = await isRaceDay();
-    const newInterval = isRaceDay ? SCRAPE_INTERVAL_RACE_DAY : SCRAPE_INTERVAL_NON_RACE_DAY;
+    const { isRaceDay: raceDayResult, venue } = await isRaceDay();
+    const newInterval = raceDayResult ? SCRAPE_INTERVAL_RACE_DAY : SCRAPE_INTERVAL_NON_RACE_DAY;
     
     if (newInterval !== currentSchedule) {
-      console.log(`[${new Date().toLocaleTimeString()}] 📅 Schedule changed: ${currentSchedule === SCRAPE_INTERVAL_RACE_DAY ? 'Race day' : 'Non-race day'} → ${isRaceDay ? 'Race day' : 'Non-race day'}`);
+      log(`[${new Date().toLocaleTimeString()}] 📅 Schedule changed: ${currentSchedule === SCRAPE_INTERVAL_RACE_DAY ? 'Race day' : 'Non-race day'} → ${raceDayResult ? 'Race day' : 'Non-race day'}`);
       currentSchedule = newInterval;
     }
     

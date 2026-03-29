@@ -109,7 +109,7 @@ class FixtureScraper:
                         text = await cell.inner_text()
                         
                         # Skip header rows
-                        if '星期' in text:
+                        if '星期' in text or '年' in text:
                             continue
                         
                         # Find race numbers
@@ -121,16 +121,12 @@ class FixtureScraper:
                                 day = int(date_match.group(1))
                                 
                                 # Venue: "沙田" = ST, "跑馬地" = HV
-                                # Check for specific venue names, not just characters
                                 if '沙田' in text:
                                     venue = 'ST'
                                 elif '跑馬地' in text:
                                     venue = 'HV'
                                 else:
-                                    # Fallback: try individual characters
-                                    # Note: "谷" alone doesn't reliably indicate HV
                                     venue = 'ST'
-                                    logger.warning(f"  Unknown venue for {date_str}: '{text[:50]}...'")
                                 
                                 # Get approximate race count from fixture
                                 fixture_race_count = max(int(r) for r in race_nums)
@@ -148,7 +144,7 @@ class FixtureScraper:
                                     race_count = fixture_race_count
                                 
                                 race_meetings.append({
-                                    'date': date_str,
+                                    'race_date': date_str,
                                     'venue': venue,
                                     'race_count': race_count,
                                     'source_url': FIXTURE_URL,

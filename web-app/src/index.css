@@ -531,7 +531,7 @@ body {
   color: var(--text-muted);
 }
 
-/* Desktop odds sparkline columns */
+/* Desktop odds sparkline columns - separated */
 .dt-odds-th { text-align: center; }
 .dt-win-th { color: #fbbf24; }
 .dt-pla-th { color: #60a5fa; }
@@ -539,12 +539,12 @@ body {
 
 .dt-odds-cell {
   text-align: center;
-  min-width: 52px;
+  padding: 4px;
 }
-.dt-spark-wrap { height: 20px; display: flex; justify-content: center; align-items: center; }
+.dt-spark-wrap { display: flex; justify-content: center; align-items: center; }
 .dt-odds-val { font-size: 0.8rem; font-weight: 700; }
-.dt-win-val { color: #fbbf24; }
-.dt-pla-val { color: #60a5fa; }
+.dt-win-val { color: #fbbf24; font-size: 0.85rem; font-weight: bold; }
+.dt-pla-val { color: #60a5fa; font-size: 0.85rem; font-weight: bold; }
 
 .race-table .rank {
   font-weight: bold;

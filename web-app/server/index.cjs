@@ -36,6 +36,51 @@ let db;
 // In-memory cache for latest odds per race
 // { "2026-03-22_ST_R7": { 1: { win, place, timestamp }, ... } }
 const oddsCache = {};
+const scratchedCache = {};  // race_id -> [scratched horse nos]
+
+// Load scratched horses from MongoDB on startup
+async function loadScratchedFromDB() {
+  try {
+    const docs = await db.collection('scratched_horses').find({}).toArray();
+    docs.forEach(doc => {
+      scratchedCache[doc.race_id] = doc.horses || [];
+    });
+    if (docs.length > 0) console.log(`[Init] Loaded ${docs.length} scratched_horses from DB`);
+  } catch (e) {
+    console.error('[Init] Failed to load scratched_horses:', e.message);
+  }
+}
+
+// Preload odds cache from MongoDB on startup
+async function preloadOddsCache() {
+  try {
+    const races = await db.collection('live_odds').aggregate([
+      { $sort: { scraped_at: -1 } },
+      { $group: { _id: '$race_id', latest: { $first: '$$ROOT' } } }
+    ]).toArray();
+    
+    const now = Date.now();
+    for (const race of races) {
+      const cached = {};
+      for (const [hk, win] of Object.entries(race.latest.win || {})) {
+        cached[Number(hk)] = { 
+          win, 
+          place: race.latest.place?.[hk], 
+          updated_at: now 
+        };
+      }
+      oddsCache[race._id] = cached;
+      // Broadcast to all connected clients for this race
+      io.to(race._id).emit('odds_snapshot', {
+        odds: cached,
+        session: oddsSessions[race._id] || null
+      });
+    }
+    console.log(`[preload] Loaded ${races.length} races into cache`);
+  } catch (e) {
+    console.error('[preload] Failed:', e.message);
+  }
+}
 
 // In-memory session tracking per race
 // { "2026-03-22_ST_R7": { started_at: timestamp, finished_at: null } }
@@ -71,10 +116,11 @@ io.on('connection', (socket) => {
     socket.join(race_id);
     console.log(`[WS] ${socket.id} joined ${race_id}`);
     
-    // Send cached snapshot if available
-    if (oddsCache[race_id]) {
+    // Send cached snapshot if available (including scratched horses for RESULT races)
+    if (oddsCache[race_id] || scratchedCache[race_id]) {
       socket.emit('odds_snapshot', {
-        odds: oddsCache[race_id],
+        odds: oddsCache[race_id] || {},
+        scratched: scratchedCache[race_id] || [],
         session: oddsSessions[race_id] || null
       });
     }
@@ -105,7 +151,9 @@ async function connect() {
   console.log('Connected');
 }
 connect()
-  .then(() => {
+  .then(async () => {
+    await preloadOddsCache();  // ← 預加載 cache
+    await loadScratchedFromDB();  // ← 加載退出馬 cache
     httpServer.listen(PORT, () => console.log('Server:', PORT));
   })
   .catch((err) => {
@@ -114,7 +162,11 @@ connect()
     setTimeout(() => {
       console.log('Retrying MongoDB connection...');
       connect()
-        .then(() => httpServer.listen(PORT, () => console.log('Server (retry):', PORT)))
+        .then(async () => {
+          await preloadOddsCache();  // ← 修復：retry 時也預加載 cache
+          await loadScratchedFromDB();
+          httpServer.listen(PORT, () => console.log('Server (retry):', PORT));
+        })
         .catch(e => console.error('Retry also failed:', e.message));
     }, 5000);
   });
@@ -208,11 +260,11 @@ app.get('/api/races', async (req, res) => {
 app.get('/api/odds/:raceId', (req, res) => {
   const { raceId } = req.params;
   const cached = req.oddsCache[raceId];
-  if (cached) {
-    res.json({ odds: cached, source: 'cache' });
-  } else {
-    res.json({ odds: {}, source: 'cache' });
-  }
+  res.json({ 
+    odds: cached || {}, 
+    scratched: scratchedCache[raceId] || [],
+    source: 'cache' 
+  });
 });
 
 // Broadcast odds update (called by scraper after writing to MongoDB)
@@ -321,7 +373,7 @@ app.get('/api/odds/session/:raceId', (req, res) => {
 });
 
 // Batch broadcast: receive all races at once, emit to each race room
-// Body: { races: [{ race_id, odds: { horse_no: { win, place } } }] }
+// Body: { races: [{ race_id, odds: { horse_no: { win, place } }, scratched: [horse_no] }] }
 app.post('/api/odds/batch-snapshot', (req, res) => {
   const { races } = req.body;
   if (!races || !Array.isArray(races)) {
@@ -331,21 +383,34 @@ app.post('/api/odds/batch-snapshot', (req, res) => {
   const timestamp = Date.now();
   let count = 0;
 
-  races.forEach(({ race_id, odds }) => {
-    if (!race_id || !odds) return;
+  races.forEach(({ race_id, odds, scratched }) => {
+    if (!race_id) return;
 
-    // Update cache
-    const cached = {};
-    Object.entries(odds).forEach(([horse_no, odds_val]) => {
-      cached[Number(horse_no)] = { ...odds_val, updated_at: timestamp };
-    });
-    req.oddsCache[race_id] = cached;
+    // Update odds cache if present
+    if (odds && Object.keys(odds).length > 0) {
+      const cached = {};
+      Object.entries(odds).forEach(([horse_no, odds_val]) => {
+        cached[Number(horse_no)] = { ...odds_val, updated_at: timestamp };
+      });
+      req.oddsCache[race_id] = cached;
+    }
 
-    // Broadcast to race room (with session info)
-    req.io.to(race_id).emit('odds_snapshot', {
-      odds: cached,
-      session: oddsSessions[race_id] || null
-    });
+    // Always broadcast scratched horses (even for RESULT races with no odds)
+    // Store in persistent cache
+    if (scratched && scratched.length > 0) {
+      scratchedCache[race_id] = scratched;
+      req.io.to(race_id).emit('odds_snapshot', {
+        odds: req.oddsCache[race_id] || {},
+        scratched: scratched,
+        session: oddsSessions[race_id] || null
+      });
+    } else if (odds && Object.keys(odds).length > 0) {
+      req.io.to(race_id).emit('odds_snapshot', {
+        odds: req.oddsCache[race_id] || {},
+        scratched: scratchedCache[race_id] || [],
+        session: oddsSessions[race_id] || null
+      });
+    }
     count++;
   });
 
@@ -758,4 +823,64 @@ app.get('/api/models/download/:filename', (req, res) => {
   }
   
   res.download(filepath, filename);
+});
+
+// ─── Logs download API ─────────────────────────────────────────────────────────
+const PIPELINE_LOGS_DIR = '/app/logs/pipeline';
+const ODDS_LOGS_DIR = '/app/scrapers/logs';
+
+// List all available logs
+app.get('/api/logs/list', (req, res) => {
+  try {
+    const logs = { pipeline: [], odds: [] };
+    
+    // Pipeline logs
+    if (fs.existsSync(PIPELINE_LOGS_DIR)) {
+      const pipelineFiles = fs.readdirSync(PIPELINE_LOGS_DIR)
+        .filter(f => f.endsWith('.log') || f.endsWith('.json'))
+        .map(f => {
+          const stats = fs.statSync(path.join(PIPELINE_LOGS_DIR, f));
+          return { source: 'pipeline', name: f, size: stats.size, modified: stats.mtime.toISOString() };
+        });
+      logs.pipeline = pipelineFiles.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    }
+    
+    // Odds collector logs
+    if (fs.existsSync(ODDS_LOGS_DIR)) {
+      const oddsFiles = fs.readdirSync(ODDS_LOGS_DIR)
+        .filter(f => f.endsWith('.log'))
+        .map(f => {
+          const filepath = path.join(ODDS_LOGS_DIR, f);
+          const stats = fs.statSync(filepath);
+          return { source: 'odds', name: f, size: stats.size, modified: stats.mtime.toISOString() };
+        });
+      logs.odds = oddsFiles.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    }
+    
+    const allLogs = [...logs.pipeline, ...logs.odds].sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    
+    res.json({ logs, updated: allLogs[0]?.modified || null });
+  } catch (error) {
+    console.error('Logs list error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Download a specific log file
+app.get('/api/logs/download/:source/:filename', (req, res) => {
+  const { source, filename } = req.params;
+  
+  // Security: only allow .log and .json files
+  if (!filename.endsWith('.log') && !filename.endsWith('.json')) {
+    return res.status(400).json({ error: 'Only .log and .json files allowed' });
+  }
+  
+  const baseDir = source === 'pipeline' ? PIPELINE_LOGS_DIR : ODDS_LOGS_DIR;
+  const filepath = path.join(baseDir, filename);
+  
+  if (!fs.existsSync(filepath)) {
+    return res.status(404).json({ error: 'Log not found' });
+  }
+  
+  res.download(filepath, `${source}_${filename}`);
 });

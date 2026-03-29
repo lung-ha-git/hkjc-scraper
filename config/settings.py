@@ -6,8 +6,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables - default to dev
-load_dotenv("/Users/fatlung/.openclaw/workspace-main/hkjc_project/config/.env.dev")
+# Load environment variables from container path
+load_dotenv("/app/config/.env")
 
 # Base paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,7 +21,7 @@ RAW_DATA_DIR.mkdir(exist_ok=True)
 PROCESSED_DATA_DIR.mkdir(exist_ok=True)
 
 # MongoDB Configuration
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://admin:password@mongodb:27017/horse_racing?authSource=admin")
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "horse_racing")
 
 # HKJC URLs
@@ -40,7 +40,7 @@ FETCH_DAYS_RECENT = 7    # Number of days for recent updates
 
 # Logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 # API Configuration (for future FastAPI)
 API_HOST = os.getenv("API_HOST", "127.0.0.1")

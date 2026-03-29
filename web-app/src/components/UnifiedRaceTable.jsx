@@ -56,14 +56,30 @@ function TinySparkline({ hist, color }) {
 
 export default function UnifiedRaceTable({ predictions, currentEntries, oddsData, oddsHistory, connected }) {
   const rows = useMemo(() => {
-    if (!predictions || !currentEntries) return [];
-    return predictions.slice().sort((a, b) => a.horse_no - b.horse_no).map(p => {
-      const entry = currentEntries.find(e => e.horse_no === p.horse_no);
-      const odds = oddsData[String(p.horse_no)] || {};
-      const hist = oddsHistory[String(p.horse_no)] || [];
-      const color = COLORS[p.horse_no % COLORS.length];
-      return { p, entry, odds, hist, color };
+    if (!currentEntries || !Array.isArray(currentEntries)) return [];
+    const result = [];
+    const predictionsArr = Array.isArray(predictions) ? predictions : [];
+    const entriesArr = Array.isArray(currentEntries) ? currentEntries : [];
+    // Active horses: from predictions that have matching entries
+    predictionsArr.slice().sort((a, b) => (a?.horse_no || 0) - (b?.horse_no || 0)).forEach(p => {
+      if (!p?.horse_no) return;
+      const entry = entriesArr.find(e => e && String(e.horse_no) === String(p.horse_no));
+      const odds = (oddsData && typeof oddsData === 'object') ? (oddsData[String(p.horse_no)] || {}) : {};
+      const hist = (oddsHistory && typeof oddsHistory === 'object') ? (oddsHistory[String(p.horse_no)] || []) : [];
+      const color = COLORS[(p.horse_no || 0) % COLORS.length];
+      result.push({ p, entry: entry || null, odds, hist, color });
     });
+    // Scratched horses: from currentEntries but not in predictions
+    entriesArr.forEach(entry => {
+      if (!entry || !entry.horse_no) return;
+      if (entry.status === 'Scratched' && !predictionsArr.find(p => p && String(p.horse_no) === String(entry.horse_no))) {
+        const odds = (oddsData && typeof oddsData === 'object') ? (oddsData[String(entry.horse_no)] || {}) : {};
+        const hist = (oddsHistory && typeof oddsHistory === 'object') ? (oddsHistory[String(entry.horse_no)] || []) : [];
+        const color = COLORS[(entry.horse_no || 0) % COLORS.length];
+        result.push({ p: null, entry, odds, hist, color, scratched: true });
+      }
+    });
+    return result.sort((a, b) => (a?.entry?.horse_no || 0) - (b?.entry?.horse_no || 0));
   }, [predictions, currentEntries, oddsData, oddsHistory]);
 
   if (!rows.length) {
@@ -90,19 +106,19 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ p, entry, odds, hist, color }) => (
-            <tr key={p.horse_no}>
+          {rows.filter(r => r?.entry?.horse_no).map(({ p, entry, odds, hist, color, scratched }) => (
+            <tr key={entry.horse_no} style={scratched ? {opacity: 0.4} : {}}>
               <td className="ut-pred">
-                <div className={`rank rank-${p.predicted_rank}`}>{p.predicted_rank}</div>
+                <div className={`rank rank-${p?.predicted_rank}`}>{p ? p.predicted_rank : '—'}</div>
               </td>
               <td className="ut-no">
-                <div className="badge" style={{ background: color }}>{p.horse_no}</div>
+                <div className="badge" style={{ background: color }}>{entry.horse_no}</div>
               </td>
               <td className="ut-name">
-                <div className="ut-horse">{p.horse_name}</div>
+                <div className="ut-horse">{entry.horse_name}{scratched ? ' ✕' : ''}</div>
                 <div className="ut-jk">
-                  <span>{p.jockey_name}</span>
-                  <span className="ut-tr">{p.trainer_name}</span>
+                  <span>{entry.jockey_name}</span>
+                  <span className="ut-tr">{entry.trainer_name}</span>
                 </div>
               </td>
               <td className="ut-odds-cell">

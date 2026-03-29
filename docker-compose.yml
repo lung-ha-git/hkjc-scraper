@@ -49,6 +49,8 @@ services:
       - /app/node_modules
       - api_logs:/app/logs
       - models_data:/app/models
+      - pipeline_logs:/app/logs/pipeline:ro
+      - odds_logs:/app/scrapers/logs:ro
     depends_on:
       mongodb:
         condition: service_healthy
@@ -118,6 +120,8 @@ services:
         condition: service_started
     networks:
       - hkjc-network
+    volumes:
+      - odds_logs:/app/scrapers/logs
     # 只在賽事日手動啟動
     profiles:
       - race-day
@@ -138,7 +142,6 @@ services:
     volumes:
       - ./src:/app:cached
       - pipeline_logs:/app/logs
-      - models_data:/app/models
     depends_on:
       mongodb:
         condition: service_healthy
@@ -183,6 +186,7 @@ volumes:
   api_logs:
     driver: local
   pipeline_logs:
+  odds_logs:
     driver: local
   models_data:
     driver: local

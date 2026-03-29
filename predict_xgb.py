@@ -612,11 +612,12 @@ if __name__ == '__main__':
     model, features = load_model()
     db, races, horses, jockeys, trainers, distance_stats, jt_wins, jt_races, hj_wins, hj_races, jt_places, horse_last_race, horse_early_pace, horse_history_stats = load_data()
     
-    # Get racecard entries
+    # Get racecard entries (exclude scratched horses)
     racecard_entries = list(db.db['racecard_entries'].find({
         'race_date': race_date,
         'venue': venue,
-        'race_no': race_no
+        'race_no': race_no,
+        'status': {'$ne': 'Scratched'}
     }))
     
     # Fallback: if racecard_entries is empty, extract from racecards' embedded horses
@@ -636,7 +637,7 @@ if __name__ == '__main__':
                         hn = int(float(hn))
                     except:
                         hn = 0
-                if h.get('status') == 'Standby' or hn == 0:
+                if h.get('status') in ('Standby', 'Scratched') or hn == 0:
                     continue
                 # Normalize draw to int
                 draw_raw = h.get('draw', 0)

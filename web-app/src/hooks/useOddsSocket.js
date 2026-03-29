@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import axios from 'axios';
 
 // Use origin-only URL + explicit path to avoid Socket.IO double-path bug
 // (io("https://host/socket.io") makes Engine.IO requests to /socket.io/socket.io/)
@@ -14,6 +15,7 @@ const SOCKET_PATH = '/socket.io/';
  */
 export function useOddsSocket(raceId) {
   const [oddsData, setOddsData] = useState({});       // { horse_no: { win, place, updated_at } }
+  const [scratched, setScratched] = useState([]);     // array of scratched horse numbers
   const [oddsHistory, setOddsHistory] = useState({}); // { horse_no: [{ time, win, place }] }
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState(null);
@@ -47,6 +49,29 @@ export function useOddsSocket(raceId) {
       setError(null);
       // Subscribe to race room
       socket.emit('subscribe', { race_id: raceId });
+      
+      // Fetch historical odds data for sparklines
+      axios.get(`${SOCKET_ORIGIN}/api/odds/history/${raceId}`)
+        .then(res => {
+          const { times, horses } = res.data || {};
+          if (!horses) return;
+          // Merge historical data into oddsHistory
+          const now = Date.now();
+          Object.entries(horses).forEach(([hk, data]) => {
+            const winArr = data.win || [];
+            const placeArr = data.place || [];
+            // Seed history only for horses without history
+            if (!historyRef.current[hk]) {
+              const history = [];
+              for (let i = 0; i < winArr.length; i++) {
+                history.push({ time: times[i], win: winArr[i], place: placeArr[i] });
+              }
+              historyRef.current[hk] = history.slice(-60);
+              setOddsHistory(prev => ({ ...prev, [hk]: historyRef.current[hk] }));
+            }
+          });
+        })
+        .catch(() => {}); // Silently fail, real-time data will still work
     });
 
     socket.on('disconnect', () => {
@@ -80,11 +105,12 @@ export function useOddsSocket(raceId) {
       historyRef.current = { ...historyRef.current, [hk]: [...(historyRef.current[hk] || []), point].slice(-60) };
     });
 
-    // Receive full snapshot: { odds: { [horse_no]: { win, place } }, session: { started_at, finished_at } }
+    // Receive full snapshot: { odds, session, scratched: [horse_no] }
     // Only seed horses that don't have history yet (preserve accumulated history on reconnect)
     socket.on('odds_snapshot', (data) => {
-      const { odds, session: sess } = data;
+      const { odds, session: sess, scratched: sc } = data;
       if (sess) setSession(sess);
+      if (sc && sc.length > 0) setScratched(sc);
       const now = Date.now();
       Object.entries(odds).forEach(([horse_no, odds_val]) => {
         const hk = String(horse_no);
@@ -109,5 +135,5 @@ export function useOddsSocket(raceId) {
     };
   }, [raceId]);
 
-  return { oddsData, oddsHistory, connected, error, session };
+  return { oddsData, oddsHistory, connected, error, session, scratched };
 }
