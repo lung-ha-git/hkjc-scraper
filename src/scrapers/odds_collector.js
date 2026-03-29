@@ -142,39 +142,76 @@ function buildRaceId(date, venue, raceNo) {
 }
 
 // ─── Check if race has results (finished) ──────────────────────────────────────
-// Check race status from GraphQL response: RESULT=finished, DECLARED=in-progress
+// Check race status from GraphQL response
 function isRaceFinished(data, date, venue, raceNo) {
   try {
-    const meet = data?.data?.raceMeetings?.[0]?.activeRaceMeeting;
-    if (!meet) return false;
-    if (meet.status === 'RESULT') {
+    const races = data?.data?.raceMeetings?.[0]?._raceStatuses || data?._raceStatuses;
+    if (!races) return false;
+    const race = races.find(r => String(r.no) === String(raceNo));
+    if (!race) return false;
+    if (race.status === 'RESULT') {
       finishedRaces.add(buildRaceId(date, venue, raceNo));
       console.log(`⏭ 已結算`);
       return true;
     }
     return false;
-  } catch (e) { return false; }
+  } catch (e) { 
+    return false;
+  }
 }
 
 // ─── Intercept GraphQL ─────────────────────────────────────────────────────
 async function fetchRaceOdds(page, date, venue, raceNo) {
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
+    let resolved = false;
+    let raceStatuses = null;
+    let meetWithPools = null;
+    
+    const resolveIfReady = () => {
+      if (resolved) return;
+      if (!meetWithPools || !raceStatuses) return;
+      resolved = true;
+      clearTimeout(timeout);
       page.removeListener('response', responseHandler);
-      resolve(null);
+      // Attach races[] (with runners info) to the pmPools response
+      meetWithPools._raceStatuses = raceStatuses;
+      resolve({ data: { raceMeetings: [meetWithPools] } });
+    };
+    
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        page.removeListener('response', responseHandler);
+        // No pmPools (race might be RESULT) - resolve with races[] so isRaceFinished can check
+        if (raceStatuses) {
+          resolved = true;
+          const meet = meetWithPools || { _raceStatuses: raceStatuses };
+          meet._raceStatuses = raceStatuses;
+          resolve({ data: { raceMeetings: [meet] } });
+        } else {
+          resolve(null);
+        }
+      }
     }, 8000);
 
     const responseHandler = async (response) => {
       const url = response.url();
       if (!url.includes('graphql') || !url.includes('info.cld.hkjc.com')) return;
+      if (resolved) return;
       try {
         const body = await response.text();
-        if (!body.includes('"pmPools"') || !body.includes('"oddsNodes"')) return;
         const json = JSON.parse(body);
-        if (!json?.data?.raceMeetings?.[0]?.pmPools) return;
-        clearTimeout(timeout);
-        page.removeListener('response', responseHandler);
-        resolve(json);
+        const meet = json?.data?.raceMeetings?.[0];
+        if (!meet) return;
+        
+        if (meet.races) {
+          raceStatuses = meet.races;
+          resolveIfReady();
+        }
+        
+        if (meet.pmPools && meet.pmPools.length > 0) {
+          meetWithPools = meet;
+          resolveIfReady();
+        }
       } catch (e) {}
     };
 
@@ -218,19 +255,17 @@ async function scrapeAllRaces(date, venue, races, total) {
     for (const raceNo of races) {
       const raceId = buildRaceId(date, venue, raceNo);
       
-      // Skip if already finished
+      // Skip if already finished (from previous scrape cycle)
       if (finishedRaces.has(raceId)) {
-        console.log(`⏭ 已結算`);
+        console.log(`  Race ${raceNo}/${total}... ⏭ 已結算`);
         continue;
       }
       
       process.stdout.write(`  Race ${raceNo}/${total}... `);
-      
       const data = await fetchRaceOdds(page, date, venue, raceNo);
       if (!data) { console.log('❌'); continue; }
       
-      if (isRaceFinished(data, date, venue, raceNo)) continue;
-      if (!data) { console.log('❌'); continue; }
+      if (isRaceFinished(data, date, venue, raceNo)) { console.log(''); continue; }
 
       const odds = parseOdds(data);
       if (!odds) { console.log('❌'); continue; }
@@ -238,15 +273,29 @@ async function scrapeAllRaces(date, venue, races, total) {
       const winKeys = Object.keys(odds.win);
       const plaKeys = Object.keys(odds.place);
       if (winKeys.length === 0 && plaKeys.length === 0) { console.log('❌'); continue; }
+      
+      // Collect scratched horses from races data
+      const scratchedHorses = [];
+      const racesData = data?.data?.raceMeetings?.[0]?._raceStatuses;
+      const raceInfo = racesData?.find(r => String(r.no) === String(raceNo));
+      if (raceInfo?.runners) {
+        raceInfo.runners.forEach(runner => {
+          if (runner.status === 'Scratched') {
+            scratchedHorses.push(Number(runner.no));
+          }
+        });
+      }
 
-      results.push({
+      const result = {
         race_id: raceId,
         date, venue,
         race_no: parseInt(raceNo),
         win: Object.fromEntries(Object.entries(odds.win).map(([k, v]) => [Number(k), v])),
         place: Object.fromEntries(Object.entries(odds.place).map(([k, v]) => [Number(k), v])),
+        scratched: scratchedHorses,
         scraped_at: new Date()
-      });
+      };
+      results.push(result);
 
       console.log('✅');
     }
@@ -280,7 +329,8 @@ async function broadcastBatch(races) {
           Number(hk),
           { win: race.win[hk], place: race.place?.[hk] }
         ])
-      )
+      ),
+      scratched: race.scratched || []
     }));
     await fetch(`${API_BASE}/api/odds/batch-snapshot`, {
       method: 'POST',
