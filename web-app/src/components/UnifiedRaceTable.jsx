@@ -85,7 +85,7 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
   if (!rows.length) {
     return (
       <div className="ut-empty">
-        {connected ? '載入中...' : '等待連接...'}
+        {!connected ? '等待連接...' : '載入中...'}
       </div>
     );
   }
