@@ -30,6 +30,7 @@ let lastScrapeTime = 0;
 let isScraping = false;
 let finishedRaces = new Set();  // races that have results - never scrape again
 let raceScratched = {};                 // race_id -> [scratched horse nos]
+let hasSynced = false;                  // sync runner status only once
 let currentSchedule = SCRAPE_INTERVAL_NON_RACE_DAY;
 let scheduledTimeout = null;
 let logStream = null;
@@ -71,6 +72,8 @@ async function isRaceDay() {
   const today = now.toISOString().split('T')[0];
   
   try {
+
+    
     const db = await getMongo();
     const fixtures = await db.collection('fixtures')
       .find({ date: today, scrape_status: 'completed' })
@@ -109,6 +112,8 @@ async function getTodayRaces() {
   const today = now.toISOString().split('T')[0];
   
   try {
+
+    
     const db = await getMongo();
     const fixtures = await db.collection('fixtures')
       .find({ date: today, scrape_status: 'completed' })
@@ -153,15 +158,17 @@ function isRaceFinished(data, date, venue, raceNo) {
     if (race && race.status === 'RESULT') {
       finishedRaces.add(raceId);
       // Collect scratched horses from races[] data
+      const scratched = [];
       if (race.runners) {
         race.runners.forEach(runner => {
           if (runner.status === 'Scratched') {
-            raceScratched[raceId] = raceScratched[raceId] || [];
-            if (!raceScratched[raceId].includes(Number(runner.no))) {
-              raceScratched[raceId].push(Number(runner.no));
-            }
+            scratched.push(Number(runner.no));
           }
         });
+      }
+      if (scratched.length > 0) {
+        raceScratched[raceId] = scratched;
+        saveScratchedToMongoDB(raceId, scratched);
       }
       console.log(`⏭ 已結算`);
       return true;
@@ -320,6 +327,11 @@ async function scrapeAllRaces(date, venue, races, total) {
       }
       // Store globally so we can broadcast even for RESULT races
       raceScratched[raceId] = scratchedHorses;
+      
+      // Persist to MongoDB
+      if (scratchedHorses.length > 0) {
+        saveScratchedToMongoDB(raceId, scratchedHorses);
+      }
 
       const result = {
         race_id: raceId,
@@ -340,6 +352,40 @@ async function scrapeAllRaces(date, venue, races, total) {
   } catch (e) {
     await browser.close();
     throw e;
+  }
+}
+
+// ─── Save scratched horses to MongoDB ────────────────────────────────────
+async function saveScratchedToMongoDB(raceId, scratched) {
+  if (!scratched || scratched.length === 0) return;
+  try {
+    const db = await getMongo();
+    const today = raceId.substring(0, 10);  // YYYY-MM-DD
+    const venue = raceId.includes('_ST_') ? 'ST' : 'HV';
+    const raceNo = parseInt(raceId.split('_R').pop());
+    
+    // Save to scratched_horses collection
+    await db.collection('scratched_horses').updateOne(
+      { race_id: raceId },
+      { $set: { race_id: raceId, horses: scratched, updated_at: new Date() } },
+      { upsert: true }
+    );
+    
+    // Update racecard_entries collection with correct status
+    await db.collection('racecard_entries').updateMany(
+      { race_id: raceId, horse_no: { $in: scratched } },
+      { $set: { status: 'Scratched' } }
+    );
+    
+    // Also update embedded horses in racecards collection
+    for (const hn of scratched) {
+      await db.collection('racecards').updateOne(
+        { race_date: today, race_no: raceNo, 'horses.horse_no': hn },
+        { $set: { 'horses.$.status': 'Scratched' } }
+      );
+    }
+  } catch (e) {
+    console.error('saveScratchedToMongoDB error:', e.message);
   }
 }
 
@@ -424,6 +470,12 @@ async function sessionEnd(races) {
 // ─── Main scrape cycle ─────────────────────────────────────────────────────
 async function scrapeCycle() {
   const now = Date.now();
+  
+  // Sync runner status from HKJC GraphQL to MongoDB (first cycle only)
+  if (!hasSynced) {
+    hasSynced = true;
+    syncRunnerStatus().catch(() => {});
+  }
   
   // Skip if another scrape in progress
   if (isScraping) {

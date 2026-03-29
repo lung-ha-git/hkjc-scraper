@@ -36,6 +36,20 @@ let db;
 // In-memory cache for latest odds per race
 // { "2026-03-22_ST_R7": { 1: { win, place, timestamp }, ... } }
 const oddsCache = {};
+const scratchedCache = {};  // race_id -> [scratched horse nos]
+
+// Load scratched horses from MongoDB on startup
+async function loadScratchedFromDB() {
+  try {
+    const docs = await db.collection('scratched_horses').find({}).toArray();
+    docs.forEach(doc => {
+      scratchedCache[doc.race_id] = doc.horses || [];
+    });
+    if (docs.length > 0) console.log(`[Init] Loaded ${docs.length} scratched_horses from DB`);
+  } catch (e) {
+    console.error('[Init] Failed to load scratched_horses:', e.message);
+  }
+}
 
 // Preload odds cache from MongoDB on startup
 async function preloadOddsCache() {
@@ -102,10 +116,11 @@ io.on('connection', (socket) => {
     socket.join(race_id);
     console.log(`[WS] ${socket.id} joined ${race_id}`);
     
-    // Send cached snapshot if available
-    if (oddsCache[race_id]) {
+    // Send cached snapshot if available (including scratched horses for RESULT races)
+    if (oddsCache[race_id] || scratchedCache[race_id]) {
       socket.emit('odds_snapshot', {
-        odds: oddsCache[race_id],
+        odds: oddsCache[race_id] || {},
+        scratched: scratchedCache[race_id] || [],
         session: oddsSessions[race_id] || null
       });
     }
@@ -138,6 +153,7 @@ async function connect() {
 connect()
   .then(async () => {
     await preloadOddsCache();  // ← 預加載 cache
+    await loadScratchedFromDB();  // ← 加載退出馬 cache
     httpServer.listen(PORT, () => console.log('Server:', PORT));
   })
   .catch((err) => {
@@ -148,6 +164,7 @@ connect()
       connect()
         .then(async () => {
           await preloadOddsCache();  // ← 修復：retry 時也預加載 cache
+          await loadScratchedFromDB();
           httpServer.listen(PORT, () => console.log('Server (retry):', PORT));
         })
         .catch(e => console.error('Retry also failed:', e.message));
@@ -243,11 +260,11 @@ app.get('/api/races', async (req, res) => {
 app.get('/api/odds/:raceId', (req, res) => {
   const { raceId } = req.params;
   const cached = req.oddsCache[raceId];
-  if (cached) {
-    res.json({ odds: cached, source: 'cache' });
-  } else {
-    res.json({ odds: {}, source: 'cache' });
-  }
+  res.json({ 
+    odds: cached || {}, 
+    scratched: scratchedCache[raceId] || [],
+    source: 'cache' 
+  });
 });
 
 // Broadcast odds update (called by scraper after writing to MongoDB)
@@ -379,7 +396,9 @@ app.post('/api/odds/batch-snapshot', (req, res) => {
     }
 
     // Always broadcast scratched horses (even for RESULT races with no odds)
+    // Store in persistent cache
     if (scratched && scratched.length > 0) {
+      scratchedCache[race_id] = scratched;
       req.io.to(race_id).emit('odds_snapshot', {
         odds: req.oddsCache[race_id] || {},
         scratched: scratched,
@@ -388,7 +407,7 @@ app.post('/api/odds/batch-snapshot', (req, res) => {
     } else if (odds && Object.keys(odds).length > 0) {
       req.io.to(race_id).emit('odds_snapshot', {
         odds: req.oddsCache[race_id] || {},
-        scratched: scratched || [],
+        scratched: scratchedCache[race_id] || [],
         session: oddsSessions[race_id] || null
       });
     }
