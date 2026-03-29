@@ -378,7 +378,7 @@ function App() {
   }
 
   const currentRaceCards = racecardData?.racecards?.find(rc => rc.race_no === selectedRaceNo);
-  const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo && !scratched.includes(e.horse_no)) || [];
+  const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo) || [];
   // Filter predictions to exclude scratched horses
   const activePredictions = predictions.filter(p => !scratched.includes(p.horse_no));
 
@@ -466,43 +466,43 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {activePredictions
+                  {currentEntries
                     .slice()
                     .sort((a, b) => a.horse_no - b.horse_no)
-                    .map((pred) => {
-                    const entry = currentEntries.find(e => e.horse_no === pred.horse_no);
-                    const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
+                    .map((entry) => {
+                    const pred = activePredictions.find(p => p.horse_no === entry.horse_no);
+                    const jersey = getJerseyInfo(entry.horse_no, entry.horse_name);
                     return (
-                      <tr key={pred.horse_no}>
+                      <tr key={entry.horse_no} style={entry.status === 'Scratched' ? {opacity: 0.5} : {}}>
                         {/* Mobile: 馬號, 馬匹 */}
                         <td className="mobile-only">
                           <div 
                             className="horse-number"
                             style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
                           >
-                            {pred.horse_no}
+                            {entry.horse_no}
                           </div>
                         </td>
                         <td className="mobile-only">
                           <div className="horse-name-cell">
                             {jersey.type === 'image' ? (
-                              <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
+                              <img src={jersey.url} alt={entry.horse_no} className="jersey-icon" />
                             ) : (
                               <div className="jersey-placeholder" style={{ backgroundColor: jersey.value }}>
-                                {pred.horse_no}
+                                {entry.horse_no}
                               </div>
                             )}
-                            <span>{pred.horse_name}</span>
+                            <span>{entry.horse_name}</span>
                           </div>
                         </td>
-                        <td className="mobile-only">{pred.jockey_name}</td>
-                        <td className="mobile-only">{pred.trainer_name}</td>
-                        <td className="mobile-only">{pred.draw}</td>
+                        <td className="mobile-only">{entry.jockey_name}</td>
+                        <td className="mobile-only">{entry.trainer_name}</td>
+                        <td className="mobile-only">{entry.draw}</td>
                         
                         {/* Desktop: 預測, 馬號, 馬匹, 騎師, 練馬師, 檔位, 評分, 近績 */}
                         <td className="desktop-only">
-                          <div className={`predicted-rank rank-${pred.predicted_rank}`}>
-                            {pred.predicted_rank}
+                          <div className={`predicted-rank rank-${pred?.predicted_rank}`}>
+                            {pred ? pred.predicted_rank : '—'}
                           </div>
                         </td>
                         <td className="desktop-only">
@@ -510,44 +510,44 @@ function App() {
                             className="horse-number"
                             style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
                           >
-                            {pred.horse_no}
+                            {entry.horse_no}
                           </div>
                         </td>
                         <td className="desktop-only">
                           <div className="horse-name-cell">
                             {jersey.type === 'image' ? (
-                              <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
+                              <img src={jersey.url} alt={entry.horse_no} className="jersey-icon" />
                             ) : (
                               <div className="jersey-placeholder" style={{ backgroundColor: jersey.value }}>
-                                {pred.horse_no}
+                                {entry.horse_no}
                               </div>
                             )}
-                            <span>{pred.horse_name}</span>
+                            <span>{entry.horse_name}</span>
                           </div>
                         </td>
-                        <td className="desktop-only">{pred.jockey_name}</td>
-                        <td className="desktop-only">{pred.trainer_name}</td>
-                        <td className="desktop-only">{pred.draw}</td>
+                        <td className="desktop-only">{entry.jockey_name}</td>
+                        <td className="desktop-only">{entry.trainer_name}</td>
+                        <td className="desktop-only">{entry.draw}</td>
                         <td className="desktop-only">
                           <DtSparkline
-                            history={mergedOddsHistory[String(pred.horse_no)] || []}
+                            history={mergedOddsHistory[String(entry.horse_no)] || []}
                             color="#fbbf24"
                           />
                         </td>
                         <td className="desktop-only dt-odds-cell dt-win-val">
-                          {oddsData[String(pred.horse_no)]?.win != null
-                            ? parseFloat(oddsData[String(pred.horse_no)].win).toFixed(2)
+                          {oddsData[String(entry.horse_no)]?.win != null
+                            ? parseFloat(oddsData[String(entry.horse_no)].win).toFixed(2)
                             : '-'}
                         </td>
                         <td className="desktop-only">
                           <DtSparkline
-                            history={mergedOddsHistory[String(pred.horse_no)] || []}
+                            history={mergedOddsHistory[String(entry.horse_no)] || []}
                             color="#60a5fa"
                           />
                         </td>
                         <td className="desktop-only dt-odds-cell dt-pla-val">
-                          {oddsData[String(pred.horse_no)]?.place != null
-                            ? parseFloat(oddsData[String(pred.horse_no)].place).toFixed(2)
+                          {oddsData[String(entry.horse_no)]?.place != null
+                            ? parseFloat(oddsData[String(entry.horse_no)].place).toFixed(2)
                             : '-'}
                         </td>
                         <td className="desktop-only">{entry?.rating || '-'}</td>
@@ -623,23 +623,23 @@ function App() {
               const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
               return (
                 <div key={idx} className="prediction-item top-4">
-                  <div className={`predicted-rank rank-${pred.predicted_rank}`}>
-                    {pred.predicted_rank}
+                  <div className={`predicted-rank rank-${pred?.predicted_rank}`}>
+                    {pred?.predicted_rank}
                   </div>
                   <div 
                     className="horse-number"
                     style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
                   >
-                    {pred.horse_no}
+                    {entry.horse_no}
                   </div>
                   <div className="prediction-details">
                     <div className="horse-name-cell">
                       {jersey.type === 'image' ? (
-                        <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
+                        <img src={jersey.url} alt={entry.horse_no} className="jersey-icon" />
                       ) : null}
-                      {pred.horse_name}
+                      {entry.horse_name}
                     </div>
-                    <div className="prediction-jockey">{pred.jockey_name}</div>
+                    <div className="prediction-jockey">{entry.jockey_name}</div>
                   </div>
                 </div>
               );
