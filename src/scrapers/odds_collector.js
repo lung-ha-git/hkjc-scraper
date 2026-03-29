@@ -28,6 +28,7 @@ const RACE_DAY_CHECK_HOUR = 12;               // Check if race day at noon
 // ─── State ─────────────────────────────────────────────────────────────────
 let lastScrapeTime = 0;
 let isScraping = false;
+let finishedRaces = new Set();  // races that have results - never scrape again
 let currentSchedule = SCRAPE_INTERVAL_NON_RACE_DAY;
 let scheduledTimeout = null;
 let logStream = null;
@@ -116,9 +117,20 @@ async function getTodayRaces() {
     if (fixtures.length === 0) return null;
     
     const fixture = fixtures[0];
-    const races = Array.from({ length: fixture.race_count }, (_, i) => i + 1);
+    const allRaces = Array.from({ length: fixture.race_count }, (_, i) => i + 1);
     
-    return { venue: fixture.venue, races };
+    // Filter out already finished races
+    const unfinished = allRaces.filter(no => {
+      const raceId = buildRaceId(today, fixture.venue, no);
+      return !finishedRaces.has(raceId);
+    });
+    
+    if (unfinished.length === 0) {
+      log(`[${new Date().toLocaleTimeString()}] 🎉 全部 ${allRaces.length} 場已結算，停止 Collector`);
+      return null;
+    }
+    
+    return { venue: fixture.venue, races: unfinished, total: allRaces.length };
   } catch (e) {
     return null;
   }
@@ -127,6 +139,28 @@ async function getTodayRaces() {
 // ─── Build race ID ─────────────────────────────────────────────────────────
 function buildRaceId(date, venue, raceNo) {
   return `${date}_${venue}_R${raceNo}`;
+}
+
+// ─── Check if race has results (finished) ──────────────────────────────────────
+async function checkRaceFinished(page, date, venue, raceNo) {
+  try {
+    await page.goto(
+      `https://bet.hkjc.com/ch/racing/results/${date}/${venue}/${raceNo}`,
+      { waitUntil: 'domcontentloaded', timeout: 8000 }
+    );
+    const body = await page.content();
+    // Look for result markers like dividend info or "已結算" / "Race Result"
+    const hasResults = /result|dividend|結算|派彩/i.test(body);
+    if (hasResults) {
+      const raceId = buildRaceId(date, venue, raceNo);
+      finishedRaces.add(raceId);
+      console.log(`⏭ 已結算`);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
 }
 
 // ─── Intercept GraphQL ─────────────────────────────────────────────────────
@@ -176,7 +210,7 @@ function parseOdds(data) {
 }
 
 // ─── Scrape all races ───────────────────────────────────────────────────────
-async function scrapeAllRaces(date, venue, races) {
+async function scrapeAllRaces(date, venue, races, total) {
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage();
@@ -189,7 +223,21 @@ async function scrapeAllRaces(date, venue, races) {
 
     const results = [];
     for (const raceNo of races) {
-      process.stdout.write(`  Race ${raceNo}... `);
+      const raceId = buildRaceId(date, venue, raceNo);
+      
+      // Skip if already finished
+      if (finishedRaces.has(raceId)) {
+        console.log(`⏭ 已結算`);
+        continue;
+      }
+      
+      process.stdout.write(`  Race ${raceNo}/${total}... `);
+      
+      // Check if race has results
+      if (await checkRaceFinished(page, date, venue, raceNo)) {
+        continue;  // Marked as finished in checkRaceFinished
+      }
+      
       const data = await fetchRaceOdds(page, date, venue, raceNo);
       if (!data) { console.log('❌'); continue; }
 
@@ -200,7 +248,6 @@ async function scrapeAllRaces(date, venue, races) {
       const plaKeys = Object.keys(odds.place);
       if (winKeys.length === 0 && plaKeys.length === 0) { console.log('❌'); continue; }
 
-      const raceId = buildRaceId(date, venue, raceNo);
       results.push({
         race_id: raceId,
         date, venue,
@@ -210,7 +257,7 @@ async function scrapeAllRaces(date, venue, races) {
         scraped_at: new Date()
       });
 
-      log(`✅`);
+      console.log('✅');
     }
 
     await browser.close();
@@ -309,13 +356,13 @@ async function scrapeCycle() {
       return;
     }
     
-    const { venue, races } = raceInfo;
-    log(`[${new Date().toLocaleTimeString()}] 🚀 Scraping ${venue} races [${races.join(', ')}]`);
+    const { venue, races, total } = raceInfo;
+    log(`[${new Date().toLocaleTimeString()}] 🚀 Scraping ${venue} races [${races.join(', ')}] (${total - races.length}/${total} 已結算)`);
     
     // Session start
     await sessionStart(races.map(r => ({ race_id: buildRaceId(today, venue, r) })));
     
-    const results = await scrapeAllRaces(today, venue, races);
+    const results = await scrapeAllRaces(today, venue, races, total);
     
     if (results.length === 0) {
       log(`[${new Date().toLocaleTimeString()}] ❌ No data`);
