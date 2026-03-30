@@ -11,6 +11,14 @@ import { Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip);
 
+function proxyJerseyUrl(url) {
+  if (!url) return null;
+  // Extract horse ID from HKJC URL like https://racing.hkjc.com/racing/content/Images/RaceColor/H411.gif
+  const match = url.match(/\/([A-Z0-9]+)\.gif$/i);
+  if (match) return `/api/jersey/${match[1]}`;
+  return null;
+}
+
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
   '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
@@ -112,7 +120,11 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
                 <div className={`rank rank-${p?.predicted_rank}`}>{p ? p.predicted_rank : '—'}</div>
               </td>
               <td className="ut-no">
-                <div className="badge" style={{ background: color }}>{entry.horse_no}</div>
+                {proxyJerseyUrl(entry.jersey_url) ? (
+                  <img src={proxyJerseyUrl(entry.jersey_url)} alt={entry.horse_no} className="ut-jersey" />
+                ) : (
+                  <div className="badge" style={{ background: color }}>{entry.horse_no}</div>
+                )}
               </td>
               <td className="ut-name">
                 <div className="ut-horse">{entry.horse_name}{scratched ? ' ✕' : ''}</div>

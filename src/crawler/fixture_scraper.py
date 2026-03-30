@@ -24,7 +24,8 @@ MONTHS = [
     ("2026", "05"), ("2026", "06"), ("2026", "07")
 ]
 
-FIXTURE_URL = "https://racing.hkjc.com/zh-hk/local/information/fixture"
+# Use en-us + calmonth for LOCAL race fixtures (not overseas)
+FIXTURE_URL = "https://racing.hkjc.com/en-us/local/information/fixture"
 
 
 class FixtureScraper:
@@ -79,87 +80,96 @@ class FixtureScraper:
             return 0
     
     async def parse_month(self, year: str, month: str) -> List[Dict]:
-        """Parse fixture for a specific month"""
+        """Parse fixture for a specific month (English local fixture page)"""
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
             page = await browser.new_page()
-            
-            url = f"{FIXTURE_URL}?calyear={year}&calm={month}"
+
+            # Use calmonth parameter (not calm) for English local fixtures
+            url = f"{FIXTURE_URL}?calyear={year}&calmonth={month}"
             logger.info(f"Fetching: {url}")
-            
+
             try:
                 await page.goto(url, wait_until="domcontentloaded", timeout=30000)
                 await asyncio.sleep(3)
-                
+
                 table = await page.query_selector("table.table_bd")
                 if not table:
                     logger.warning(f"No table found for {year}-{month}")
                     await browser.close()
                     return []
-                
+
                 rows = await table.query_selector_all("tr")
-                
+
                 race_meetings = []
                 current_month = int(month)
-                
+
                 for row in rows:
                     cells = await row.query_selector_all("td")
-                    
+
                     for cell in cells:
                         text = await cell.inner_text()
-                        
-                        # Skip header rows
-                        if '星期' in text or '年' in text:
+
+                        # Skip header rows (English: no "星期" but has month/day headers)
+                        if 'Race Date' in text or 'Day' in text or 'Venue' in text:
                             continue
-                        
-                        # Find race numbers
+
+                        # Find race numbers - English page may have patterns like "11 Races"
                         race_nums = re.findall(r'\((\d+)\)', text)
+                        if not race_nums:
+                            # Try "11 Races" pattern
+                            race_nums = re.findall(r'(\d+)\s*[Rr]ace', text)
+
                         if race_nums:
-                            # Find date
-                            date_match = re.search(r'^(\d{1,2})', text.strip())
+                            # Find date (English page: "Mon 1" or "1 Apr" or similar)
+                            date_match = re.search(r'(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[,\s]+(\d{1,2})|(\d{1,2})\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)', text.strip())
+                            if not date_match:
+                                # Try standalone number at start
+                                date_match = re.search(r'^(\d{1,2})', text.strip())
                             if date_match and current_month:
                                 day = int(date_match.group(1))
-                                
-                                # Venue: "沙田" = ST, "跑馬地" = HV
-                                if '沙田' in text:
-                                    venue = 'ST'
-                                elif '跑馬地' in text:
+
+                                # Venue: English "Sha Tin" = ST, "Happy Valley" = HV
+                                text_lower = text.lower()
+                                if 'happy valley' in text_lower:
                                     venue = 'HV'
+                                elif 'sha tin' in text_lower:
+                                    venue = 'ST'
                                 else:
                                     venue = 'ST'
-                                
-                                # Get approximate race count from fixture
+
+                                # Get race count from fixture (use max number found)
                                 fixture_race_count = max(int(r) for r in race_nums)
-                                
+
                                 # Verify with racecard page (for published races)
                                 date_str = f"{year}-{current_month:02d}-{day:02d}"
-                                
-                                # Try to get actual count from racecard
+
+                                # Try to get actual count from racecard (always use zh-hk for racecard page)
                                 actual_count = await self.get_race_count_from_racecard(date_str, venue)
-                                
+
                                 if actual_count > 0:
                                     race_count = actual_count
                                     logger.info(f"  {date_str} ({venue}): {race_count} races (verified)")
                                 else:
                                     race_count = fixture_race_count
-                                
+
                                 race_meetings.append({
                                     'race_date': date_str,
                                     'venue': venue,
                                     'race_count': race_count,
-                                    'source_url': FIXTURE_URL,
-                                    'racecard_url': f"https://racing.hkjc.com/zh-hk/local/information/racecard?racedate={year}/{month}/{day:02d}&Racecourse={venue}",
-                                    'results_url': f"https://racing.hkjc.com/zh-hk/racing/information/English/Racing/LocalResults.aspx?RaceDate={date_str}",
+                                    'source_url': url,
+                                    'racecard_url': f"https://racing.hkjc.com/en-us/local/information/racecard?racedate={year}/{month}/{day:02d}&Racecourse={venue}",
+                                    'results_url': f"https://racing.hkjc.com/en-us/racing/information/Racing/LocalResults.aspx?RaceDate={date_str}",
                                     'scrape_status': 'pending',
                                     'created_at': datetime.now(),
                                     'modified_at': datetime.now()
                                 })
-                
+
             except Exception as e:
                 logger.error(f"Error fetching {year}-{month}: {e}")
             finally:
                 await browser.close()
-            
+
             return race_meetings
     
     async def scrape_all(self) -> List[Dict]:

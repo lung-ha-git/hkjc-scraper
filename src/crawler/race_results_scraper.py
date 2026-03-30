@@ -57,7 +57,8 @@ class RaceResultsScraper:
         else:
             date_ddmmyyyy = race_date  # Already in correct format
         
-        url = f"{self.BASE_URL}?racedate={date_ddmmyyyy}&Racecourse={racecourse}&RaceNo={race_no}"
+        # Use lowercase params (racecourse=, raceno=) matching actual HKJC URL format
+        url = f"{self.BASE_URL}?racedate={date_ddmmyyyy}&racecourse=&raceno={race_no}"
         
         print(f"\n🏇 Scraping: {race_date} {racecourse} Race {race_no}")
         print(f"URL: {url}")
