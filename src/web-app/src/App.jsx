@@ -219,12 +219,12 @@ function App() {
 
   // Calculate predictions when race changes
   useEffect(() => {
-    if (racecardData && selectedRaceNo) {
-      lastPredictRef.current = 0;
-      setRaceConfidence(null);
-      calculatePredictions();
-    }
-  }, [selectedRaceNo]);
+    if (!racecardData || !selectedRaceNo) return;
+    setPredictions([]); // clear stale predictions immediately
+    lastPredictRef.current = 0;
+    setRaceConfidence(null);
+    calculatePredictions();
+  }, [selectedRaceNo, racecardData]);
 
   // Auto-save prediction to MongoDB when predictions change (debounced)
   const saveTimerRef = useRef(null);
@@ -273,7 +273,7 @@ function App() {
           setRaceConfidence(data.race_confidence != null ? data.race_confidence : null);
           // Add jersey_url, horse_no from racecard data
           const entries = racecardData.entries?.filter(e => e.race_no === selectedRaceNo) || [];
-          const results = data.predictions.map(pred => {
+          const results = data.predictions.filter(p => p?.horse_no != null).map(pred => {
             const entry = entries.find(e => e.horse_name === pred.horse_name);
             return {
               ...pred,
@@ -287,7 +287,7 @@ function App() {
           });
           
           // Sort by horse_no for display in table
-          results.sort((a, b) => a.horse_no - b.horse_no);
+          results.sort((a, b) => (a?.horse_no || 0) - (b?.horse_no || 0));
           setPredictions(results);
         }
       })
@@ -468,34 +468,34 @@ function App() {
                 <tbody>
                   {currentEntries
                     .slice()
-                    .sort((a, b) => a.horse_no - b.horse_no)
-                    .map((entry) => {
+                    .sort((a, b) => (a?.horse_no || 0) - (b?.horse_no || 0))
+                    .filter(e => e?.horse_no).map((entry) => {
                     const pred = activePredictions.find(p => p.horse_no === entry.horse_no);
                     const jersey = getJerseyInfo(entry.horse_no, entry.horse_name);
                     return (
-                      <tr key={pred.horse_no} style={entry.status === 'Scratched' ? {opacity: 0.5} : {}}>
+                      <tr key={entry.horse_no} style={entry.status === 'Scratched' ? {opacity: 0.5} : {}}>
                         {/* Mobile: 馬號, 馬匹 */}
                         <td className="mobile-only">
                           <div 
                             className="horse-number"
                             style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
                           >
-                            {pred.horse_no}
+                            {entry.horse_no}
                           </div>
                         </td>
                         <td className="mobile-only">
                           <div className="horse-name-cell">
                             {jersey.type === 'image' ? (
-                              <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
+                              <img src={jersey.url} alt={entry.horse_no} className="jersey-icon" />
                             ) : (
                               <div className="jersey-placeholder" style={{ backgroundColor: jersey.value }}>
-                                {pred.horse_no}
+                                {entry.horse_no}
                               </div>
                             )}
-                            <span>{pred.horse_name}</span>
+                            <span>{entry.horse_name}</span>
                           </div>
                         </td>
-                        <td className="mobile-only">{pred.jockey_name}</td>
+                        <td className="mobile-only">{entry.jockey_name}</td>
                         <td className="mobile-only">{entry.trainer_name}</td>
                         <td className="mobile-only">{entry.draw}</td>
                         
@@ -510,22 +510,22 @@ function App() {
                             className="horse-number"
                             style={{ backgroundColor: jersey.type === 'color' ? jersey.value : '#888' }}
                           >
-                            {pred.horse_no}
+                            {entry.horse_no}
                           </div>
                         </td>
                         <td className="desktop-only">
                           <div className="horse-name-cell">
                             {jersey.type === 'image' ? (
-                              <img src={jersey.url} alt={pred.horse_no} className="jersey-icon" />
+                              <img src={jersey.url} alt={entry.horse_no} className="jersey-icon" />
                             ) : (
                               <div className="jersey-placeholder" style={{ backgroundColor: jersey.value }}>
-                                {pred.horse_no}
+                                {entry.horse_no}
                               </div>
                             )}
-                            <span>{pred.horse_name}</span>
+                            <span>{entry.horse_name}</span>
                           </div>
                         </td>
-                        <td className="desktop-only">{pred.jockey_name}</td>
+                        <td className="desktop-only">{entry.jockey_name}</td>
                         <td className="desktop-only">{entry.trainer_name}</td>
                         <td className="desktop-only">{entry.draw}</td>
                         <td className="desktop-only">
@@ -617,8 +617,7 @@ function App() {
           )}
           
           <div className="prediction-list">
-            {activePredictions
-              .sort((a,b) => a.predicted_rank - b.predicted_rank)
+            {activePredictions?.slice().sort((a,b) => (a?.predicted_rank || 99) - (b?.predicted_rank || 99))
               .map((pred, idx) => {
               const jersey = getJerseyInfo(pred.horse_no, pred.horse_name);
               return (

@@ -11,6 +11,14 @@ import { Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip);
 
+function proxyJerseyUrl(url) {
+  if (!url) return null;
+  // Extract horse ID from HKJC URL like https://racing.hkjc.com/racing/content/Images/RaceColor/H411.gif
+  const match = url.match(/\/([A-Z0-9]+)\.gif$/i);
+  if (match) return `/api/jersey/${match[1]}`;
+  return null;
+}
+
 const COLORS = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
   '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
@@ -56,34 +64,36 @@ function TinySparkline({ hist, color }) {
 
 export default function UnifiedRaceTable({ predictions, currentEntries, oddsData, oddsHistory, connected }) {
   const rows = useMemo(() => {
-    if (!currentEntries) return [];
+    if (!currentEntries || !Array.isArray(currentEntries)) return [];
     const result = [];
-    // Active horses: from predictions
-    if (predictions) {
-      predictions.slice().sort((a, b) => a.horse_no - b.horse_no).forEach(p => {
-        const entry = currentEntries.find(e => e.horse_no === p.horse_no);
-        const odds = oddsData[String(p.horse_no)] || {};
-        const hist = oddsHistory[String(p.horse_no)] || [];
-        const color = COLORS[p.horse_no % COLORS.length];
-        result.push({ p, entry, odds, hist, color });
-      });
-    }
+    const predictionsArr = Array.isArray(predictions) ? predictions : [];
+    const entriesArr = Array.isArray(currentEntries) ? currentEntries : [];
+    // Active horses: from predictions that have matching entries
+    predictionsArr.slice().sort((a, b) => (a?.horse_no || 0) - (b?.horse_no || 0)).forEach(p => {
+      if (!p?.horse_no) return;
+      const entry = entriesArr.find(e => e && String(e.horse_no) === String(p.horse_no));
+      const odds = (oddsData && typeof oddsData === 'object') ? (oddsData[String(p.horse_no)] || {}) : {};
+      const hist = (oddsHistory && typeof oddsHistory === 'object') ? (oddsHistory[String(p.horse_no)] || []) : [];
+      const color = COLORS[(p.horse_no || 0) % COLORS.length];
+      result.push({ p, entry: entry || null, odds, hist, color });
+    });
     // Scratched horses: from currentEntries but not in predictions
-    currentEntries.forEach(entry => {
-      if (entry.status === 'Scratched' && !predictions?.find(p => p.horse_no === entry.horse_no)) {
-        const odds = oddsData[String(entry.horse_no)] || {};
-        const hist = oddsHistory[String(entry.horse_no)] || [];
-        const color = COLORS[entry.horse_no % COLORS.length];
+    entriesArr.forEach(entry => {
+      if (!entry || !entry.horse_no) return;
+      if (entry.status === 'Scratched' && !predictionsArr.find(p => p && String(p.horse_no) === String(entry.horse_no))) {
+        const odds = (oddsData && typeof oddsData === 'object') ? (oddsData[String(entry.horse_no)] || {}) : {};
+        const hist = (oddsHistory && typeof oddsHistory === 'object') ? (oddsHistory[String(entry.horse_no)] || []) : [];
+        const color = COLORS[(entry.horse_no || 0) % COLORS.length];
         result.push({ p: null, entry, odds, hist, color, scratched: true });
       }
     });
-    return result.sort((a, b) => a.entry.horse_no - b.entry.horse_no);
+    return result.sort((a, b) => (a?.entry?.horse_no || 0) - (b?.entry?.horse_no || 0));
   }, [predictions, currentEntries, oddsData, oddsHistory]);
 
   if (!rows.length) {
     return (
       <div className="ut-empty">
-        {connected ? '載入中...' : '等待連接...'}
+        {!connected ? '等待連接...' : '載入中...'}
       </div>
     );
   }
@@ -104,13 +114,17 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ p, entry, odds, hist, color, scratched }) => (
+          {rows.filter(r => r?.entry?.horse_no).map(({ p, entry, odds, hist, color, scratched }) => (
             <tr key={entry.horse_no} style={scratched ? {opacity: 0.4} : {}}>
               <td className="ut-pred">
                 <div className={`rank rank-${p?.predicted_rank}`}>{p ? p.predicted_rank : '—'}</div>
               </td>
               <td className="ut-no">
-                <div className="badge" style={{ background: color }}>{entry.horse_no}</div>
+                {proxyJerseyUrl(entry.jersey_url) ? (
+                  <img src={proxyJerseyUrl(entry.jersey_url)} alt={entry.horse_no} className="ut-jersey" />
+                ) : (
+                  <div className="badge" style={{ background: color }}>{entry.horse_no}</div>
+                )}
               </td>
               <td className="ut-name">
                 <div className="ut-horse">{entry.horse_name}{scratched ? ' ✕' : ''}</div>

@@ -174,6 +174,24 @@ connect()
 app.get('/api/health', (req, res) => res.json({ok: 1}));
 app.get('/health', (req, res) => res.json({ok: 1}));
 
+// Jersey image proxy - fetch from HKJC and serve with CORS headers
+app.get('/api/jersey/:horseId', async (req, res) => {
+  const { horseId } = req.params;
+  try {
+    const url = `https://racing.hkjc.com/racing/content/Images/RaceColor/${horseId}.gif`;
+    const response = await fetch(url);
+    if (!response.ok) return res.status(404).send('Not found');
+    const buffer = await response.arrayBuffer();
+    res.set('Content-Type', 'image/gif');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error('Jersey proxy error:', err);
+    res.status(500).send('Proxy error');
+  }
+});
+
+
 // Fixtures - upcoming and past race days
 app.get('/api/fixtures', async (req, res) => {
   const { mode = 'upcoming' } = req.query; // 'upcoming', 'past', or 'all'

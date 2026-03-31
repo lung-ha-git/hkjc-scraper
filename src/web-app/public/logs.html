@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📜 HKJC 日誌下載</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { text-align: center; margin: 30px 0; color: #ffd700; }
+    h2 { color: #4ecdc4; margin: 25px 0 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    .refresh-btn { background: #333; color: #fff; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; margin-bottom: 20px; }
+    .refresh-btn:hover { background: #444; }
+    .log-card { background: #16213e; border-radius: 12px; padding: 15px 20px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+    .log-info h3 { color: #4ecdc4; font-size: 14px; word-break: break-all; }
+    .log-info p { color: #888; font-size: 12px; margin-top: 5px; }
+    .download-btn { background: #4ecdc4; color: #1a1a2e; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; }
+    .download-btn:hover { background: #45b7d1; }
+    .loading { text-align: center; padding: 20px; color: #888; }
+    .error { background: #ff6b6b; color: #fff; padding: 15px; border-radius: 8px; margin: 10px 0; }
+    .empty { text-align: center; padding: 30px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📜 HKJC 日誌下載</h1>
+    <button class="refresh-btn" onclick="loadLogs()">🔄 刷新列表</button>
+    <div id="pipeline-logs"></div>
+    <div id="odds-logs"></div>
+  </div>
+  
+  <script>
+    const API_BASE = '/api/logs';
+    
+    async function loadLogs() {
+      const pipelineDiv = document.getElementById('pipeline-logs');
+      const oddsDiv = document.getElementById('odds-logs');
+      
+      pipelineDiv.innerHTML = '<div class="loading">載入中...</div>';
+      oddsDiv.innerHTML = '';
+      
+      try {
+        const res = await fetch(`${API_BASE}/list`);
+        const data = await res.json();
+        
+        if (!data.logs || (data.logs.pipeline.length === 0 && data.logs.odds.length === 0)) {
+          pipelineDiv.innerHTML = '<div class="empty">暫無日誌文件</div>';
+          return;
+        }
+        
+        // Pipeline logs
+        if (data.logs.pipeline.length > 0) {
+          pipelineDiv.innerHTML = `
+            <h2>📊 Pipeline 日誌</h2>
+            ${data.logs.pipeline.map(log => `
+              <div class="log-card">
+                <div class="log-info">
+                  <h3>${log.name}</h3>
+                  <p>${formatSize(log.size)} | ${formatDate(log.modified)}</p>
+                </div>
+                <a href="${API_BASE}/download/pipeline/${log.name}" class="download-btn" download>⬇️ 下載</a>
+              </div>
+            `).join('')}
+          `;
+        }
+        
+        // Odds collector logs
+        if (data.logs.odds.length > 0) {
+          oddsDiv.innerHTML = `
+            <h2>🔄 Odds Collector 日誌</h2>
+            ${data.logs.odds.map(log => `
+              <div class="log-card">
+                <div class="log-info">
+                  <h3>${log.name}</h3>
+                  <p>${formatSize(log.size)} | ${formatDate(log.modified)}</p>
+                </div>
+                <a href="${API_BASE}/download/odds/${log.name}" class="download-btn" download>⬇️ 下載</a>
+              </div>
+            `).join('')}
+          `;
+        }
+      } catch (err) {
+        pipelineDiv.innerHTML = `<div class="error">載入失敗: ${err.message}</div>`;
+      }
+    }
+    
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+    
+    function formatDate(iso) {
+      if (!iso) return '-';
+      return new Date(iso).toLocaleString('zh-HK', { 
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+    
+    loadLogs();
+  </script>
+</body>
+</html>
