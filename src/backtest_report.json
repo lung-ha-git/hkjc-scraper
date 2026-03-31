@@ -1,0 +1,40 @@
+{
+  "overall": {
+    "win": {
+      "cost": 0,
+      "payout": 0,
+      "profit": 0,
+      "hits": 0,
+      "races": 0
+    },
+    "place": {
+      "cost": 0,
+      "payout": 0,
+      "profit": 0,
+      "hits": 0,
+      "races": 0
+    },
+    "quinella": {
+      "cost": 0,
+      "payout": 0,
+      "profit": 0,
+      "hits": 0,
+      "races": 0
+    },
+    "quinella_place": {
+      "cost": 0,
+      "payout": 0,
+      "profit": 0,
+      "hits": 0,
+      "races": 0
+    },
+    "first4": {
+      "cost": 0,
+      "payout": 0,
+      "profit": 0,
+      "hits": 0,
+      "races": 0
+    }
+  },
+  "meetings": []
+}

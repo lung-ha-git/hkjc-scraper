@@ -1,0 +1,54 @@
+{
+  "models": {
+    "xgb-default": {
+      "name": "XGBoost Default",
+      "description": "Standard XGBoost classifier with base features",
+      "version": "v1.0.0",
+      "script": "predict_xgb.py",
+      "model_file": "xgb_model.pkl",
+      "type": "xgboost",
+      "features": 23,
+      "accuracy": 0.567,
+      "status": "active",
+      "default": true
+    },
+    "xgb-enhanced": {
+      "name": "XGBoost Enhanced",
+      "description": "XGBoost with odds-based features and pace analysis",
+      "version": "v1.1.0",
+      "script": "src/ml/enhanced_predictor.py",
+      "model_file": "models/xgb_enhanced.pkl",
+      "type": "xgboost",
+      "features": 36,
+      "accuracy": 0.60,
+      "status": "development",
+      "default": false
+    },
+    "ensemble": {
+      "name": "Ensemble Model",
+      "description": "Stacking ensemble: XGBoost + LightGBM + Neural Network",
+      "version": "v2.0.0",
+      "script": "src/ml/ensemble_predictor.py",
+      "model_file": "models/ensemble_meta.pkl",
+      "type": "ensemble",
+      "features": 36,
+      "accuracy": 0.62,
+      "status": "planned",
+      "default": false
+    }
+  },
+  "settings": {
+    "default_model": "xgb-default",
+    "timeout_seconds": 60,
+    "cache_predictions": true,
+    "cache_ttl_seconds": 300,
+    "enable_boosting": true,
+    "enable_calibration": false
+  },
+  "feature_flags": {
+    "allow_model_switching": true,
+    "allow_a_b_testing": false,
+    "log_predictions": true,
+    "track_accuracy": true
+  }
+}
