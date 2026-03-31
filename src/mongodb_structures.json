@@ -1,0 +1,361 @@
+{
+  "test_time": "2026-03-12T13:50:00",
+  "mongodb_structures": {
+    "race": {
+      "fields": [
+        "_id",
+        "hkjc_race_id",
+        "class",
+        "created_at",
+        "distance",
+        "incidents",
+        "modified_at",
+        "payout",
+        "prize",
+        "race_date",
+        "race_id_num",
+        "race_no",
+        "results",
+        "track_condition",
+        "venue"
+      ],
+      "sample": {
+        "_id": "69b24f93fca1b9cd6fcc59cb",
+        "hkjc_race_id": "2026_03_15_ST_1",
+        "class": "五班",
+        "created_at": "2026-03-12 13:30:59.571000",
+        "distance": "1000米",
+        "incidents": [],
+        "modified_at": "2026-03-12 13:30:59.571000",
+        "payout": {
+          "彩池": {
+            "勝出組合": "派彩 (HK)"
+          },
+          "獨贏": {
+            "1": "155.00"
+          },
+          "位置": {
+            "1": "41.50"
+          },
+          "連贏": {
+            "1,9": "493.50"
+          },
+          "位置Q": {
+            "1,9": "164.50"
+          },
+          "二重彩": {
+            "1,9": "1079.00"
+          },
+          "三重彩": {
+            "1,9,6": "8683.00"
+          },
+          "單T": {
+            "1,6,9": "1326.00"
+          },
+          "四連環": {
+            "1,6,8,9": "2082.00"
+          },
+          "四重彩": {
+            "1,9,6,8": "52157.00"
+          }
+        },
+        "prize": null,
+        "race_date": "2026/03/15",
+        "race_id_num": 506,
+        "race_no": "1",
+        "results": [
+          {
+            "position": 1,
+            "horse_no": 1,
+            "horse_id": "HK_2023_J366",
+            "horse_name": "風采人生",
+            "jockey": "霍宏聲",
+            "trainer": "方嘉柏",
+            "weight_carried": "135",
+            "draw": "1151",
+            "distance": "9",
+            "finish_time": "-",
+            "odds": "7 7 1"
+          },
+          {
+            "position": 2,
+            "horse_no": 9,
+            "horse_id": "HK_2023_J532",
+            "horse_name": "銀亮濠俠",
+            "jockey": "鍾易禮",
+            "trainer": "徐雨石",
+            "weight_carried": "125",
+            "draw": "1085",
+            "distance": "11",
+            "finish_time": "1-1/4",
+            "odds": "2 2 2"
+          },
+          {
+            "position": 3,
+            "horse_no": 6,
+            "horse_id": "HK_2024_K099",
+            "horse_name": "皇金合",
+            "jockey": "金誠剛",
+            "trainer": "丁冠豪",
+            "weight_carried": "131",
+            "draw": "1194",
+            "distance": "12",
+            "finish_time": "1-1/4",
+            "odds": "1 1 3"
+          },
+          {
+            "position": 4,
+            "horse_no": 8,
+            "horse_id": "HK_2023_J345",
+            "horse_name": "喆喆友福",
+            "jockey": "潘頓",
+            "trainer": "沈集成",
+            "weight_carried": "129",
+            "draw": "1078",
+            "distance": "8",
+            "finish_time": "1-3/4",
+            "odds": "6 3 4"
+          },
+          {
+            "position": 5,
+            "horse_no": 7,
+            "horse_id": "HK_2022_H464",
+            "horse_name": "機械騎士",
+            "jockey": "田泰安",
+            "trainer": "文家良",
+            "weight_carried": "131",
+            "draw": "1099",
+            "distance": "7",
+            "finish_time": "2-3/4",
+            "odds": "5 5 5"
+          },
+          {
+            "position": 6,
+            "horse_no": 10,
+            "horse_id": "HK_2021_G352",
+            "horse_name": "謙謙君子",
+            "jockey": "蔡明紹",
+            "trainer": "葉楚航",
+            "weight_carried": "118",
+            "draw": "1059",
+            "distance": "5",
+            "finish_time": "3",
+            "odds": "8 8 6"
+          },
+          {
+            "position": 7,
+            "horse_no": 5,
+            "horse_id": "HK_2023_J087",
+            "horse_name": "辣得金",
+            "jockey": "布文",
+            "trainer": "巫偉傑",
+            "weight_carried": "132",
+            "draw": "1121",
+            "distance": "6",
+            "finish_time": "3",
+            "odds": "3 4 7"
+          },
+          {
+            "position": 8,
+            "horse_no": 4,
+            "horse_id": "HK_2023_J304",
+            "horse_name": "獵寶勤",
+            "jockey": "麥文堅",
+            "trainer": "蔡約翰",
+            "weight_carried": "133",
+            "draw": "1055",
+            "distance": "4",
+            "finish_time": "3-1/2",
+            "odds": "4 6 8"
+          },
+          {
+            "position": 9,
+            "horse_no": 2,
+            "horse_id": "HK_2023_J002",
+            "horse_name": "一鹿歡騰",
+            "jockey": "巴度",
+            "trainer": "告東尼",
+            "weight_carried": "133",
+            "draw": "1100",
+            "distance": "1",
+            "finish_time": "4-3/4",
+            "odds": "9 10 9"
+          },
+          {
+            "position": 10,
+            "horse_no": 12,
+            "horse_id": "HK_2023_J259",
+            "horse_name": "天火同心",
+            "jockey": "楊明綸",
+            "trainer": "韋達",
+            "weight_carried": "115",
+            "draw": "1169",
+            "distance": "10",
+            "finish_time": "7-1/4",
+            "odds": "12 12 10"
+          },
+          {
+            "position": 11,
+            "horse_no": 11,
+            "horse_id": "HK_2023_J385",
+            "horse_name": "威德勇士",
+            "jockey": "巫顯東",
+            "trainer": "鄭俊偉",
+            "weight_carried": "115",
+            "draw": "1061",
+            "distance": "2",
+            "finish_time": "7-3/4",
+            "odds": "10 9 11"
+          },
+          {
+            "position": 12,
+            "horse_no": 3,
+            "horse_id": "HK_2023_J479",
+            "horse_name": "鼓浪高升",
+            "jockey": "周俊樂",
+            "trainer": "伍鵬志",
+            "weight_carried": "131",
+            "draw": "1094",
+            "distance": "3",
+            "finish_time": "7-3/4",
+            "odds": "11 11 12"
+          }
+        ],
+        "track_condition": "好地至快地",
+        "venue": "ST"
+      }
+    },
+    "horse": {
+      "fields": [
+        "_id",
+        "hkjc_horse_id",
+        "horse_code",
+        "jersey_url",
+        "name",
+        "country_of_origin",
+        "age",
+        "color",
+        "sex",
+        "import_type",
+        "season_prize",
+        "total_prize",
+        "career_wins",
+        "career_seconds",
+        "career_thirds",
+        "career_starts",
+        "recent_10_race_days_runs",
+        "import_date",
+        "trainer",
+        "owner",
+        "current_rating",
+        "season_start_rating",
+        "sire",
+        "dam",
+        "maternal_grand_sire",
+        "created_at",
+        "modified_at"
+      ],
+      "sample": {
+        "_id": "69b00762fca1b9cd6fcc42e4",
+        "hkjc_horse_id": "HK_2025_L108",
+        "horse_code": "L108",
+        "jersey_url": "https://racing.hkjc.com/racing/content/Images/RaceColor/L108.gif",
+        "name": "紫荊傳令",
+        "country_of_origin": "愛爾蘭",
+        "age": 4,
+        "color": "棗",
+        "sex": "雄",
+        "import_type": "自購馬",
+        "season_prize": 430500,
+        "total_prize": 430500,
+        "career_wins": 0,
+        "career_seconds": 1,
+        "career_thirds": 0,
+        "career_starts": 3,
+        "recent_10_race_days_runs": 1,
+        "import_date": "09/08/2025",
+        "trainer": "游達榮",
+        "owner": "陳國泰與陳李妮",
+        "current_rating": 79,
+        "season_start_rating": 76,
+        "sire": "Saxon Warrior",
+        "dam": "Archangel Gabriel",
+        "maternal_grand_sire": "Arch",
+        "created_at": "2026-03-10T11:58:26.856056+00:00",
+        "modified_at": "2026-03-10T11:58:26.856056+00:00"
+      }
+    },
+    "jockey": {
+      "fields": [
+        "_id",
+        "jockey_id",
+        "name",
+        "created_at",
+        "fifths",
+        "fourths",
+        "modified_at",
+        "prize_money",
+        "prize_money_int",
+        "scrape_date",
+        "season",
+        "seconds",
+        "thirds",
+        "total_rides",
+        "wins"
+      ],
+      "sample": {
+        "_id": "69b05fbc5421cfea9aea4e11",
+        "jockey_id": "PZ",
+        "name": "潘頓",
+        "created_at": "2026-03-12T10:28:13.285360",
+        "fifths": 38,
+        "fourths": 36,
+        "modified_at": "2026-03-12T10:28:13.285360",
+        "prize_money": "$159,612,620",
+        "prize_money_int": 159612620,
+        "scrape_date": "2026-03-12T10:28:06.701001",
+        "season": "2025/2026",
+        "seconds": 59,
+        "thirds": 52,
+        "total_rides": 412,
+        "wins": 84
+      }
+    },
+    "trainer": {
+      "fields": [
+        "_id",
+        "trainer_id",
+        "name",
+        "created_at",
+        "fifths",
+        "fourths",
+        "modified_at",
+        "prize_money",
+        "prize_money_int",
+        "scrape_date",
+        "season",
+        "seconds",
+        "thirds",
+        "total_horses",
+        "wins"
+      ],
+      "sample": {
+        "_id": "69b05fbe5421cfea9aea4e3b",
+        "trainer_id": "CCW",
+        "name": "鄭俊偉",
+        "created_at": "2026-03-12T10:28:13.285360",
+        "fifths": 12,
+        "fourths": 15,
+        "modified_at": "2026-03-12T10:28:13.285360",
+        "prize_money": "$15,408,925",
+        "prize_money_int": 15408925,
+        "scrape_date": "2026-03-12T10:28:13.047725",
+        "season": "2025/2026",
+        "seconds": 7,
+        "thirds": 16,
+        "total_horses": 228,
+        "wins": 12
+      }
+    }
+  }
+}

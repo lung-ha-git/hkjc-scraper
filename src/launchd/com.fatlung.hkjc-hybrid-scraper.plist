@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.fatlung.hkjc-hybrid-scraper</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/fatlung/.openclaw/workspace-main/hkjc_project/scrapers/hybrid_odds_scraper.js</string>
+        <string>--auto-detect</string>
+    </array>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/fatlung/.openclaw/workspace-main/hkjc_project</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+    
+    <!-- Run on race days: Wed, Sat, Sun at 09:00 -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <!-- Wednesday -->
+        <dict>
+            <key>Weekday</key>
+            <integer>3</integer>
+            <key>Hour</key>
+            <integer>9</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <!-- Saturday -->
+        <dict>
+            <key>Weekday</key>
+            <integer>6</integer>
+            <key>Hour</key>
+            <integer>9</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <!-- Sunday -->
+        <dict>
+            <key>Weekday</key>
+            <integer>0</integer>
+            <key>Hour</key>
+            <integer>9</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+    
+    <key>KeepAlive</key>
+    <false/>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/fatlung/.openclaw/workspace-main/hkjc_project/logs/hybrid-scraper.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/fatlung/.openclaw/workspace-main/hkjc_project/logs/hybrid-scraper-error.log</string>
+    
+    <key>ThrottleInterval</key>
+    <integer>3600</integer>
+</dict>
+</plist>

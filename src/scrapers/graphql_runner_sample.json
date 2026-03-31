@@ -1,0 +1,39 @@
+{
+  "id": "20260325HV01H213",
+  "no": "1",
+  "standbyNo": "",
+  "status": "Declared",
+  "name_ch": "富喜來",
+  "name_en": "JOYFUL PROSPERITY",
+  "horse": {
+    "id": "HK_2022_H213",
+    "code": "H213"
+  },
+  "color": "gr",
+  "barrierDrawNumber": "5",
+  "handicapWeight": "135",
+  "currentWeight": "",
+  "currentRating": "040",
+  "internationalRating": "",
+  "gearInfo": "B/TT",
+  "racingColorFileName": "HK_2022_H213",
+  "allowance": "  ",
+  "trainerPreference": "1",
+  "last6run": "12/11/11/12/7/13",
+  "saddleClothNo": null,
+  "trumpCard": false,
+  "priority": true,
+  "finalPosition": 0,
+  "deadHeat": false,
+  "winOdds": "",
+  "jockey": {
+    "code": "BH",
+    "name_en": "H Bowman",
+    "name_ch": "布文"
+  },
+  "trainer": {
+    "code": "SCS",
+    "name_en": "C S Shum",
+    "name_ch": "沈集成"
+  }
+}

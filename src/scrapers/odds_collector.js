@@ -30,7 +30,6 @@ let lastScrapeTime = 0;
 let isScraping = false;
 let finishedRaces = new Set();  // races that have results - never scrape again
 let raceScratched = {};                 // race_id -> [scratched horse nos]
-let hasSynced = false;                  // sync runner status only once
 let currentSchedule = SCRAPE_INTERVAL_NON_RACE_DAY;
 let scheduledTimeout = null;
 let logStream = null;
@@ -470,12 +469,6 @@ async function sessionEnd(races) {
 // ─── Main scrape cycle ─────────────────────────────────────────────────────
 async function scrapeCycle() {
   const now = Date.now();
-  
-  // Sync runner status from HKJC GraphQL to MongoDB (first cycle only)
-  if (!hasSynced) {
-    hasSynced = true;
-    syncRunnerStatus().catch(() => {});
-  }
   
   // Skip if another scrape in progress
   if (isScraping) {

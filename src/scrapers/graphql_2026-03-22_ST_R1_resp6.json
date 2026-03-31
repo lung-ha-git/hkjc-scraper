@@ -1,0 +1,4981 @@
+{
+  "data": {
+    "raceMeetings": [
+      {
+        "status": "DECLARED",
+        "currentNumberOfRace": 0,
+        "totalInvestment": "0",
+        "races": [
+          {
+            "no": 1,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV01H213",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "富喜來",
+                "name_en": "JOYFUL PROSPERITY",
+                "horse": {
+                  "id": "HK_2022_H213",
+                  "code": "H213"
+                },
+                "color": "gr",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "040",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2022_H213",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "12/11/11/12/7/13",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BH",
+                  "name_en": "H Bowman",
+                  "name_ch": "布文"
+                },
+                "trainer": {
+                  "code": "SCS",
+                  "name_en": "C S Shum",
+                  "name_ch": "沈集成"
+                }
+              },
+              {
+                "id": "20260325HV01E496",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "管之友",
+                "name_en": "MANAGEMENT FOLKS",
+                "horse": {
+                  "id": "HK_2021_E496",
+                  "code": "E496"
+                },
+                "color": "br",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "040",
+                "internationalRating": "",
+                "gearInfo": "CP2",
+                "racingColorFileName": "HK_2021_E496",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "5/11/9/6/4/2",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PZ",
+                  "name_en": "Z Purton",
+                  "name_ch": "潘頓"
+                },
+                "trainer": {
+                  "code": "HAD",
+                  "name_en": "D J Hall",
+                  "name_ch": "賀賢"
+                }
+              },
+              {
+                "id": "20260325HV01G312",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "架勢奇爸",
+                "name_en": "KASA PAPA",
+                "horse": {
+                  "id": "HK_2021_G312",
+                  "code": "G312"
+                },
+                "color": "br",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "133",
+                "currentWeight": "",
+                "currentRating": "038",
+                "internationalRating": "",
+                "gearInfo": "CP2/TT",
+                "racingColorFileName": "HK_2021_G312",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "10/9/7/2/7/4",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CJE",
+                  "name_en": "C L Chau",
+                  "name_ch": "周俊樂"
+                },
+                "trainer": {
+                  "code": "CAS",
+                  "name_en": "A S Cruz",
+                  "name_ch": "告東尼"
+                }
+              },
+              {
+                "id": "20260325HV01H168",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "夢照發",
+                "name_en": "ROMANTIC FANTASY",
+                "horse": {
+                  "id": "HK_2022_H168",
+                  "code": "H168"
+                },
+                "color": "b",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "133",
+                "currentWeight": "",
+                "currentRating": "038",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2022_H168",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "2/2/2/8/4/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BA",
+                  "name_en": "A Badel",
+                  "name_ch": "巴度"
+                },
+                "trainer": {
+                  "code": "RW",
+                  "name_en": "J Richards",
+                  "name_ch": "黎昭昇"
+                }
+              },
+              {
+                "id": "20260325HV01J541",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "古惑大師",
+                "name_en": "CONSPIRACY WITNESS",
+                "horse": {
+                  "id": "HK_2023_J541",
+                  "code": "J541"
+                },
+                "color": "br",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "131",
+                "currentWeight": "",
+                "currentRating": "036",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J541",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "4/6/5/9/8/11",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "MDB",
+                  "name_en": "D B McMonagle",
+                  "name_ch": "麥文堅"
+                },
+                "trainer": {
+                  "code": "HDA",
+                  "name_en": "D A Hayes",
+                  "name_ch": "大衛希斯"
+                }
+              },
+              {
+                "id": "20260325HV01D241",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "香港精神",
+                "name_en": "SUPER HONG KONG",
+                "horse": {
+                  "id": "HK_2019_D241",
+                  "code": "D241"
+                },
+                "color": "br",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "131",
+                "currentWeight": "",
+                "currentRating": "036",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2019_D241",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/2/6/1/8/9",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CML",
+                  "name_en": "M Chadwick",
+                  "name_ch": "蔡明紹"
+                },
+                "trainer": {
+                  "code": "YCH",
+                  "name_en": "C H Yip",
+                  "name_ch": "葉楚航"
+                }
+              },
+              {
+                "id": "20260325HV01J331",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "幸運同行",
+                "name_en": "PERFECT PAIRING",
+                "horse": {
+                  "id": "HK_2023_J331",
+                  "code": "J331"
+                },
+                "color": "br",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "130",
+                "currentWeight": "",
+                "currentRating": "035",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2023_J331",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "3/12/6/8/2/5",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AA",
+                  "name_en": "A Atzeni",
+                  "name_ch": "艾兆禮"
+                },
+                "trainer": {
+                  "code": "SJJ",
+                  "name_en": "J Size",
+                  "name_ch": "蔡約翰"
+                }
+              },
+              {
+                "id": "20260325HV01J524",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "捷足奔馳",
+                "name_en": "ROSEWOOD FLEETFOOT",
+                "horse": {
+                  "id": "HK_2023_J524",
+                  "code": "J524"
+                },
+                "color": "b",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "129",
+                "currentWeight": "",
+                "currentRating": "034",
+                "internationalRating": "",
+                "gearInfo": "V/TT",
+                "racingColorFileName": "HK_2023_J524",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/10/7/9/6/6",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "KRW",
+                  "name_en": "R Kingscote",
+                  "name_ch": "金誠剛"
+                },
+                "trainer": {
+                  "code": "YPF",
+                  "name_en": "P F Yiu",
+                  "name_ch": "姚本輝"
+                }
+              },
+              {
+                "id": "20260325HV01H293",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "開心三多",
+                "name_en": "ALL ARE MINE",
+                "horse": {
+                  "id": "HK_2022_H293",
+                  "code": "H293"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "127",
+                "currentWeight": "",
+                "currentRating": "032",
+                "internationalRating": "",
+                "gearInfo": "H/XB",
+                "racingColorFileName": "HK_2022_H293",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "2/3/8/10/4/11",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "TEK",
+                  "name_en": "K Teetan",
+                  "name_ch": "田泰安"
+                },
+                "trainer": {
+                  "code": "CBJ",
+                  "name_en": "B Crawford",
+                  "name_ch": "桂福特"
+                }
+              },
+              {
+                "id": "20260325HV01E448",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "皇金風速",
+                "name_en": "GOLDEN FAIRY",
+                "horse": {
+                  "id": "HK_2020_E448",
+                  "code": "E448"
+                },
+                "color": "b",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "028",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2020_E448",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/9/11/10/8/13",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "OJM",
+                  "name_en": "J Orman",
+                  "name_ch": "奧爾民"
+                },
+                "trainer": {
+                  "code": "SWY",
+                  "name_en": "W Y So",
+                  "name_ch": "蘇偉賢"
+                }
+              },
+              {
+                "id": "20260325HV01H471",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "永勝金駒",
+                "name_en": "CHATEAU LE PECHE",
+                "horse": {
+                  "id": "HK_2022_H471",
+                  "code": "H471"
+                },
+                "color": "b",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "024",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2022_H471",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/5/5/10/5/4",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "HCY",
+                  "name_en": "C Y Ho",
+                  "name_ch": "何澤堯"
+                },
+                "trainer": {
+                  "code": "TKH",
+                  "name_en": "K H Ting",
+                  "name_ch": "丁冠豪"
+                }
+              },
+              {
+                "id": "20260325HV01H386",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "同寶寶",
+                "name_en": "MR ALADDIN",
+                "horse": {
+                  "id": "HK_2022_H386",
+                  "code": "H386"
+                },
+                "color": "b",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "115",
+                "currentWeight": "",
+                "currentRating": "015",
+                "internationalRating": "",
+                "gearInfo": "H-/PC-/CP2/TT",
+                "racingColorFileName": "HK_2022_H386",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "13/13/7/7/4/8",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CCY",
+                  "name_en": "Y L Chung",
+                  "name_ch": "鍾易禮"
+                },
+                "trainer": {
+                  "code": "NPC",
+                  "name_en": "P C Ng",
+                  "name_ch": "伍鵬志"
+                }
+              },
+              {
+                "id": "20260325HV01J508",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "光輝歲月",
+                "name_en": "HAILTOTHEVICTORS",
+                "horse": {
+                  "id": "HK_2023_J508",
+                  "code": "J508"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "129",
+                "currentWeight": "",
+                "currentRating": "034",
+                "internationalRating": "",
+                "gearInfo": "B2/TT",
+                "racingColorFileName": "HK_2023_J508",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "8/4/7/7/2/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "EDJ",
+                  "name_en": "D Eustace",
+                  "name_ch": "游達榮"
+                }
+              },
+              {
+                "id": "20260325HV01J538",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "常多笑",
+                "name_en": "SMART TRIO",
+                "horse": {
+                  "id": "HK_2023_J538",
+                  "code": "J538"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "118",
+                "currentWeight": "",
+                "currentRating": "023",
+                "internationalRating": "",
+                "gearInfo": "B-/V2/XB2/TT-",
+                "racingColorFileName": "HK_2023_J538",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "8/13/9/10/9/9",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "CCW",
+                  "name_en": "C W Chang",
+                  "name_ch": "鄭俊偉"
+                }
+              }
+            ]
+          },
+          {
+            "no": 2,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV02K162",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "佳登",
+                "name_en": "RAGGA BOMB",
+                "horse": {
+                  "id": "HK_2024_K162",
+                  "code": "K162"
+                },
+                "color": "b",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "060",
+                "internationalRating": "",
+                "gearInfo": "XB",
+                "racingColorFileName": "HK_2024_K162",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "3/1/8/2/8/5",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BH",
+                  "name_en": "H Bowman",
+                  "name_ch": "布文"
+                },
+                "trainer": {
+                  "code": "EDJ",
+                  "name_en": "D Eustace",
+                  "name_ch": "游達榮"
+                }
+              },
+              {
+                "id": "20260325HV02K383",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "傲然",
+                "name_en": "PRESTIGE SUPERIOR",
+                "horse": {
+                  "id": "HK_2024_K383",
+                  "code": "K383"
+                },
+                "color": "b/br",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "129",
+                "currentWeight": "",
+                "currentRating": "054",
+                "internationalRating": "",
+                "gearInfo": "B-/H",
+                "racingColorFileName": "HK_2024_K383",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "12/10/13/12/12/14",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "MHT",
+                  "name_en": "H T Mo",
+                  "name_ch": "巫顯東"
+                },
+                "trainer": {
+                  "code": "CCW",
+                  "name_en": "C W Chang",
+                  "name_ch": "鄭俊偉"
+                }
+              },
+              {
+                "id": "20260325HV02K406",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "知道穩勝",
+                "name_en": "WIN METHOD",
+                "horse": {
+                  "id": "HK_2024_K406",
+                  "code": "K406"
+                },
+                "color": "b",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "128",
+                "currentWeight": "",
+                "currentRating": "053",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2024_K406",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/8/11/7/1/7",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "HEL",
+                  "name_en": "L Hewitson",
+                  "name_ch": "希威森"
+                },
+                "trainer": {
+                  "code": "SCS",
+                  "name_en": "C S Shum",
+                  "name_ch": "沈集成"
+                }
+              },
+              {
+                "id": "20260325HV02K039",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "活力精神",
+                "name_en": "ABSOLUTE AWAKENED",
+                "horse": {
+                  "id": "HK_2024_K039",
+                  "code": "K039"
+                },
+                "color": "b",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "127",
+                "currentWeight": "",
+                "currentRating": "052",
+                "internationalRating": "",
+                "gearInfo": "H/TT",
+                "racingColorFileName": "HK_2024_K039",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "7/10/5/1/7/3",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "LDE",
+                  "name_en": "K C Leung",
+                  "name_ch": "梁家俊"
+                },
+                "trainer": {
+                  "code": "LFC",
+                  "name_en": "F C Lor",
+                  "name_ch": "羅富全"
+                }
+              },
+              {
+                "id": "20260325HV02G150",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "都靈勇士",
+                "name_en": "TURIN WARRIOR",
+                "horse": {
+                  "id": "HK_2021_G150",
+                  "code": "G150"
+                },
+                "color": "b",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "126",
+                "currentWeight": "",
+                "currentRating": "051",
+                "internationalRating": "",
+                "gearInfo": "XB",
+                "racingColorFileName": "HK_2021_G150",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "4/6/12/3/1/6",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PMF",
+                  "name_en": "M F Poon",
+                  "name_ch": "潘明輝"
+                },
+                "trainer": {
+                  "code": "MKL",
+                  "name_en": "K L Man",
+                  "name_ch": "文家良"
+                }
+              },
+              {
+                "id": "20260325HV02G277",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "極速滿貫",
+                "name_en": "TO INFINITY",
+                "horse": {
+                  "id": "HK_2021_G277",
+                  "code": "G277"
+                },
+                "color": "b",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "125",
+                "currentWeight": "",
+                "currentRating": "050",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2021_G277",
+                "allowance": "7 ",
+                "trainerPreference": "1",
+                "last6run": "9/3/8/12/8/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "WPN",
+                  "name_en": "P N Wong",
+                  "name_ch": "黃寶妮"
+                },
+                "trainer": {
+                  "code": "RW",
+                  "name_en": "J Richards",
+                  "name_ch": "黎昭昇"
+                }
+              },
+              {
+                "id": "20260325HV02H233",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "北海盜",
+                "name_en": "NORTHERN BEAST",
+                "horse": {
+                  "id": "HK_2022_H233",
+                  "code": "H233"
+                },
+                "color": "br",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "V-",
+                "racingColorFileName": "HK_2022_H233",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/3/11/4/4/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "OJM",
+                  "name_en": "J Orman",
+                  "name_ch": "奧爾民"
+                },
+                "trainer": {
+                  "code": "HAD",
+                  "name_en": "D J Hall",
+                  "name_ch": "賀賢"
+                }
+              },
+              {
+                "id": "20260325HV02L047",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "準希望",
+                "name_en": "PRECISION HOPE",
+                "horse": {
+                  "id": "HK_2025_L047",
+                  "code": "L047"
+                },
+                "color": "b",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2025_L047",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "5/12/8/9",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BA",
+                  "name_en": "A Badel",
+                  "name_ch": "巴度"
+                },
+                "trainer": {
+                  "code": "HDA",
+                  "name_en": "D A Hayes",
+                  "name_ch": "大衛希斯"
+                }
+              },
+              {
+                "id": "20260325HV02J098",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "先到先得",
+                "name_en": "TAKE ACTION",
+                "horse": {
+                  "id": "HK_2023_J098",
+                  "code": "J098"
+                },
+                "color": "b",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2023_J098",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "8/2/2/5/11/3",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AVB",
+                  "name_en": "B Avdulla",
+                  "name_ch": "艾道拿"
+                },
+                "trainer": {
+                  "code": "SJJ",
+                  "name_en": "J Size",
+                  "name_ch": "蔡約翰"
+                }
+              },
+              {
+                "id": "20260325HV02J529",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "耀昌勝世",
+                "name_en": "YIU CHEUNG VICTORY",
+                "horse": {
+                  "id": "HK_2023_J529",
+                  "code": "J529"
+                },
+                "color": "b",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "122",
+                "currentWeight": "",
+                "currentRating": "047",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2023_J529",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "8/7/13/1/7/1",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CJE",
+                  "name_en": "C L Chau",
+                  "name_ch": "周俊樂"
+                },
+                "trainer": {
+                  "code": "YCH",
+                  "name_en": "C H Yip",
+                  "name_ch": "葉楚航"
+                }
+              },
+              {
+                "id": "20260325HV02J395",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "至高心得",
+                "name_en": "KOLACHI",
+                "horse": {
+                  "id": "HK_2023_J395",
+                  "code": "J395"
+                },
+                "color": "b",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "044",
+                "internationalRating": "",
+                "gearInfo": "CP-/E/XB/SR2/TT-",
+                "racingColorFileName": "HK_2023_J395",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "10/5/12/10/3/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BHW",
+                  "name_en": "H Bentley",
+                  "name_ch": "班德禮"
+                },
+                "trainer": {
+                  "code": "WDJ",
+                  "name_en": "D J Whyte",
+                  "name_ch": "韋達"
+                }
+              },
+              {
+                "id": "20260325HV02G292",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "多利神駒",
+                "name_en": "OUR LUCKY GLORY",
+                "horse": {
+                  "id": "HK_2021_G292",
+                  "code": "G292"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "117",
+                "currentWeight": "",
+                "currentRating": "042",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2021_G292",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "10/3/3/3/4/9",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "TEK",
+                  "name_en": "K Teetan",
+                  "name_ch": "田泰安"
+                },
+                "trainer": {
+                  "code": "SWY",
+                  "name_en": "W Y So",
+                  "name_ch": "蘇偉賢"
+                }
+              },
+              {
+                "id": "20260325HV02K458",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "佰勝金龍",
+                "name_en": "SUPER GOLDENDRAGON",
+                "horse": {
+                  "id": "HK_2024_K458",
+                  "code": "K458"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "",
+                "handicapWeight": "120",
+                "currentWeight": "",
+                "currentRating": "045",
+                "internationalRating": "",
+                "gearInfo": "CP-/BO1/TT",
+                "racingColorFileName": "HK_2024_K458",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "14/6/13/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "MWK",
+                  "name_en": "W K Mo",
+                  "name_ch": "巫偉傑"
+                }
+              },
+              {
+                "id": "20260325HV02L093",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "赤風驪",
+                "name_en": "VERMILION TEMPEST",
+                "horse": {
+                  "id": "HK_2025_L093",
+                  "code": "L093"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "131",
+                "currentWeight": "",
+                "currentRating": "056",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2025_L093",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "6/11/6/9/14",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "FC",
+                  "name_en": "C Fownes",
+                  "name_ch": "方嘉柏"
+                }
+              }
+            ]
+          },
+          {
+            "no": 3,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV03K475",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "開心孖寶",
+                "name_en": "A TIME FOR US",
+                "horse": {
+                  "id": "HK_2024_K475",
+                  "code": "K475"
+                },
+                "color": "b",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "060",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2024_K475",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "13/8/8/4",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AVB",
+                  "name_en": "B Avdulla",
+                  "name_ch": "艾道拿"
+                },
+                "trainer": {
+                  "code": "LKW",
+                  "name_en": "K W Lui",
+                  "name_ch": "呂健威"
+                }
+              },
+              {
+                "id": "20260325HV03E490",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "金發盛世",
+                "name_en": "GOLDEN EMPIRE",
+                "horse": {
+                  "id": "HK_2020_E490",
+                  "code": "E490"
+                },
+                "color": "b",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "134",
+                "currentWeight": "",
+                "currentRating": "059",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2020_E490",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "3/8/13/8/6/13",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "FEL",
+                  "name_en": "L Ferraris",
+                  "name_ch": "霍宏聲"
+                },
+                "trainer": {
+                  "code": "CBJ",
+                  "name_en": "B Crawford",
+                  "name_ch": "桂福特"
+                }
+              },
+              {
+                "id": "20260325HV03K517",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "方圓星",
+                "name_en": "ORIGIN OF FORM",
+                "horse": {
+                  "id": "HK_2024_K517",
+                  "code": "K517"
+                },
+                "color": "br",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "134",
+                "currentWeight": "",
+                "currentRating": "059",
+                "internationalRating": "",
+                "gearInfo": "CP/H",
+                "racingColorFileName": "HK_2024_K517",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/12/12/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PMF",
+                  "name_en": "M F Poon",
+                  "name_ch": "潘明輝"
+                },
+                "trainer": {
+                  "code": "LFC",
+                  "name_en": "F C Lor",
+                  "name_ch": "羅富全"
+                }
+              },
+              {
+                "id": "20260325HV03G123",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "縱橫天下",
+                "name_en": "AMAZING VICTORY",
+                "horse": {
+                  "id": "HK_2021_G123",
+                  "code": "G123"
+                },
+                "color": "b",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "133",
+                "currentWeight": "",
+                "currentRating": "058",
+                "internationalRating": "",
+                "gearInfo": "CP/TT",
+                "racingColorFileName": "HK_2021_G123",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/9/8/9/12/11",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "HCY",
+                  "name_en": "C Y Ho",
+                  "name_ch": "何澤堯"
+                },
+                "trainer": {
+                  "code": "CCW",
+                  "name_en": "C W Chang",
+                  "name_ch": "鄭俊偉"
+                }
+              },
+              {
+                "id": "20260325HV03H459",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "星運少爵",
+                "name_en": "THE HEIR",
+                "horse": {
+                  "id": "HK_2022_H459",
+                  "code": "H459"
+                },
+                "color": "b",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "128",
+                "currentWeight": "",
+                "currentRating": "053",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2022_H459",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "3/3/8/4/6/8",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "OJM",
+                  "name_en": "J Orman",
+                  "name_ch": "奧爾民"
+                },
+                "trainer": {
+                  "code": "FC",
+                  "name_en": "C Fownes",
+                  "name_ch": "方嘉柏"
+                }
+              },
+              {
+                "id": "20260325HV03J362",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "比特星",
+                "name_en": "BITS SUPERSTAR",
+                "horse": {
+                  "id": "HK_2023_J362",
+                  "code": "J362"
+                },
+                "color": "b",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "126",
+                "currentWeight": "",
+                "currentRating": "051",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2023_J362",
+                "allowance": "7 ",
+                "trainerPreference": "2",
+                "last6run": "2/2/2/3/7/2",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "WPN",
+                  "name_en": "P N Wong",
+                  "name_ch": "黃寶妮"
+                },
+                "trainer": {
+                  "code": "HAD",
+                  "name_en": "D J Hall",
+                  "name_ch": "賀賢"
+                }
+              },
+              {
+                "id": "20260325HV03K283",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "可靠大師",
+                "name_en": "HONEST WITNESS",
+                "horse": {
+                  "id": "HK_2024_K283",
+                  "code": "K283"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2024_K283",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "8/11/5/2/11/8",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PZ",
+                  "name_en": "Z Purton",
+                  "name_ch": "潘頓"
+                },
+                "trainer": {
+                  "code": "HDA",
+                  "name_en": "D A Hayes",
+                  "name_ch": "大衛希斯"
+                }
+              },
+              {
+                "id": "20260325HV03K553",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "驕陽雄心",
+                "name_en": "LEADING AGILITY",
+                "horse": {
+                  "id": "HK_2024_K553",
+                  "code": "K553"
+                },
+                "color": "b/br",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "H/TT",
+                "racingColorFileName": "HK_2024_K553",
+                "allowance": "  ",
+                "trainerPreference": "3",
+                "last6run": "9/7/3",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "HEL",
+                  "name_en": "L Hewitson",
+                  "name_ch": "希威森"
+                },
+                "trainer": {
+                  "code": "SCS",
+                  "name_en": "C S Shum",
+                  "name_ch": "沈集成"
+                }
+              },
+              {
+                "id": "20260325HV03L139",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "怪獸波士",
+                "name_en": "VIVA BOSS",
+                "horse": {
+                  "id": "HK_2025_L139",
+                  "code": "L139"
+                },
+                "color": "b",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2025_L139",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "6/14/9",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "LDE",
+                  "name_en": "K C Leung",
+                  "name_ch": "梁家俊"
+                },
+                "trainer": {
+                  "code": "MKL",
+                  "name_en": "K L Man",
+                  "name_ch": "文家良"
+                }
+              },
+              {
+                "id": "20260325HV03J223",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "新力驕",
+                "name_en": "SUNNY Q",
+                "horse": {
+                  "id": "HK_2023_J223",
+                  "code": "J223"
+                },
+                "color": "b",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "122",
+                "currentWeight": "",
+                "currentRating": "047",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J223",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/5/6/5/2/1",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BHW",
+                  "name_en": "H Bentley",
+                  "name_ch": "班德禮"
+                },
+                "trainer": {
+                  "code": "SWY",
+                  "name_en": "W Y So",
+                  "name_ch": "蘇偉賢"
+                }
+              },
+              {
+                "id": "20260325HV03K268",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "好多利高",
+                "name_en": "WATCH THIS ONE",
+                "horse": {
+                  "id": "HK_2024_K268",
+                  "code": "K268"
+                },
+                "color": "b",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "044",
+                "internationalRating": "",
+                "gearInfo": "V/TT",
+                "racingColorFileName": "HK_2024_K268",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/8/6/8/11/9",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AA",
+                  "name_en": "A Atzeni",
+                  "name_ch": "艾兆禮"
+                },
+                "trainer": {
+                  "code": "NPC",
+                  "name_en": "P C Ng",
+                  "name_ch": "伍鵬志"
+                }
+              },
+              {
+                "id": "20260325HV03J020",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "跑得好快",
+                "name_en": "GIDDY UP",
+                "horse": {
+                  "id": "HK_2023_J020",
+                  "code": "J020"
+                },
+                "color": "b",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "116",
+                "currentWeight": "",
+                "currentRating": "041",
+                "internationalRating": "",
+                "gearInfo": "B-/PC2/TT",
+                "racingColorFileName": "HK_2023_J020",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "7/14/12/11/3/8",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "TEK",
+                  "name_en": "K Teetan",
+                  "name_ch": "田泰安"
+                },
+                "trainer": {
+                  "code": "RW",
+                  "name_en": "J Richards",
+                  "name_ch": "黎昭昇"
+                }
+              },
+              {
+                "id": "20260325HV03H197",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "智勝攻略",
+                "name_en": "TACTICAL COMMAND",
+                "horse": {
+                  "id": "HK_2022_H197",
+                  "code": "H197"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "129",
+                "currentWeight": "",
+                "currentRating": "054",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2022_H197",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "9/2/9/8/6/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BA",
+                  "name_en": "A Badel",
+                  "name_ch": "巴度"
+                },
+                "trainer": {
+                  "code": "NM",
+                  "name_en": "M Newnham",
+                  "name_ch": "廖康銘"
+                }
+              },
+              {
+                "id": "20260325HV03H356",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "電玩精英",
+                "name_en": "GAMEPLAYER ELITE",
+                "horse": {
+                  "id": "HK_2022_H356",
+                  "code": "H356"
+                },
+                "color": "gr",
+                "barrierDrawNumber": "",
+                "handicapWeight": "122",
+                "currentWeight": "",
+                "currentRating": "047",
+                "internationalRating": "",
+                "gearInfo": "SR/TT",
+                "racingColorFileName": "HK_2022_H356",
+                "allowance": "  ",
+                "trainerPreference": "3",
+                "last6run": "1/5/3/10/8/9",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "WDJ",
+                  "name_en": "D J Whyte",
+                  "name_ch": "韋達"
+                }
+              }
+            ]
+          },
+          {
+            "no": 4,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV04J137",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "本領非凡",
+                "name_en": "GLORIOUS JOURNEY",
+                "horse": {
+                  "id": "HK_2023_J137",
+                  "code": "J137"
+                },
+                "color": "b",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "058",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J137",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "2/4/7/2/1/4",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "HCY",
+                  "name_en": "C Y Ho",
+                  "name_ch": "何澤堯"
+                },
+                "trainer": {
+                  "code": "LFC",
+                  "name_en": "F C Lor",
+                  "name_ch": "羅富全"
+                }
+              },
+              {
+                "id": "20260325HV04K176",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "暴風之子",
+                "name_en": "ANOTHER ZONDA",
+                "horse": {
+                  "id": "HK_2024_K176",
+                  "code": "K176"
+                },
+                "color": "br",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "134",
+                "currentWeight": "",
+                "currentRating": "057",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2024_K176",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/6/11/6/6/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "OJM",
+                  "name_en": "J Orman",
+                  "name_ch": "奧爾民"
+                },
+                "trainer": {
+                  "code": "TYS",
+                  "name_en": "Y S Tsui",
+                  "name_ch": "徐雨石"
+                }
+              },
+              {
+                "id": "20260325HV04L189",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "飛躍星伴",
+                "name_en": "LEAPING STAR",
+                "horse": {
+                  "id": "HK_2025_L189",
+                  "code": "L189"
+                },
+                "color": "b",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "133",
+                "currentWeight": "",
+                "currentRating": "056",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2025_L189",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/12/12/13/12/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "YML",
+                  "name_en": "M L Yeung",
+                  "name_ch": "楊明綸"
+                },
+                "trainer": {
+                  "code": "HDA",
+                  "name_en": "D A Hayes",
+                  "name_ch": "大衛希斯"
+                }
+              },
+              {
+                "id": "20260325HV04K003",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "康昌之星",
+                "name_en": "FORTUNE STAR",
+                "horse": {
+                  "id": "HK_2024_K003",
+                  "code": "K003"
+                },
+                "color": "gr",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "132",
+                "currentWeight": "",
+                "currentRating": "055",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2024_K003",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "7/4/1/12/2/4",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "FEL",
+                  "name_en": "L Ferraris",
+                  "name_ch": "霍宏聲"
+                },
+                "trainer": {
+                  "code": "NM",
+                  "name_en": "M Newnham",
+                  "name_ch": "廖康銘"
+                }
+              },
+              {
+                "id": "20260325HV04J266",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "香港神駒",
+                "name_en": "HARMONY GALAXY",
+                "horse": {
+                  "id": "HK_2023_J266",
+                  "code": "J266"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "131",
+                "currentWeight": "",
+                "currentRating": "054",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J266",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "5/7/10/9/9/12",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PZ",
+                  "name_en": "Z Purton",
+                  "name_ch": "潘頓"
+                },
+                "trainer": {
+                  "code": "SCS",
+                  "name_en": "C S Shum",
+                  "name_ch": "沈集成"
+                }
+              },
+              {
+                "id": "20260325HV04K155",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "爆出美麗",
+                "name_en": "BEAUTY VIVA",
+                "horse": {
+                  "id": "HK_2024_K155",
+                  "code": "K155"
+                },
+                "color": "b",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "128",
+                "currentWeight": "",
+                "currentRating": "051",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2024_K155",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/5/9/2/7/7",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BH",
+                  "name_en": "H Bowman",
+                  "name_ch": "布文"
+                },
+                "trainer": {
+                  "code": "CAS",
+                  "name_en": "A S Cruz",
+                  "name_ch": "告東尼"
+                }
+              },
+              {
+                "id": "20260325HV04K045",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "兄弟再盈",
+                "name_en": "DASHING PAL",
+                "horse": {
+                  "id": "HK_2024_K045",
+                  "code": "K045"
+                },
+                "color": "b/br",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "128",
+                "currentWeight": "",
+                "currentRating": "051",
+                "internationalRating": "",
+                "gearInfo": "H-/B1/TT",
+                "racingColorFileName": "HK_2024_K045",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "14/5",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CJE",
+                  "name_en": "C L Chau",
+                  "name_ch": "周俊樂"
+                },
+                "trainer": {
+                  "code": "MWK",
+                  "name_en": "W K Mo",
+                  "name_ch": "巫偉傑"
+                }
+              },
+              {
+                "id": "20260325HV04K536",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "八心之星",
+                "name_en": "STAR ELEGANCE",
+                "horse": {
+                  "id": "HK_2024_K536",
+                  "code": "K536"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "125",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "B/XB",
+                "racingColorFileName": "HK_2024_K536",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "2/14/12/8/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "LDE",
+                  "name_en": "K C Leung",
+                  "name_ch": "梁家俊"
+                },
+                "trainer": {
+                  "code": "WDJ",
+                  "name_en": "D J Whyte",
+                  "name_ch": "韋達"
+                }
+              },
+              {
+                "id": "20260325HV04K580",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "紅磚戰士",
+                "name_en": "RED BRICK WARRIOR",
+                "horse": {
+                  "id": "HK_2024_K580",
+                  "code": "K580"
+                },
+                "color": "b/br",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "124",
+                "currentWeight": "",
+                "currentRating": "047",
+                "internationalRating": "",
+                "gearInfo": "XB",
+                "racingColorFileName": "HK_2024_K580",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "7/8/10/10",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AA",
+                  "name_en": "A Atzeni",
+                  "name_ch": "艾兆禮"
+                },
+                "trainer": {
+                  "code": "EDJ",
+                  "name_en": "D Eustace",
+                  "name_ch": "游達榮"
+                }
+              },
+              {
+                "id": "20260325HV04K435",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "真叻仔",
+                "name_en": "EXCELLENT BOY",
+                "horse": {
+                  "id": "HK_2024_K435",
+                  "code": "K435"
+                },
+                "color": "b/br",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "121",
+                "currentWeight": "",
+                "currentRating": "044",
+                "internationalRating": "",
+                "gearInfo": "CP",
+                "racingColorFileName": "HK_2024_K435",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "8/6/11/12/13",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CML",
+                  "name_en": "M Chadwick",
+                  "name_ch": "蔡明紹"
+                },
+                "trainer": {
+                  "code": "CCW",
+                  "name_en": "C W Chang",
+                  "name_ch": "鄭俊偉"
+                }
+              },
+              {
+                "id": "20260325HV04H429",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "手到再來",
+                "name_en": "FRANTANCK",
+                "horse": {
+                  "id": "HK_2022_H429",
+                  "code": "H429"
+                },
+                "color": "b",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "042",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2022_H429",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "12/12/6/14/10/12",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CCY",
+                  "name_en": "Y L Chung",
+                  "name_ch": "鍾易禮"
+                },
+                "trainer": {
+                  "code": "NPC",
+                  "name_en": "P C Ng",
+                  "name_ch": "伍鵬志"
+                }
+              },
+              {
+                "id": "20260325HV04K306",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "堅多福",
+                "name_en": "SUPER SICARIO",
+                "horse": {
+                  "id": "HK_2024_K306",
+                  "code": "K306"
+                },
+                "color": "b",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "118",
+                "currentWeight": "",
+                "currentRating": "041",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2024_K306",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/7/10/3/4/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BA",
+                  "name_en": "A Badel",
+                  "name_ch": "巴度"
+                },
+                "trainer": {
+                  "code": "FC",
+                  "name_en": "C Fownes",
+                  "name_ch": "方嘉柏"
+                }
+              },
+              {
+                "id": "20260325HV04G230",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "佳福駒",
+                "name_en": "CELTIC TIMES",
+                "horse": {
+                  "id": "HK_2021_G230",
+                  "code": "G230"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "",
+                "handicapWeight": "130",
+                "currentWeight": "",
+                "currentRating": "053",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2021_G230",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "5/11/9/1/7/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "MKL",
+                  "name_en": "K L Man",
+                  "name_ch": "文家良"
+                }
+              },
+              {
+                "id": "20260325HV04L048",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "寫我其誰",
+                "name_en": "WHOWROTETHATSONG",
+                "horse": {
+                  "id": "HK_2025_L048",
+                  "code": "L048"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "125",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2025_L048",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "12/10/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "YCH",
+                  "name_en": "C H Yip",
+                  "name_ch": "葉楚航"
+                }
+              }
+            ]
+          },
+          {
+            "no": 5,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV05J431",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "馬力",
+                "name_en": "HORSEPOWER",
+                "horse": {
+                  "id": "HK_2023_J431",
+                  "code": "J431"
+                },
+                "color": "b",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "079",
+                "internationalRating": "",
+                "gearInfo": "XB/TT",
+                "racingColorFileName": "HK_2023_J431",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/6/4/13/5/5",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PZ",
+                  "name_en": "Z Purton",
+                  "name_ch": "潘頓"
+                },
+                "trainer": {
+                  "code": "LFC",
+                  "name_en": "F C Lor",
+                  "name_ch": "羅富全"
+                }
+              },
+              {
+                "id": "20260325HV05J082",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "年少多好",
+                "name_en": "YOUTHFUL SPIRITS",
+                "horse": {
+                  "id": "HK_2023_J082",
+                  "code": "J082"
+                },
+                "color": "b",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "079",
+                "internationalRating": "",
+                "gearInfo": "SR/V2/TT",
+                "racingColorFileName": "HK_2023_J082",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "10/6/6/8/9/10",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "FEL",
+                  "name_en": "L Ferraris",
+                  "name_ch": "霍宏聲"
+                },
+                "trainer": {
+                  "code": "NM",
+                  "name_en": "M Newnham",
+                  "name_ch": "廖康銘"
+                }
+              },
+              {
+                "id": "20260325HV05J468",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "燭光晚餐",
+                "name_en": "CANDLELIGHT DINNER",
+                "horse": {
+                  "id": "HK_2023_J468",
+                  "code": "J468"
+                },
+                "color": "b",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "134",
+                "currentWeight": "",
+                "currentRating": "078",
+                "internationalRating": "",
+                "gearInfo": "H",
+                "racingColorFileName": "HK_2023_J468",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/1/10/1/8/5",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "OJM",
+                  "name_en": "J Orman",
+                  "name_ch": "奧爾民"
+                },
+                "trainer": {
+                  "code": "TYS",
+                  "name_en": "Y S Tsui",
+                  "name_ch": "徐雨石"
+                }
+              },
+              {
+                "id": "20260325HV05H241",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "紅逸舍",
+                "name_en": "RED ELEGANCE",
+                "horse": {
+                  "id": "HK_2022_H241",
+                  "code": "H241"
+                },
+                "color": "gr",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "131",
+                "currentWeight": "",
+                "currentRating": "075",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2022_H241",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "10/8/11/9/13/12",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "KRW",
+                  "name_en": "R Kingscote",
+                  "name_ch": "金誠剛"
+                },
+                "trainer": {
+                  "code": "WDJ",
+                  "name_en": "D J Whyte",
+                  "name_ch": "韋達"
+                }
+              },
+              {
+                "id": "20260325HV05E061",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "人和家興",
+                "name_en": "HARMONY N BLESSED",
+                "horse": {
+                  "id": "HK_2020_E061",
+                  "code": "E061"
+                },
+                "color": "b",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "130",
+                "currentWeight": "",
+                "currentRating": "074",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2020_E061",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "5/9/5/9/11/9",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BHW",
+                  "name_en": "H Bentley",
+                  "name_ch": "班德禮"
+                },
+                "trainer": {
+                  "code": "HDA",
+                  "name_en": "D A Hayes",
+                  "name_ch": "大衛希斯"
+                }
+              },
+              {
+                "id": "20260325HV05L170",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "價值傳承",
+                "name_en": "TOGETHER WE VALUE",
+                "horse": {
+                  "id": "HK_2025_L170",
+                  "code": "L170"
+                },
+                "color": "b",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "128",
+                "currentWeight": "",
+                "currentRating": "072",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2025_L170",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "7/8/2",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BH",
+                  "name_en": "H Bowman",
+                  "name_ch": "布文"
+                },
+                "trainer": {
+                  "code": "YCH",
+                  "name_en": "C H Yip",
+                  "name_ch": "葉楚航"
+                }
+              },
+              {
+                "id": "20260325HV05L196",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "高士威勁",
+                "name_en": "CAUSEWAY KING",
+                "horse": {
+                  "id": "HK_2025_L196",
+                  "code": "L196"
+                },
+                "color": "b",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "067",
+                "internationalRating": "",
+                "gearInfo": "CP-",
+                "racingColorFileName": "HK_2025_L196",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PMF",
+                  "name_en": "M F Poon",
+                  "name_ch": "潘明輝"
+                },
+                "trainer": {
+                  "code": "YPF",
+                  "name_en": "P F Yiu",
+                  "name_ch": "姚本輝"
+                }
+              },
+              {
+                "id": "20260325HV05K411",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "飛龍在天",
+                "name_en": "MR DESIRA",
+                "horse": {
+                  "id": "HK_2024_K411",
+                  "code": "K411"
+                },
+                "color": "b/br",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "067",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2024_K411",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "12/4/1/3/1/2",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "HCY",
+                  "name_en": "C Y Ho",
+                  "name_ch": "何澤堯"
+                },
+                "trainer": {
+                  "code": "FC",
+                  "name_en": "C Fownes",
+                  "name_ch": "方嘉柏"
+                }
+              },
+              {
+                "id": "20260325HV05L224",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "好吉利高",
+                "name_en": "DASHING BASICS",
+                "horse": {
+                  "id": "HK_2025_L224",
+                  "code": "L224"
+                },
+                "color": "b",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "122",
+                "currentWeight": "",
+                "currentRating": "066",
+                "internationalRating": "",
+                "gearInfo": "XB-/PC1/TT-",
+                "racingColorFileName": "HK_2025_L224",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AA",
+                  "name_en": "A Atzeni",
+                  "name_ch": "艾兆禮"
+                },
+                "trainer": {
+                  "code": "NPC",
+                  "name_en": "P C Ng",
+                  "name_ch": "伍鵬志"
+                }
+              },
+              {
+                "id": "20260325HV05L214",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "友駿同心",
+                "name_en": "COPPER CORE",
+                "horse": {
+                  "id": "HK_2025_L214",
+                  "code": "L214"
+                },
+                "color": "b",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "121",
+                "currentWeight": "",
+                "currentRating": "065",
+                "internationalRating": "",
+                "gearInfo": "SR-/TT1",
+                "racingColorFileName": "HK_2025_L214",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "YML",
+                  "name_en": "M L Yeung",
+                  "name_ch": "楊明綸"
+                },
+                "trainer": {
+                  "code": "SWY",
+                  "name_en": "W Y So",
+                  "name_ch": "蘇偉賢"
+                }
+              },
+              {
+                "id": "20260325HV05L150",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "團結巴打",
+                "name_en": "HEY BROS",
+                "horse": {
+                  "id": "HK_2025_L150",
+                  "code": "L150"
+                },
+                "color": "b",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "063",
+                "internationalRating": "",
+                "gearInfo": "XB",
+                "racingColorFileName": "HK_2025_L150",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "8/5",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "TEK",
+                  "name_en": "K Teetan",
+                  "name_ch": "田泰安"
+                },
+                "trainer": {
+                  "code": "CBJ",
+                  "name_en": "B Crawford",
+                  "name_ch": "桂福特"
+                }
+              },
+              {
+                "id": "20260325HV05J465",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "品德寶寶",
+                "name_en": "BUNTA BABY",
+                "horse": {
+                  "id": "HK_2023_J465",
+                  "code": "J465"
+                },
+                "color": "b",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "118",
+                "currentWeight": "",
+                "currentRating": "062",
+                "internationalRating": "",
+                "gearInfo": "V/TT",
+                "racingColorFileName": "HK_2023_J465",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/3/1/2/3/8",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BA",
+                  "name_en": "A Badel",
+                  "name_ch": "巴度"
+                },
+                "trainer": {
+                  "code": "MKL",
+                  "name_en": "K L Man",
+                  "name_ch": "文家良"
+                }
+              },
+              {
+                "id": "20260325HV05E392",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "狀元及第",
+                "name_en": "WHIZZ KID",
+                "horse": {
+                  "id": "HK_2020_E392",
+                  "code": "E392"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "130",
+                "currentWeight": "",
+                "currentRating": "074",
+                "internationalRating": "",
+                "gearInfo": "V/TT",
+                "racingColorFileName": "HK_2020_E392",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/11/8/4/12/14",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "CAS",
+                  "name_en": "A S Cruz",
+                  "name_ch": "告東尼"
+                }
+              },
+              {
+                "id": "20260325HV05L222",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "怡傲錢莊",
+                "name_en": "CENTRAL BANK",
+                "horse": {
+                  "id": "HK_2025_L222",
+                  "code": "L222"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "067",
+                "internationalRating": "",
+                "gearInfo": "H-",
+                "racingColorFileName": "HK_2025_L222",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "EDJ",
+                  "name_en": "D Eustace",
+                  "name_ch": "游達榮"
+                }
+              }
+            ]
+          },
+          {
+            "no": 6,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV06H321",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "千杯敬典",
+                "name_en": "HAYDAY",
+                "horse": {
+                  "id": "HK_2022_H321",
+                  "code": "H321"
+                },
+                "color": "b",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "060",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2022_H321",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "5/3/7/9/9/7",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PMF",
+                  "name_en": "M F Poon",
+                  "name_ch": "潘明輝"
+                },
+                "trainer": {
+                  "code": "YPF",
+                  "name_en": "P F Yiu",
+                  "name_ch": "姚本輝"
+                }
+              },
+              {
+                "id": "20260325HV06L078",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "賢者福星",
+                "name_en": "INVINCIBLE STARR",
+                "horse": {
+                  "id": "HK_2025_L078",
+                  "code": "L078"
+                },
+                "color": "b",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "133",
+                "currentWeight": "",
+                "currentRating": "058",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2025_L078",
+                "allowance": "  ",
+                "trainerPreference": "3",
+                "last6run": "9/13/8/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "OJM",
+                  "name_en": "J Orman",
+                  "name_ch": "奧爾民"
+                },
+                "trainer": {
+                  "code": "HAD",
+                  "name_en": "D J Hall",
+                  "name_ch": "賀賢"
+                }
+              },
+              {
+                "id": "20260325HV06J539",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "皇者有利",
+                "name_en": "KING PROFIT",
+                "horse": {
+                  "id": "HK_2023_J539",
+                  "code": "J539"
+                },
+                "color": "b",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "132",
+                "currentWeight": "",
+                "currentRating": "057",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J539",
+                "allowance": "3 ",
+                "trainerPreference": "1",
+                "last6run": "2/5/4/5/6/2",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "WEC",
+                  "name_en": "E C W Wong",
+                  "name_ch": "黃智弘"
+                },
+                "trainer": {
+                  "code": "SCS",
+                  "name_en": "C S Shum",
+                  "name_ch": "沈集成"
+                }
+              },
+              {
+                "id": "20260325HV06K132",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "團結戰靈",
+                "name_en": "GENIUS BABY",
+                "horse": {
+                  "id": "HK_2024_K132",
+                  "code": "K132"
+                },
+                "color": "br",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "130",
+                "currentWeight": "",
+                "currentRating": "055",
+                "internationalRating": "",
+                "gearInfo": "CP/XB/TT",
+                "racingColorFileName": "HK_2024_K132",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "2/9/4/4/1/5",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "TEK",
+                  "name_en": "K Teetan",
+                  "name_ch": "田泰安"
+                },
+                "trainer": {
+                  "code": "CBJ",
+                  "name_en": "B Crawford",
+                  "name_ch": "桂福特"
+                }
+              },
+              {
+                "id": "20260325HV06K165",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "馬達",
+                "name_en": "MOTOR",
+                "horse": {
+                  "id": "HK_2024_K165",
+                  "code": "K165"
+                },
+                "color": "b",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "130",
+                "currentWeight": "",
+                "currentRating": "055",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2024_K165",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/7/11/10/3/1",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BH",
+                  "name_en": "H Bowman",
+                  "name_ch": "布文"
+                },
+                "trainer": {
+                  "code": "MWK",
+                  "name_en": "W K Mo",
+                  "name_ch": "巫偉傑"
+                }
+              },
+              {
+                "id": "20260325HV06J043",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "銀刺勇士",
+                "name_en": "SILVER SPURS",
+                "horse": {
+                  "id": "HK_2023_J043",
+                  "code": "J043"
+                },
+                "color": "b",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "126",
+                "currentWeight": "",
+                "currentRating": "051",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J043",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/3/9/3/1/2",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "MDB",
+                  "name_en": "D B McMonagle",
+                  "name_ch": "麥文堅"
+                },
+                "trainer": {
+                  "code": "FC",
+                  "name_en": "C Fownes",
+                  "name_ch": "方嘉柏"
+                }
+              },
+              {
+                "id": "20260325HV06E435",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "佳運發",
+                "name_en": "AWESOME TREASURE",
+                "horse": {
+                  "id": "HK_2020_E435",
+                  "code": "E435"
+                },
+                "color": "b",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "125",
+                "currentWeight": "",
+                "currentRating": "050",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2020_E435",
+                "allowance": "7 ",
+                "trainerPreference": "1",
+                "last6run": "8/4/12/1/4/5",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "WPN",
+                  "name_en": "P N Wong",
+                  "name_ch": "黃寶妮"
+                },
+                "trainer": {
+                  "code": "RW",
+                  "name_en": "J Richards",
+                  "name_ch": "黎昭昇"
+                }
+              },
+              {
+                "id": "20260325HV06H317",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "花好月盈",
+                "name_en": "DAN ATTACK",
+                "horse": {
+                  "id": "HK_2022_H317",
+                  "code": "H317"
+                },
+                "color": "b",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "125",
+                "currentWeight": "",
+                "currentRating": "050",
+                "internationalRating": "",
+                "gearInfo": "XB",
+                "racingColorFileName": "HK_2022_H317",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "5/2/3/1/4/1",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BHW",
+                  "name_en": "H Bentley",
+                  "name_ch": "班德禮"
+                },
+                "trainer": {
+                  "code": "WDJ",
+                  "name_en": "D J Whyte",
+                  "name_ch": "韋達"
+                }
+              },
+              {
+                "id": "20260325HV06H442",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "最好玩",
+                "name_en": "AMAZING FUN",
+                "horse": {
+                  "id": "HK_2022_H442",
+                  "code": "H442"
+                },
+                "color": "b",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "044",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2022_H442",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "11/14/2/9/5/7",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "KRW",
+                  "name_en": "R Kingscote",
+                  "name_ch": "金誠剛"
+                },
+                "trainer": {
+                  "code": "YCH",
+                  "name_en": "C H Yip",
+                  "name_ch": "葉楚航"
+                }
+              },
+              {
+                "id": "20260325HV06K421",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "勇敢孖寶",
+                "name_en": "BRAVE WIN",
+                "horse": {
+                  "id": "HK_2024_K421",
+                  "code": "K421"
+                },
+                "color": "br",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "118",
+                "currentWeight": "",
+                "currentRating": "043",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2024_K421",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "11/10/10/12/7/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "HCY",
+                  "name_en": "C Y Ho",
+                  "name_ch": "何澤堯"
+                },
+                "trainer": {
+                  "code": "LKW",
+                  "name_en": "K W Lui",
+                  "name_ch": "呂健威"
+                }
+              },
+              {
+                "id": "20260325HV06J375",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "銳高",
+                "name_en": "VIGOR ELLEEGANT",
+                "horse": {
+                  "id": "HK_2023_J375",
+                  "code": "J375"
+                },
+                "color": "b",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "116",
+                "currentWeight": "",
+                "currentRating": "041",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2023_J375",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "12/7/7/11/12/5",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CML",
+                  "name_en": "M Chadwick",
+                  "name_ch": "蔡明紹"
+                },
+                "trainer": {
+                  "code": "MKL",
+                  "name_en": "K L Man",
+                  "name_ch": "文家良"
+                }
+              },
+              {
+                "id": "20260325HV06J243",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "八里旺",
+                "name_en": "CALL TO COMMAND",
+                "horse": {
+                  "id": "HK_2023_J243",
+                  "code": "J243"
+                },
+                "color": "b",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "115",
+                "currentWeight": "",
+                "currentRating": "040",
+                "internationalRating": "",
+                "gearInfo": "CP/TT",
+                "racingColorFileName": "HK_2023_J243",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "3/5/12/3/10/5",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "YML",
+                  "name_en": "M L Yeung",
+                  "name_ch": "楊明綸"
+                },
+                "trainer": {
+                  "code": "CCW",
+                  "name_en": "C W Chang",
+                  "name_ch": "鄭俊偉"
+                }
+              },
+              {
+                "id": "20260325HV06H057",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "有你有我",
+                "name_en": "SAME TO YOU",
+                "horse": {
+                  "id": "HK_2022_H057",
+                  "code": "H057"
+                },
+                "color": "br",
+                "barrierDrawNumber": "",
+                "handicapWeight": "120",
+                "currentWeight": "",
+                "currentRating": "045",
+                "internationalRating": "",
+                "gearInfo": "H/P/TT",
+                "racingColorFileName": "HK_2022_H057",
+                "allowance": "  ",
+                "trainerPreference": "3",
+                "last6run": "3/10/6/4/7/4",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "NM",
+                  "name_en": "M Newnham",
+                  "name_ch": "廖康銘"
+                }
+              },
+              {
+                "id": "20260325HV06L083",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "應龍飛影",
+                "name_en": "LEADING DRAGON",
+                "horse": {
+                  "id": "HK_2025_L083",
+                  "code": "L083"
+                },
+                "color": "gr",
+                "barrierDrawNumber": "",
+                "handicapWeight": "124",
+                "currentWeight": "",
+                "currentRating": "049",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2025_L083",
+                "allowance": "  ",
+                "trainerPreference": "3",
+                "last6run": "5/6/5",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "NPC",
+                  "name_en": "P C Ng",
+                  "name_ch": "伍鵬志"
+                }
+              }
+            ]
+          },
+          {
+            "no": 7,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV07J393",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "維港激流",
+                "name_en": "VICTOR THE RAPID",
+                "horse": {
+                  "id": "HK_2023_J393",
+                  "code": "J393"
+                },
+                "color": "b",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "060",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2023_J393",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "2/3/1/6/6/3",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "LDE",
+                  "name_en": "K C Leung",
+                  "name_ch": "梁家俊"
+                },
+                "trainer": {
+                  "code": "NPC",
+                  "name_en": "P C Ng",
+                  "name_ch": "伍鵬志"
+                }
+              },
+              {
+                "id": "20260325HV07K451",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "踏雪尋梅",
+                "name_en": "GIANT BALLON",
+                "horse": {
+                  "id": "HK_2024_K451",
+                  "code": "K451"
+                },
+                "color": "b",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "134",
+                "currentWeight": "",
+                "currentRating": "059",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2024_K451",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "1/5/3/4/2/8",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PZ",
+                  "name_en": "Z Purton",
+                  "name_ch": "潘頓"
+                },
+                "trainer": {
+                  "code": "WDJ",
+                  "name_en": "D J Whyte",
+                  "name_ch": "韋達"
+                }
+              },
+              {
+                "id": "20260325HV07J143",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "日馳千里",
+                "name_en": "GIANT LEAP",
+                "horse": {
+                  "id": "HK_2023_J143",
+                  "code": "J143"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "132",
+                "currentWeight": "",
+                "currentRating": "057",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2023_J143",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "2/7/7/11/8/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AA",
+                  "name_en": "A Atzeni",
+                  "name_ch": "艾兆禮"
+                },
+                "trainer": {
+                  "code": "YPF",
+                  "name_en": "P F Yiu",
+                  "name_ch": "姚本輝"
+                }
+              },
+              {
+                "id": "20260325HV07L074",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "星威心得",
+                "name_en": "STARRY SHOW",
+                "horse": {
+                  "id": "HK_2025_L074",
+                  "code": "L074"
+                },
+                "color": "br/gr",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "129",
+                "currentWeight": "",
+                "currentRating": "054",
+                "internationalRating": "",
+                "gearInfo": "CP",
+                "racingColorFileName": "HK_2025_L074",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/11/12/11/14/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "FEL",
+                  "name_en": "L Ferraris",
+                  "name_ch": "霍宏聲"
+                },
+                "trainer": {
+                  "code": "HDA",
+                  "name_en": "D A Hayes",
+                  "name_ch": "大衛希斯"
+                }
+              },
+              {
+                "id": "20260325HV07J253",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "至合拍",
+                "name_en": "THE PERFECT MATCH",
+                "horse": {
+                  "id": "HK_2023_J253",
+                  "code": "J253"
+                },
+                "color": "b",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "129",
+                "currentWeight": "",
+                "currentRating": "054",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J253",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "7/4/3/2/2/9",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BH",
+                  "name_en": "H Bowman",
+                  "name_ch": "布文"
+                },
+                "trainer": {
+                  "code": "SCS",
+                  "name_en": "C S Shum",
+                  "name_ch": "沈集成"
+                }
+              },
+              {
+                "id": "20260325HV07G192",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "大才",
+                "name_en": "PHOENIX LIGHT",
+                "horse": {
+                  "id": "HK_2021_G192",
+                  "code": "G192"
+                },
+                "color": "b",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "128",
+                "currentWeight": "",
+                "currentRating": "053",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2021_G192",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "9/7/8/5/3/2",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "MDB",
+                  "name_en": "D B McMonagle",
+                  "name_ch": "麥文堅"
+                },
+                "trainer": {
+                  "code": "YCH",
+                  "name_en": "C H Yip",
+                  "name_ch": "葉楚航"
+                }
+              },
+              {
+                "id": "20260325HV07L144",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "頑童",
+                "name_en": "KWAI CHUNG TALENTS",
+                "horse": {
+                  "id": "HK_2025_L144",
+                  "code": "L144"
+                },
+                "color": "b/br",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "125",
+                "currentWeight": "",
+                "currentRating": "050",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2025_L144",
+                "allowance": "  ",
+                "trainerPreference": "3",
+                "last6run": "8/14",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "YML",
+                  "name_en": "M L Yeung",
+                  "name_ch": "楊明綸"
+                },
+                "trainer": {
+                  "code": "CCW",
+                  "name_en": "C W Chang",
+                  "name_ch": "鄭俊偉"
+                }
+              },
+              {
+                "id": "20260325HV07K325",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "星辰千帥",
+                "name_en": "BROWNNEEDSFURTHER",
+                "horse": {
+                  "id": "HK_2024_K325",
+                  "code": "K325"
+                },
+                "color": "b",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "048",
+                "internationalRating": "",
+                "gearInfo": "B1/TT",
+                "racingColorFileName": "HK_2024_K325",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/3/5/5/7/3",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "OJM",
+                  "name_en": "J Orman",
+                  "name_ch": "奧爾民"
+                },
+                "trainer": {
+                  "code": "HAD",
+                  "name_en": "D J Hall",
+                  "name_ch": "賀賢"
+                }
+              },
+              {
+                "id": "20260325HV07J359",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "天下寵兒",
+                "name_en": "LOVING VIBES",
+                "horse": {
+                  "id": "HK_2023_J359",
+                  "code": "J359"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "121",
+                "currentWeight": "",
+                "currentRating": "046",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J359",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "7/7/4/2/3/7",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CJE",
+                  "name_en": "C L Chau",
+                  "name_ch": "周俊樂"
+                },
+                "trainer": {
+                  "code": "NM",
+                  "name_en": "M Newnham",
+                  "name_ch": "廖康銘"
+                }
+              },
+              {
+                "id": "20260325HV07G451",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "加州得力",
+                "name_en": "CALIFORNIA DEEPLY",
+                "horse": {
+                  "id": "HK_2021_G451",
+                  "code": "G451"
+                },
+                "color": "b",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "044",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2021_G451",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "7/5/8/9/7/5",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CML",
+                  "name_en": "M Chadwick",
+                  "name_ch": "蔡明紹"
+                },
+                "trainer": {
+                  "code": "CAS",
+                  "name_en": "A S Cruz",
+                  "name_ch": "告東尼"
+                }
+              },
+              {
+                "id": "20260325HV07H068",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "妙玲瓏",
+                "name_en": "CRYSTAL POWERFUL",
+                "horse": {
+                  "id": "HK_2022_H068",
+                  "code": "H068"
+                },
+                "color": "b",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "117",
+                "currentWeight": "",
+                "currentRating": "042",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2022_H068",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "11/8/4/12/10/7",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BA",
+                  "name_en": "A Badel",
+                  "name_ch": "巴度"
+                },
+                "trainer": {
+                  "code": "MWK",
+                  "name_en": "W K Mo",
+                  "name_ch": "巫偉傑"
+                }
+              },
+              {
+                "id": "20260325HV07K281",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "幽默大師",
+                "name_en": "MASTER OF HUMOR",
+                "horse": {
+                  "id": "HK_2024_K281",
+                  "code": "K281"
+                },
+                "color": "b",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "116",
+                "currentWeight": "",
+                "currentRating": "041",
+                "internationalRating": "",
+                "gearInfo": "CP",
+                "racingColorFileName": "HK_2024_K281",
+                "allowance": "2 ",
+                "trainerPreference": "3",
+                "last6run": "12/6/11/12/12/12",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CCY",
+                  "name_en": "Y L Chung",
+                  "name_ch": "鍾易禮"
+                },
+                "trainer": {
+                  "code": "CBJ",
+                  "name_en": "B Crawford",
+                  "name_ch": "桂福特"
+                }
+              },
+              {
+                "id": "20260325HV07L079",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "越駿齊歡",
+                "name_en": "LUCKY TOGETHER",
+                "horse": {
+                  "id": "HK_2025_L079",
+                  "code": "L079"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "132",
+                "currentWeight": "",
+                "currentRating": "057",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2025_L079",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "9/9/13/12/14",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "LFC",
+                  "name_en": "F C Lor",
+                  "name_ch": "羅富全"
+                }
+              },
+              {
+                "id": "20260325HV07K125",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "富心星",
+                "name_en": "SKY CAP",
+                "horse": {
+                  "id": "HK_2024_K125",
+                  "code": "K125"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "",
+                "handicapWeight": "133",
+                "currentWeight": "",
+                "currentRating": "058",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2024_K125",
+                "allowance": "  ",
+                "trainerPreference": "3",
+                "last6run": "1/3/11/7/5/12",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "FC",
+                  "name_en": "C Fownes",
+                  "name_ch": "方嘉柏"
+                }
+              }
+            ]
+          },
+          {
+            "no": 8,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV08J260",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "一起美麗",
+                "name_en": "BEAUTY ALLIANCE",
+                "horse": {
+                  "id": "HK_2023_J260",
+                  "code": "J260"
+                },
+                "color": "b",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "078",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2023_J260",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "2/7/5/5/8/3",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AA",
+                  "name_en": "A Atzeni",
+                  "name_ch": "艾兆禮"
+                },
+                "trainer": {
+                  "code": "SJJ",
+                  "name_en": "J Size",
+                  "name_ch": "蔡約翰"
+                }
+              },
+              {
+                "id": "20260325HV08J225",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "一定掂",
+                "name_en": "SOLID WIN",
+                "horse": {
+                  "id": "HK_2023_J225",
+                  "code": "J225"
+                },
+                "color": "b",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "134",
+                "currentWeight": "",
+                "currentRating": "077",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2023_J225",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/7/1/9/6/4",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "MDB",
+                  "name_en": "D B McMonagle",
+                  "name_ch": "麥文堅"
+                },
+                "trainer": {
+                  "code": "YPF",
+                  "name_en": "P F Yiu",
+                  "name_ch": "姚本輝"
+                }
+              },
+              {
+                "id": "20260325HV08J445",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "非凡豪傑",
+                "name_en": "FLYING FORTRESS",
+                "horse": {
+                  "id": "HK_2023_J445",
+                  "code": "J445"
+                },
+                "color": "b",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "133",
+                "currentWeight": "",
+                "currentRating": "076",
+                "internationalRating": "",
+                "gearInfo": "XB/TT",
+                "racingColorFileName": "HK_2023_J445",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "7/10/2/2/10/11",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BH",
+                  "name_en": "H Bowman",
+                  "name_ch": "布文"
+                },
+                "trainer": {
+                  "code": "MWK",
+                  "name_en": "W K Mo",
+                  "name_ch": "巫偉傑"
+                }
+              },
+              {
+                "id": "20260325HV08K381",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "好實力",
+                "name_en": "FIVEFORTWO",
+                "horse": {
+                  "id": "HK_2024_K381",
+                  "code": "K381"
+                },
+                "color": "b",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "131",
+                "currentWeight": "",
+                "currentRating": "074",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2024_K381",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/4/10/6/1/12",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "FEL",
+                  "name_en": "L Ferraris",
+                  "name_ch": "霍宏聲"
+                },
+                "trainer": {
+                  "code": "LKW",
+                  "name_en": "K W Lui",
+                  "name_ch": "呂健威"
+                }
+              },
+              {
+                "id": "20260325HV08G306",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "瑪瑙",
+                "name_en": "KEEFY",
+                "horse": {
+                  "id": "HK_2021_G306",
+                  "code": "G306"
+                },
+                "color": "b",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "131",
+                "currentWeight": "",
+                "currentRating": "074",
+                "internationalRating": "",
+                "gearInfo": "CP-/V1",
+                "racingColorFileName": "HK_2021_G306",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "3/4/5/9/7/4",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PMF",
+                  "name_en": "M F Poon",
+                  "name_ch": "潘明輝"
+                },
+                "trainer": {
+                  "code": "LFC",
+                  "name_en": "F C Lor",
+                  "name_ch": "羅富全"
+                }
+              },
+              {
+                "id": "20260325HV08K186",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "蓮冠皇",
+                "name_en": "KING LOTUS",
+                "horse": {
+                  "id": "HK_2024_K186",
+                  "code": "K186"
+                },
+                "color": "b",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "127",
+                "currentWeight": "",
+                "currentRating": "070",
+                "internationalRating": "",
+                "gearInfo": "CP",
+                "racingColorFileName": "HK_2024_K186",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/11/4/2/2/3",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "HEL",
+                  "name_en": "L Hewitson",
+                  "name_ch": "希威森"
+                },
+                "trainer": {
+                  "code": "NM",
+                  "name_en": "M Newnham",
+                  "name_ch": "廖康銘"
+                }
+              },
+              {
+                "id": "20260325HV08L151",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "凌登",
+                "name_en": "WITHOUT COMPARE",
+                "horse": {
+                  "id": "HK_2025_L151",
+                  "code": "L151"
+                },
+                "color": "br",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "124",
+                "currentWeight": "",
+                "currentRating": "067",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2025_L151",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "4/2/4/2",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CJE",
+                  "name_en": "C L Chau",
+                  "name_ch": "周俊樂"
+                },
+                "trainer": {
+                  "code": "SCS",
+                  "name_en": "C S Shum",
+                  "name_ch": "沈集成"
+                }
+              },
+              {
+                "id": "20260325HV08J131",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "加州活力",
+                "name_en": "CALIFORNIA MOXIE",
+                "horse": {
+                  "id": "HK_2023_J131",
+                  "code": "J131"
+                },
+                "color": "b",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "121",
+                "currentWeight": "",
+                "currentRating": "064",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2023_J131",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/7/3/1/6/11",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PZ",
+                  "name_en": "Z Purton",
+                  "name_ch": "潘頓"
+                },
+                "trainer": {
+                  "code": "CAS",
+                  "name_en": "A S Cruz",
+                  "name_ch": "告東尼"
+                }
+              },
+              {
+                "id": "20260325HV08L167",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "三寶進財",
+                "name_en": "TRINITY TREASURE",
+                "horse": {
+                  "id": "HK_2025_L167",
+                  "code": "L167"
+                },
+                "color": "b",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "121",
+                "currentWeight": "",
+                "currentRating": "064",
+                "internationalRating": "",
+                "gearInfo": "B-",
+                "racingColorFileName": "HK_2025_L167",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "KRW",
+                  "name_en": "R Kingscote",
+                  "name_ch": "金誠剛"
+                },
+                "trainer": {
+                  "code": "EDJ",
+                  "name_en": "D Eustace",
+                  "name_ch": "游達榮"
+                }
+              },
+              {
+                "id": "20260325HV08J396",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "富國兄弟",
+                "name_en": "THRIVING BROTHERS",
+                "horse": {
+                  "id": "HK_2023_J396",
+                  "code": "J396"
+                },
+                "color": "b",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "120",
+                "currentWeight": "",
+                "currentRating": "063",
+                "internationalRating": "",
+                "gearInfo": "P-/TT",
+                "racingColorFileName": "HK_2023_J396",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "5/3/8/3/4/1",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CML",
+                  "name_en": "M Chadwick",
+                  "name_ch": "蔡明紹"
+                },
+                "trainer": {
+                  "code": "YCH",
+                  "name_en": "C H Yip",
+                  "name_ch": "葉楚航"
+                }
+              },
+              {
+                "id": "20260325HV08L124",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "熒光",
+                "name_en": "FLUORESCENCE",
+                "horse": {
+                  "id": "HK_2025_L124",
+                  "code": "L124"
+                },
+                "color": "br",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "062",
+                "internationalRating": "",
+                "gearInfo": "B-/TT",
+                "racingColorFileName": "HK_2025_L124",
+                "allowance": "7 ",
+                "trainerPreference": "1",
+                "last6run": "14/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "WPN",
+                  "name_en": "P N Wong",
+                  "name_ch": "黃寶妮"
+                },
+                "trainer": {
+                  "code": "MKL",
+                  "name_en": "K L Man",
+                  "name_ch": "文家良"
+                }
+              },
+              {
+                "id": "20260325HV08J467",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "心雄雄",
+                "name_en": "POSITIVE SMILE",
+                "horse": {
+                  "id": "HK_2023_J467",
+                  "code": "J467"
+                },
+                "color": "b",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "062",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2023_J467",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "6/1/1/3/10/2",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "YML",
+                  "name_en": "M L Yeung",
+                  "name_ch": "楊明綸"
+                },
+                "trainer": {
+                  "code": "HDA",
+                  "name_en": "D A Hayes",
+                  "name_ch": "大衛希斯"
+                }
+              },
+              {
+                "id": "20260325HV08L168",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "丞匡掠影",
+                "name_en": "DARYL FLASH",
+                "horse": {
+                  "id": "HK_2025_L168",
+                  "code": "L168"
+                },
+                "color": "br",
+                "barrierDrawNumber": "",
+                "handicapWeight": "129",
+                "currentWeight": "",
+                "currentRating": "072",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2025_L168",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "8/12/9/7",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "TYS",
+                  "name_en": "Y S Tsui",
+                  "name_ch": "徐雨石"
+                }
+              },
+              {
+                "id": "20260325HV08J446",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "將義",
+                "name_en": "FORTUNATE SON",
+                "horse": {
+                  "id": "HK_2023_J446",
+                  "code": "J446"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "066",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2023_J446",
+                "allowance": "  ",
+                "trainerPreference": "2",
+                "last6run": "10/11/4/1/7/3",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "MWK",
+                  "name_en": "W K Mo",
+                  "name_ch": "巫偉傑"
+                }
+              }
+            ]
+          },
+          {
+            "no": 9,
+            "status": "DECLARED",
+            "runners": [
+              {
+                "id": "20260325HV09K352",
+                "no": "1",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "乘數表",
+                "name_en": "SYMBOL OF STRENGTH",
+                "horse": {
+                  "id": "HK_2024_K352",
+                  "code": "K352"
+                },
+                "color": "b",
+                "barrierDrawNumber": "4",
+                "handicapWeight": "135",
+                "currentWeight": "",
+                "currentRating": "078",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2024_K352",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/3/4/6/5/10",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "FEL",
+                  "name_en": "L Ferraris",
+                  "name_ch": "霍宏聲"
+                },
+                "trainer": {
+                  "code": "LFC",
+                  "name_en": "F C Lor",
+                  "name_ch": "羅富全"
+                }
+              },
+              {
+                "id": "20260325HV09L033",
+                "no": "2",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "粵港資駒",
+                "name_en": "GREATER BAE",
+                "horse": {
+                  "id": "HK_2025_L033",
+                  "code": "L033"
+                },
+                "color": "b/br",
+                "barrierDrawNumber": "5",
+                "handicapWeight": "129",
+                "currentWeight": "",
+                "currentRating": "072",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2025_L033",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "5/1/8/9",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PZ",
+                  "name_en": "Z Purton",
+                  "name_ch": "潘頓"
+                },
+                "trainer": {
+                  "code": "EDJ",
+                  "name_en": "D Eustace",
+                  "name_ch": "游達榮"
+                }
+              },
+              {
+                "id": "20260325HV09K408",
+                "no": "3",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "精彩福星",
+                "name_en": "METRO POWER",
+                "horse": {
+                  "id": "HK_2024_K408",
+                  "code": "K408"
+                },
+                "color": "b",
+                "barrierDrawNumber": "11",
+                "handicapWeight": "128",
+                "currentWeight": "",
+                "currentRating": "071",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2024_K408",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/2/4/10/5/3",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "OJM",
+                  "name_en": "J Orman",
+                  "name_ch": "奧爾民"
+                },
+                "trainer": {
+                  "code": "HDA",
+                  "name_en": "D A Hayes",
+                  "name_ch": "大衛希斯"
+                }
+              },
+              {
+                "id": "20260325HV09L075",
+                "no": "4",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "飛馬座",
+                "name_en": "PEGAS",
+                "horse": {
+                  "id": "HK_2025_L075",
+                  "code": "L075"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "3",
+                "handicapWeight": "128",
+                "currentWeight": "",
+                "currentRating": "071",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2025_L075",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "4/7/1/4/6/10",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BH",
+                  "name_en": "H Bowman",
+                  "name_ch": "布文"
+                },
+                "trainer": {
+                  "code": "TYS",
+                  "name_en": "Y S Tsui",
+                  "name_ch": "徐雨石"
+                }
+              },
+              {
+                "id": "20260325HV09K434",
+                "no": "5",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "福星小子",
+                "name_en": "AMAZING KID",
+                "horse": {
+                  "id": "HK_2024_K434",
+                  "code": "K434"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "7",
+                "handicapWeight": "125",
+                "currentWeight": "",
+                "currentRating": "068",
+                "internationalRating": "",
+                "gearInfo": "",
+                "racingColorFileName": "HK_2024_K434",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/7/1/1/1/11",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AA",
+                  "name_en": "A Atzeni",
+                  "name_ch": "艾兆禮"
+                },
+                "trainer": {
+                  "code": "SJJ",
+                  "name_en": "J Size",
+                  "name_ch": "蔡約翰"
+                }
+              },
+              {
+                "id": "20260325HV09J519",
+                "no": "6",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "好節拍",
+                "name_en": "MY DAY MY WAY",
+                "horse": {
+                  "id": "HK_2023_J519",
+                  "code": "J519"
+                },
+                "color": "br",
+                "barrierDrawNumber": "10",
+                "handicapWeight": "125",
+                "currentWeight": "",
+                "currentRating": "068",
+                "internationalRating": "",
+                "gearInfo": "CP/TT",
+                "racingColorFileName": "HK_2023_J519",
+                "allowance": "2 ",
+                "trainerPreference": "1",
+                "last6run": "1/10/2/8/1/2",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "CJE",
+                  "name_en": "C L Chau",
+                  "name_ch": "周俊樂"
+                },
+                "trainer": {
+                  "code": "SCS",
+                  "name_en": "C S Shum",
+                  "name_ch": "沈集成"
+                }
+              },
+              {
+                "id": "20260325HV09G016",
+                "no": "7",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "鈁糖武士",
+                "name_en": "SUGAR SUGAR",
+                "horse": {
+                  "id": "HK_2021_G016",
+                  "code": "G016"
+                },
+                "color": "br",
+                "barrierDrawNumber": "2",
+                "handicapWeight": "123",
+                "currentWeight": "",
+                "currentRating": "066",
+                "internationalRating": "",
+                "gearInfo": "V-/B2/TT",
+                "racingColorFileName": "HK_2021_G016",
+                "allowance": "3 ",
+                "trainerPreference": "1",
+                "last6run": "7/3/10/1/7/6",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "WEC",
+                  "name_en": "E C W Wong",
+                  "name_ch": "黃智弘"
+                },
+                "trainer": {
+                  "code": "FC",
+                  "name_en": "C Fownes",
+                  "name_ch": "方嘉柏"
+                }
+              },
+              {
+                "id": "20260325HV09J370",
+                "no": "8",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "加州本事",
+                "name_en": "CALIFORNIA BLITZ",
+                "horse": {
+                  "id": "HK_2023_J370",
+                  "code": "J370"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "12",
+                "handicapWeight": "122",
+                "currentWeight": "",
+                "currentRating": "065",
+                "internationalRating": "",
+                "gearInfo": "B/TT",
+                "racingColorFileName": "HK_2023_J370",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "3/2/3/1/1/3",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "PMF",
+                  "name_en": "M F Poon",
+                  "name_ch": "潘明輝"
+                },
+                "trainer": {
+                  "code": "MWK",
+                  "name_en": "W K Mo",
+                  "name_ch": "巫偉傑"
+                }
+              },
+              {
+                "id": "20260325HV09K074",
+                "no": "9",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "怡昌光輝",
+                "name_en": "YEE CHEONG GLORY",
+                "horse": {
+                  "id": "HK_2024_K074",
+                  "code": "K074"
+                },
+                "color": "gr",
+                "barrierDrawNumber": "6",
+                "handicapWeight": "121",
+                "currentWeight": "",
+                "currentRating": "064",
+                "internationalRating": "",
+                "gearInfo": "CP/TT",
+                "racingColorFileName": "HK_2024_K074",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "1/4/3/14/8/8",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "BA",
+                  "name_en": "A Badel",
+                  "name_ch": "巴度"
+                },
+                "trainer": {
+                  "code": "RW",
+                  "name_en": "J Richards",
+                  "name_ch": "黎昭昇"
+                }
+              },
+              {
+                "id": "20260325HV09J513",
+                "no": "10",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "輕功猛男",
+                "name_en": "CHARMING BABE",
+                "horse": {
+                  "id": "HK_2023_J513",
+                  "code": "J513"
+                },
+                "color": "ch",
+                "barrierDrawNumber": "8",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "062",
+                "internationalRating": "",
+                "gearInfo": "B",
+                "racingColorFileName": "HK_2023_J513",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "10/5/7/8/8/7",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "KRW",
+                  "name_en": "R Kingscote",
+                  "name_ch": "金誠剛"
+                },
+                "trainer": {
+                  "code": "YPF",
+                  "name_en": "P F Yiu",
+                  "name_ch": "姚本輝"
+                }
+              },
+              {
+                "id": "20260325HV09L174",
+                "no": "11",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "鋼鐵安防",
+                "name_en": "IRON SECURITY",
+                "horse": {
+                  "id": "HK_2025_L174",
+                  "code": "L174"
+                },
+                "color": "br",
+                "barrierDrawNumber": "1",
+                "handicapWeight": "119",
+                "currentWeight": "",
+                "currentRating": "062",
+                "internationalRating": "",
+                "gearInfo": "CP/TT",
+                "racingColorFileName": "HK_2025_L174",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "11/9",
+                "saddleClothNo": null,
+                "trumpCard": true,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "LDE",
+                  "name_en": "K C Leung",
+                  "name_ch": "梁家俊"
+                },
+                "trainer": {
+                  "code": "CCW",
+                  "name_en": "C W Chang",
+                  "name_ch": "鄭俊偉"
+                }
+              },
+              {
+                "id": "20260325HV09K342",
+                "no": "12",
+                "standbyNo": "",
+                "status": "Declared",
+                "name_ch": "合夥飛馳",
+                "name_en": "COPARTNER FLEET",
+                "horse": {
+                  "id": "HK_2024_K342",
+                  "code": "K342"
+                },
+                "color": "br",
+                "barrierDrawNumber": "9",
+                "handicapWeight": "118",
+                "currentWeight": "",
+                "currentRating": "061",
+                "internationalRating": "",
+                "gearInfo": "XB",
+                "racingColorFileName": "HK_2024_K342",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "8/1/11/13/12/9",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": true,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "YML",
+                  "name_en": "M L Yeung",
+                  "name_ch": "楊明綸"
+                },
+                "trainer": {
+                  "code": "LKW",
+                  "name_en": "K W Lui",
+                  "name_ch": "呂健威"
+                }
+              },
+              {
+                "id": "20260325HV09K363",
+                "no": "",
+                "standbyNo": "1",
+                "status": "Standby",
+                "name_ch": "星月飛雲",
+                "name_en": "CELESTIAL HERO",
+                "horse": {
+                  "id": "HK_2024_K363",
+                  "code": "K363"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "133",
+                "currentWeight": "",
+                "currentRating": "076",
+                "internationalRating": "",
+                "gearInfo": "CP-/B1",
+                "racingColorFileName": "HK_2024_K363",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "4/4/3/6/6/1",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "MDB",
+                  "name_en": "D B McMonagle",
+                  "name_ch": "麥文堅"
+                },
+                "trainer": {
+                  "code": "WDJ",
+                  "name_en": "D J Whyte",
+                  "name_ch": "韋達"
+                }
+              },
+              {
+                "id": "20260325HV09E459",
+                "no": "",
+                "standbyNo": "2",
+                "status": "Standby",
+                "name_ch": "美麗邂逅",
+                "name_en": "BEAUTY GLORY",
+                "horse": {
+                  "id": "HK_2020_E459",
+                  "code": "E459"
+                },
+                "color": "b",
+                "barrierDrawNumber": "",
+                "handicapWeight": "120",
+                "currentWeight": "",
+                "currentRating": "063",
+                "internationalRating": "",
+                "gearInfo": "TT",
+                "racingColorFileName": "HK_2020_E459",
+                "allowance": "  ",
+                "trainerPreference": "1",
+                "last6run": "8/2/8/12/7/1",
+                "saddleClothNo": null,
+                "trumpCard": false,
+                "priority": false,
+                "finalPosition": 0,
+                "deadHeat": false,
+                "winOdds": "",
+                "jockey": {
+                  "code": "AAA",
+                  "name_en": "   ---",
+                  "name_ch": "   ---"
+                },
+                "trainer": {
+                  "code": "CAS",
+                  "name_en": "A S Cruz",
+                  "name_ch": "告東尼"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
