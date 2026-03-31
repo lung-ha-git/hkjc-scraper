@@ -1,0 +1,8 @@
+node_modules/
+web-app/src/node_modules/
+data/
+logs/
+
+# Environment
+config/.env
+*.env
