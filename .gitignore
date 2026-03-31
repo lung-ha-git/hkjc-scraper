@@ -54,6 +54,10 @@ coverage/
 *.pb
 *.onnx
 
+# Model checkpoints
+src/models/checkpoints/
+src/models/model_registry.json
+
 # Archives & Backups
 *.archive
 *.zip
