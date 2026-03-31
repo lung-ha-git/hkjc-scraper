@@ -63,6 +63,11 @@ src/models/model_registry.json
 *.zip
 Backup/
 
+# Data
+data/
+*.csv
+*.json
+
 # Misc
 .cache/
 temp/
