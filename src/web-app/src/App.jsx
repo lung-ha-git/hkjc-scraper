@@ -385,17 +385,9 @@ function App() {
     return { type: 'color', value: JERSEY_COLORS[(horseNo - 1) % JERSEY_COLORS.length] };
   };
 
-  if (loading) {
-    return (
-      <div className="app">
-        <div className="loading">載入中...</div>
-      </div>
-    );
-  }
-
+  // ⚠️ These must be before `if (loading)` — hooks after early returns violate React rules
   const currentRaceCards = racecardData?.racecards?.find(rc => rc.race_no === selectedRaceNo);
   const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo) || [];
-  // Filter predictions to exclude scratched horses
   const activePredictions = predictions.filter(p => !scratched.includes(p.horse_no));
 
   // TASK-017: Race time — format and near-start highlight
@@ -432,6 +424,14 @@ function App() {
     if (cond) return cond;
     return '-';
   }, [currentRaceCards?.track_code, currentRaceCards?.track_condition]);
+
+  if (loading) {
+    return (
+      <div className="app">
+        <div className="loading">載入中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
