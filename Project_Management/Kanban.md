@@ -3,8 +3,6 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 ---
 ## 待處理
 
-## 待處理
-
 （無）
 
 ## 進行中
@@ -70,6 +68,31 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 - `tags:` 加上對應成員標籤（`#Dev_Alpha` / `#The_Debugger` / `#The_Tester`）
 - 不允許建立「沒有人負責」的待處理任務
 
+## ⚠️ 狀態更新規則
+
+**每次 Task 狀態改變時，必須同時滿足以下兩件事：**
+
+1. **Task 文件更新**
+   - `status:` 欄位改為新狀態
+   - `completed:` / `verified:` / `started:` 等時間欄位填寫
+   - `tags:` **必須包含狀態標籤**（`#待處理` / `#進行中` / `#已完成` / `#已驗證` / `#需重做`）
+
+2. **Kanban.md 更新**
+   - 將 Task 引用移動到對應欄位
+   - **必須加上狀態標籤**，例如：`[[TASK-015|TASK-015: ...]] #已完成 #Dev_Alpha`
+
+**⚠️ 錯誤範例（狀態標籤缺失）：**
+```
+- [ ] [[TASK-XXX|TASK-XXX: 任務標題]] #Dev_Alpha  ← ❌ 缺 #進行中
+```
+
+**✅ 正確範例：**
+```
+- [ ] [[TASK-XXX|TASK-XXX: 任務標題]] #待處理 #Dev_Alpha
+- [ ] [[TASK-XXX|TASK-XXX: 任務標題]] #進行中 #Dev_Alpha
+- [ ] [[TASK-XXX|TASK-XXX: 任務標題]] #已完成 #Dev_Alpha
+```
+
 
 
 **狀態標籤**（決定 Kanban 欄位）：
@@ -80,6 +103,16 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 
 **優先級標籤**：
 - `#High`, `#Medium`, `#Low`
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,6 +1,10 @@
 # Subagents Cron Job 指南
 
-**觸發頻率**: 每 15 分鐘  
+> ⚠️ **已整合至中央 Team Check**：此文件的職責由「Team_Check｜所有項目（每 15 分鐘）」Cron Job 統一執行，不再需要獨立 Job。
+>
+> 參見：`Team_Check｜所有項目（每 15 分鐘）`（Cron ID: a81ce79b）
+
+**觸發頻率**: 每 15 分鐘（統一 Job）  
 **路徑**: `/Users/fatlung/ClawObsidian/Claw/The_Brain`
 
 ---

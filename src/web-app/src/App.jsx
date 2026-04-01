@@ -390,18 +390,19 @@ function App() {
   const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo) || [];
   const activePredictions = predictions.filter(p => !scratched.includes(p.horse_no));
 
-  // TASK-017: Race time — format and near-start highlight
-  const raceTimeStr = currentRaceCards?.race_time || null;
+  // TASK-017: Race time — format post_time and near-start highlight
+  const raceTimeStr = useMemo(() => {
+    const pt = currentRaceCards?.post_time;
+    if (!pt) return null;
+    const d = new Date(pt);
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }, [currentRaceCards?.post_time]);
   const isRaceTimeNear = useMemo(() => {
-    if (!raceTimeStr) return false;
-    const [h, m] = raceTimeStr.split(':').map(Number);
-    const raceDate = selectedFixture?.date;
-    if (!raceDate) return false;
-    const [y, mo, d] = raceDate.split('-').map(Number);
-    const raceDateTime = new Date(y, mo - 1, d, h, m, 0);
+    if (!currentRaceCards?.post_time) return false;
+    const raceDateTime = new Date(currentRaceCards.post_time);
     const diffMin = (raceDateTime - new Date()) / 60000;
     return diffMin > 0 && diffMin < 5;
-  }, [raceTimeStr, selectedFixture?.date]);
+  }, [currentRaceCards?.post_time]);
 
   // TASK-018: Format last update time (HH:MM:SS)
   const lastUpdateLabel = useMemo(() => {
@@ -415,15 +416,11 @@ function App() {
     return (Date.now() - lastOddsUpdate.getTime()) > 2 * 60 * 1000;
   }, [lastOddsUpdate]);
 
-  // TASK-015: Track code + condition label
+  // TASK-015: Track label
   const trackLabel = useMemo(() => {
-    const code = currentRaceCards?.track_code;
-    const cond = currentRaceCards?.track_condition;
-    if (code && cond) return `${code} / ${cond}`;
-    if (code) return code;
-    if (cond) return cond;
-    return '-';
-  }, [currentRaceCards?.track_code, currentRaceCards?.track_condition]);
+    const code = currentRaceCards?.race_track;
+    return code || '-';
+  }, [currentRaceCards?.race_track]);
 
   if (loading) {
     return (
@@ -461,7 +458,7 @@ function App() {
                 <div className="race-info">
                   <span>第 {selectedRaceNo} 場</span>
                   <span>{currentRaceCards?.distance || '-'}m</span>
-                  <span>{currentRaceCards?.class || '-'}</span>
+                  <span>{currentRaceCards?.class_ch || '-'}</span>
                   {/* TASK-015: Track code + condition */}
                   <span className="track-label">{trackLabel}</span>
                   {/* TASK-017: Race start time */}
