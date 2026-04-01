@@ -17,6 +17,9 @@ FROM nginx:alpine
 # 安裝 curl 用於健康檢查
 RUN apk add --no-cache curl
 
+# 複製自定義 nginx 配置（包含 /api proxy）
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # 複製構建產物
 COPY --from=builder /app/dist /usr/share/nginx/html
 # 複製額外的靜態頁面 (logs.html)
