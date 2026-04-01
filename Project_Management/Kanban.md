@@ -3,6 +3,8 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 ---
 ## 待處理
 
+## 待處理
+
 （無）
 
 ## 進行中
@@ -11,7 +13,10 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 
 ## 已完成
 
-（無）
+- [x] [[TASK-015|TASK-015: Webapp 顯示跑道資料]] #已完成 #Dev_Alpha #High
+- [x] [[TASK-016|TASK-016: 修復 Webapp 不明時間格式 `上午：08:10...`]] #已完成 #Dev_Alpha #Medium
+- [x] [[TASK-017|TASK-017: Webapp 增加開跑時間（從 WebSocket 獲取）]] #已完成 #Dev_Alpha #High
+- [x] [[TASK-018|TASK-018: Webapp 增加賠率更新時間]] #已完成 #Dev_Alpha #Medium
 
 ## 已驗證
 
@@ -58,7 +63,14 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 ### Dev_Alpha 提醒
 參見 [[Dev_Alpha 工作流程指南]]
 
-## 🏷️ 標籤規範
+## ⚠️ 任務創建規則
+
+**創建新 Task 時，必須同時指派負責人：**
+- `assignee:` 填寫實際負責人（Dev_Alpha / The_Debugger / The_Tester）
+- `tags:` 加上對應成員標籤（`#Dev_Alpha` / `#The_Debugger` / `#The_Tester`）
+- 不允許建立「沒有人負責」的待處理任務
+
+
 
 **狀態標籤**（決定 Kanban 欄位）：
 - `#待處理`, `#進行中`, `#已完成`, `#已驗證`, `#需重做`
@@ -68,6 +80,12 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 
 **優先級標籤**：
 - `#High`, `#Medium`, `#Low`
+
+
+
+
+
+
 
 
 

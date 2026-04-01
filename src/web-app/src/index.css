@@ -513,6 +513,41 @@ body {
   font-size: 0.82rem;
 }
 
+/* TASK-015: Track code label */
+.track-label {
+  color: #98d8c8;
+  font-size: 0.85rem;
+}
+
+/* TASK-017: Race start time */
+.race-time {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.race-time-near {
+  color: #f8b500;
+  font-weight: bold;
+  animation: pulse-gold 1s ease-in-out infinite alternate;
+}
+@keyframes pulse-gold {
+  from { opacity: 0.8; }
+  to { opacity: 1; text-shadow: 0 0 6px #f8b500; }
+}
+
+/* TASK-018: Odds update status */
+.odds-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+.last-update-time {
+  color: #60a5fa;
+}
+.stale-warning {
+  color: #ff6b6b;
+}
+
 .race-table {
   width: 100%;
   border-collapse: collapse;

@@ -113,6 +113,22 @@ function App() {
   // WebSocket for real-time odds
   const { oddsData, oddsHistory, connected, error: oddsError, session, scratched } = useOddsSocket(raceId);
 
+  // TASK-018: Track last odds update time
+  const [lastOddsUpdate, setLastOddsUpdate] = useState(null);
+
+  useEffect(() => {
+    if (!raceId) { setLastOddsUpdate(null); return; }
+    if (connected && !lastOddsUpdate) {
+      setLastOddsUpdate(new Date());
+    }
+  }, [connected, raceId]);
+
+  useEffect(() => {
+    if (Object.keys(oddsData || {}).length > 0) {
+      setLastOddsUpdate(new Date());
+    }
+  }, [oddsData]);
+
   // Direct history fetch for sparklines (backup when socket hook doesn't populate history)
   const [sparklineHistory, setSparklineHistory] = useState({});
 
@@ -382,6 +398,41 @@ function App() {
   // Filter predictions to exclude scratched horses
   const activePredictions = predictions.filter(p => !scratched.includes(p.horse_no));
 
+  // TASK-017: Race time — format and near-start highlight
+  const raceTimeStr = currentRaceCards?.race_time || null;
+  const isRaceTimeNear = useMemo(() => {
+    if (!raceTimeStr) return false;
+    const [h, m] = raceTimeStr.split(':').map(Number);
+    const raceDate = selectedFixture?.date;
+    if (!raceDate) return false;
+    const [y, mo, d] = raceDate.split('-').map(Number);
+    const raceDateTime = new Date(y, mo - 1, d, h, m, 0);
+    const diffMin = (raceDateTime - new Date()) / 60000;
+    return diffMin > 0 && diffMin < 5;
+  }, [raceTimeStr, selectedFixture?.date]);
+
+  // TASK-018: Format last update time (HH:MM:SS)
+  const lastUpdateLabel = useMemo(() => {
+    if (!lastOddsUpdate) return null;
+    return lastOddsUpdate.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }, [lastOddsUpdate]);
+
+  // TASK-018: Stale warning (> 2 minutes since last update)
+  const isStale = useMemo(() => {
+    if (!lastOddsUpdate) return false;
+    return (Date.now() - lastOddsUpdate.getTime()) > 2 * 60 * 1000;
+  }, [lastOddsUpdate]);
+
+  // TASK-015: Track code + condition label
+  const trackLabel = useMemo(() => {
+    const code = currentRaceCards?.track_code;
+    const cond = currentRaceCards?.track_condition;
+    if (code && cond) return `${code} / ${cond}`;
+    if (code) return code;
+    if (cond) return cond;
+    return '-';
+  }, [currentRaceCards?.track_code, currentRaceCards?.track_condition]);
+
   return (
     <div className="app">
       <header className="header">
@@ -411,11 +462,18 @@ function App() {
                   <span>第 {selectedRaceNo} 場</span>
                   <span>{currentRaceCards?.distance || '-'}m</span>
                   <span>{currentRaceCards?.class || '-'}</span>
-                  {session?.started_at && (
-                    <span className="odds-service-time">
-                      📡 {fmtTime(session.started_at)}{session.finished_at ? ` – ${fmtTime(session.finished_at)}` : ' – ...'}
-                    </span>
-                  )}
+                  {/* TASK-015: Track code + condition */}
+                  <span className="track-label">{trackLabel}</span>
+                  {/* TASK-017: Race start time */}
+                  <span className={`race-time ${isRaceTimeNear ? 'race-time-near' : ''}`}>
+                    {raceTimeStr ? `⏱ ${raceTimeStr}` : '⏱ -'}
+                  </span>
+                  {/* TASK-018: Connection status + last update time */}
+                  <span className="odds-status">
+                    {connected ? '🟢' : '🔴'}
+                    {lastUpdateLabel && <span className="last-update-time"> {lastUpdateLabel}</span>}
+                    {isStale && <span className="stale-warning"> ⚠️</span>}
+                  </span>
                 </div>
               </div>
               
@@ -664,6 +722,17 @@ function App() {
         <div className="ut-mobile-header">
           <span>第 {selectedRaceNo || '-'} 場</span>
           <span>{currentRaceCards?.distance ? `${currentRaceCards.distance}m` : ''}</span>
+          {/* TASK-015: Track code */}
+          <span className="track-label">{trackLabel}</span>
+          {/* TASK-017: Race start time */}
+          <span className={`race-time ${isRaceTimeNear ? 'race-time-near' : ''}`}>
+            {raceTimeStr ? `⏱ ${raceTimeStr}` : '⏱ -'}
+          </span>
+          {/* TASK-018: Connection indicator */}
+          <span className="odds-status">
+            {connected ? '🟢' : '🔴'}
+            {isStale && <span className="stale-warning"> ⚠️</span>}
+          </span>
           {raceConfidence != null && (
             <span className={`conf-dot ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
               信心 {raceConfidence}
