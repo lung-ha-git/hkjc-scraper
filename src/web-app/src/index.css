@@ -355,9 +355,23 @@ body {
   white-space: nowrap;
 }
 
-.ut-no { text-align: center; width: 26px; }
+.ut-no {
+  text-align: center;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 2px 0;
+}
+.ut-no .horse-no-label {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--text-muted);
+  min-width: 12px;
+}
 .ut-name { min-width: 60px; max-width: 72px; }
-.ut-jersey { width: 22px; height: 16px; object-fit: contain; border-radius: 2px; display: block; margin: 0 auto; }
+.ut-jersey { width: 22px; height: 16px; object-fit: contain; border-radius: 2px; }
 .ut-draw { text-align: center; width: 22px; }
 .ut-pred { text-align: center; width: 26px; }
 .ut-rating { text-align: center; width: 28px; font-size: 0.7rem; color: var(--text-muted); }

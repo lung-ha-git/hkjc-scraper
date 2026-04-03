@@ -120,6 +120,7 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
                 <div className={`rank rank-${p?.predicted_rank}`}>{p ? p.predicted_rank : '—'}</div>
               </td>
               <td className="ut-no">
+                <span className="horse-no-label">{entry.horse_no}</span>
                 {proxyJerseyUrl(entry.jersey_url) ? (
                   <img src={proxyJerseyUrl(entry.jersey_url)} alt={entry.horse_no} className="ut-jersey" />
                 ) : (
