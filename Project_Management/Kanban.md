@@ -11,17 +11,18 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 
 ## 已完成
 
-- [x] [[TASK-015|TASK-015: Webapp 顯示跑道資料]] #已完成 #Dev_Alpha #High
-- [x] [[TASK-016|TASK-016: 修復 Webapp 不明時間格式 `上午：08:10...`]] #已完成 #Dev_Alpha #Medium
-- [x] [[TASK-017|TASK-017: Webapp 增加開跑時間（從 WebSocket 獲取）]] #已完成 #Dev_Alpha #High
-- [x] [[TASK-018|TASK-018: Webapp 增加賠率更新時間]] #已完成 #Dev_Alpha #Medium
+（無）
 
 ## 已驗證
 
+- [x] [[TASK-015|TASK-015: Webapp 顯示跑道資料]] #已驗證 #The_Debugger #Dev_Alpha #High
+- [x] [[TASK-016|TASK-016: 修復 Webapp 不明時間格式 `上午：08:10...`]] #已驗證 #The_Debugger #Dev_Alpha #Medium
+- [x] [[TASK-017|TASK-017: Webapp 增加開跑時間（從 WebSocket 獲取）]] #已驗證 #The_Debugger #Dev_Alpha #High
+- [x] [[TASK-018|TASK-018: Webapp 增加賠率更新時間]] #已驗證 #The_Debugger #Dev_Alpha #Medium
 - [x] [[TASK-010|TASK-010: Odds Collector Log 重新實作 + 驗證完整功能]] #已驗證 #The_Debugger #High
-- [x] [[TASK-012|TASK-012: 修復 Scraper `isRaceDay` ReferenceError]] #Dev_Alpha #High
-- [x] [[TASK-013|TASK-013: API Server 啟動時預加載 Odds Cache]] #Dev_Alpha #High
-- [x] [[TASK-014|TASK-014: API Server 預加載 Odds Cache（預防重啟後失效）]] #Dev_Alpha #High
+- [x] [[TASK-012|TASK-012: 修復 Scraper `isRaceDay` ReferenceError]] #已驗證 #Dev_Alpha #High
+- [x] [[TASK-013|TASK-013: API Server 啟動時預加載 Odds Cache]] #已驗證 #Dev_Alpha #High
+- [x] [[TASK-014|TASK-014: API Server 預加載 Odds Cache（預防重啟後失效）]] #已驗證 #Dev_Alpha #High
 
 - [x] [[TASK-011|TASK-011: Pipeline Cron Job 未運行調查 + MongoDB_URI 修復驗證]] #已驗證 #The_Debugger #High
 - [x] [[TASK-009|TASK-009: Team Check Cron Log Accumulation]] #已驗證 #Dev_Alpha #Medium
@@ -29,7 +30,7 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 - [x] [[TASK-007|TASK-007: 修復 predict API Feature Mismatch (19→29 features)]] #已驗證 #The_Debugger #High
 - [x] [[TASK-006|TASK-006: 修復 sync_past_race_results 查詢錯誤]] #已驗證 #The_Debugger #High
 - [x] [[TASK-003|TASK-003: 撰寫 Docker 安裝與起始文檔]] #已驗證 #The_Tester #High
-- [x] [[TASK-001|TASK-001: 製作 Feature Document & Technical Guide]]
+- [x] [[TASK-001|TASK-001: 製作 Feature Document & Technical Guide]] #已驗證 #Dev_Alpha #Medium
 - [x] [[TASK-002|TASK-002: Docker 化 HKJC 專案]] #已驗證 #Dev_Alpha #High
 - [x] [[TASK-005|TASK-005: 設定 Cloudflare Tunnel (horse.fatlung.com)]] #已驗證 #Dev_Alpha #High
 

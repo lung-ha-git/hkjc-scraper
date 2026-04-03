@@ -9,8 +9,13 @@ started:
 completed: 2026-04-01 
 verified: 
 tags:
-  - 待處理
+  - 已完成
   - Dev_Alpha
+verified: 2026-04-01
+reviewer_notes: |
+  ✅ 驗收標準 1-2 全部滿足：怪異時間文字已移除，無替代顯示
+  ✅ Bug fix 精準，直接刪除目標 JSX
+  → 移至「已驗證」
 ---
 
 # TASK-016: 移除 WebSocket 連線時長顯示 `📡 上午：08:10...`

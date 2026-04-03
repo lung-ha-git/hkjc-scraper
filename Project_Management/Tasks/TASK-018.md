@@ -9,8 +9,13 @@ started:
 completed: 2026-04-01 
 verified: 
 tags:
-  - 待處理
+  - 已完成
   - Dev_Alpha
+verified: 2026-04-01
+reviewer_notes: |
+  ✅ 驗收標準 1-4 全部滿足：桌面顯示精確秒數、綠/紅連線燈、手機同步、2分鐘警告
+  ✅ 斷線處理完善，超時提示清晰
+  → 移至「已驗證」
 ---
 
 # TASK-018: Webapp 增加賠率更新時間

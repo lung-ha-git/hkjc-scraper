@@ -844,7 +844,7 @@ app.get('/api/models/download/:filename', (req, res) => {
 });
 
 // ─── Logs download API ─────────────────────────────────────────────────────────
-const PIPELINE_LOGS_DIR = '/app/logs/pipeline';
+const PIPELINE_LOGS_DIR = '/app/logs/pipeline/pipeline';
 const ODDS_LOGS_DIR = '/app/scrapers/logs';
 
 // List all available logs

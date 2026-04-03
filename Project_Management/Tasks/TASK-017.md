@@ -9,8 +9,13 @@ started:
 completed: 2026-04-01 
 verified: 
 tags:
-  - 待處理
+  - 已完成
   - Dev_Alpha
+verified: 2026-04-01
+reviewer_notes: |
+  ✅ 驗收標準 1-4 全部滿足：桌面/手機顯示、格式統一「⏱ 14:30」、臨近高亮
+  ✅ 利用現有 /api/racecards 的 race_time，無需新增 API
+  → 移至「已驗證」
 ---
 
 # TASK-017: Webapp 增加開跑時間（從 WebSocket 獲取）

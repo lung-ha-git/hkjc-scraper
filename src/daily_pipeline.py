@@ -44,14 +44,37 @@ from src.scheduler.queue_worker import QueueWorker
 LOG_DIR = PROJECT_ROOT / "logs" / "pipeline"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+# NOTE: basicConfig() must come AFTER all imports to avoid child modules'
+# basicConfig(level=INFO) calls (which have no handlers) preempting our FileHandler.
+# See: https://docs.python.org/3/library/logging.html#logging.basicConfig
+# "basicConfig() does nothing if the root logger already has handlers configured."
+# NOTE: basicConfig() must come AFTER all imports to avoid child modules'
+# basicConfig(level=INFO) calls (which have no handlers) preempting our FileHandler.
+# See: https://docs.python.org/3/library/logging.html#logging.basicConfig
+# "basicConfig() does nothing if the root logger already has handlers configured."
+FMT = '%(asctime)s - %(levelname)s - %(message)s'
+FILE_LOG = LOG_DIR / f"pipeline_{datetime.now().strftime('%Y%m%d')}.log"
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_DIR / f"pipeline_{datetime.now().strftime('%Y%m%d')}.log"),
-        logging.StreamHandler()
-    ]
+    format=FMT,
+    handlers=[logging.FileHandler(FILE_LOG), logging.StreamHandler()]
 )
+
+# Apply format to ALL existing handlers (child modules may have added
+# StreamHandlers without a format during import, making basicConfig() a no-op).
+_root = logging.getLogger()
+_formatter = logging.Formatter(FMT)
+for h in _root.handlers:
+    h.setFormatter(_formatter)
+
+# Ensure FileHandler is present
+_root_has_file = any(isinstance(h, logging.FileHandler) for h in _root.handlers)
+if not _root_has_file:
+    fh = logging.FileHandler(FILE_LOG)
+    fh.setFormatter(_formatter)
+    _root.addHandler(fh)
+
 logger = logging.getLogger(__name__)
 
 

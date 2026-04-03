@@ -9,8 +9,13 @@ started:
 completed: 2026-04-01 
 verified: 
 tags:
-  - 待處理
+  - 已完成
   - Dev_Alpha
+verified: 2026-04-01
+reviewer_notes: |
+  ✅ 驗收標準 1-3 全部滿足：桌面版顯示跑道代碼、手機版顯示、無資料顯示「-」
+  ✅ 代碼修改合理，使用現有 API 欄位
+  → 移至「已驗證」
 ---
 
 # TASK-015: Webapp 顯示跑道資料
