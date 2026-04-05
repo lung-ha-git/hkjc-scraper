@@ -30,7 +30,8 @@ let lastScrapeTime = 0;
 let isScraping = false;
 let finishedRaces = new Set();  // races that have results - never scrape again
 let raceScratched = {};                 // race_id -> [scratched horse nos]
-let currentSchedule = SCRAPE_INTERVAL_NON_RACE_DAY;
+// No persistent schedule state needed — scrapeCycle schedules itself via scheduleNext()
+
 let scheduledTimeout = null;
 let logStream = null;
 
@@ -559,24 +560,7 @@ async function main() {
 ╚══════════════════════════════════════════════════════╝
   `);
   
-  // Check race day status periodically
-  const checkRaceDay = async () => {
-    const { isRaceDay: raceDayResult, venue } = await isRaceDay();
-    const newInterval = raceDayResult ? SCRAPE_INTERVAL_RACE_DAY : SCRAPE_INTERVAL_NON_RACE_DAY;
-    
-    if (newInterval !== currentSchedule) {
-      log(`[${new Date().toLocaleTimeString()}] 📅 Schedule changed: ${currentSchedule === SCRAPE_INTERVAL_RACE_DAY ? 'Race day' : 'Non-race day'} → ${raceDayResult ? 'Race day' : 'Non-race day'}`);
-      currentSchedule = newInterval;
-    }
-    
-    // Reschedule with new interval
-    scheduleNext(1000); // Quick re-check
-  };
-  
-  // Check race day status every hour
-  setInterval(checkRaceDay, 60 * 60 * 1000);
-  
-  // Initial scrape
+  // Initial scrape — scheduleNext() inside scrapeCycle handles all rescheduling
   await scrapeCycle();
 }
 
