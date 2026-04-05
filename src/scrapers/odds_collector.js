@@ -2,8 +2,9 @@
  * HKJC Live Odds Collector - Smart Scheduling
  * 
  * Logic:
+ * - Wake every hour (lightweight check)
  * - Race day: scrape every 5 seconds
- * - Non-race day: scrape once every 12 hours
+ * - Non-race day: scrape only if > 12 hours since last successful scrape
  * - Skip if last scrape < 5 seconds or another scrape in progress
  * - Always keep running (restart on crash)
  */
@@ -21,16 +22,16 @@ const LOGS_DIR = '/app/scrapers/logs';
 
 // ─── Timing constants ───────────────────────────────────────────────────────
 const SCRAPE_INTERVAL_RACE_DAY = 5 * 1000;    // 5 seconds
-const SCRAPE_INTERVAL_NON_RACE_DAY = 12 * 60 * 60 * 1000; // 12 hours
+const MIN_INTERVAL_NON_RACE_DAY = 12 * 60 * 60 * 1000; // 12 hours between scrapes
+const HOURLY_WAKE = 60 * 60 * 1000;           // wake every hour to re-check
 const SCRAPE_COOLDOWN = 5 * 1000;              // Skip if < 5s since last
-const RACE_DAY_CHECK_HOUR = 12;               // Check if race day at noon
 
 // ─── State ─────────────────────────────────────────────────────────────────
-let lastScrapeTime = 0;
+let lastScrapeTime = 0; // 0 = never scraped; cooldown check is skipped when 0
 let isScraping = false;
 let finishedRaces = new Set();  // races that have results - never scrape again
 let raceScratched = {};                 // race_id -> [scratched horse nos]
-// No persistent schedule state needed — scrapeCycle schedules itself via scheduleNext()
+// No persistent schedule state needed — maybeScrape schedules itself via scheduleNext()
 
 let scheduledTimeout = null;
 let logStream = null;
@@ -67,13 +68,13 @@ async function getMongo() {
 }
 
 // ─── Check if today is a race day ─────────────────────────────────────────
+// ─── Check if today is a race day ─────────────────────────────────────────
+// Returns true ONLY if today has races in DB (not tomorrow)
 async function isRaceDay() {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   
   try {
-
-    
     const db = await getMongo();
     const fixtures = await db.collection('fixtures')
       .find({ date: today, scrape_status: 'completed' })
@@ -85,7 +86,7 @@ async function isRaceDay() {
       return { isRaceDay: true, venue: fixtures[0].venue, raceCount: fixtures[0].race_count };
     }
     
-    // Also check tomorrow
+    // Log tomorrow info only for awareness, but don't treat as race day yet
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toISOString().split('T')[0];
@@ -96,7 +97,6 @@ async function isRaceDay() {
     
     if (tomorrowFixtures.length > 0 && now.getHours() >= 12) {
       log(`[${now.toLocaleTimeString()}] 📅 Tomorrow is race day (${tomorrowFixtures[0].venue})`);
-      return { isRaceDay: true, venue: tomorrowFixtures[0].venue, raceCount: tomorrowFixtures[0].race_count };
     }
     
     return { isRaceDay: false };
@@ -107,13 +107,12 @@ async function isRaceDay() {
 }
 
 // ─── Get races for today ────────────────────────────────────────────────────
-async function getTodayRaces() {
+// Accepts pre-checked raceDayResult to skip redundant isRaceDay() call
+async function getTodayRaces(raceDayResult) {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   
   try {
-
-    
     const db = await getMongo();
     const fixtures = await db.collection('fixtures')
       .find({ date: today, scrape_status: 'completed' })
@@ -125,7 +124,6 @@ async function getTodayRaces() {
     const fixture = fixtures[0];
     const allRaces = Array.from({ length: fixture.race_count }, (_, i) => i + 1);
     
-    // Filter out already finished races
     const unfinished = allRaces.filter(no => {
       const raceId = buildRaceId(today, fixture.venue, no);
       return !finishedRaces.has(raceId);
@@ -467,33 +465,51 @@ async function sessionEnd(races) {
   }
 }
 
-// ─── Main scrape cycle ─────────────────────────────────────────────────────
-async function scrapeCycle() {
+// ─── Hourly wake decision ───────────────────────────────────────────────────
+// Wakes every hour, decides whether to actually scrape based on race day & 12h rule
+async function maybeScrape() {
   const now = Date.now();
   
-  // Skip if another scrape in progress
-  if (isScraping) {
-    log(`[${new Date().toLocaleTimeString()}] ⏳ Scrape in progress, skipping...`);
-    return;
-  }
+  // Skip if another scrape in progress or cooldown not elapsed (allow if never scraped: lastScrapeTime=0)
+  if (isScraping) return;
+  if (lastScrapeTime > 0 && now - lastScrapeTime < SCRAPE_COOLDOWN) return;
   
-  // Skip if cooldown not elapsed
-  if (now - lastScrapeTime < SCRAPE_COOLDOWN) {
-    return;
-  }
+  // Check if today is a race day (single DB call)
+  const { isRaceDay: raceDayResult } = await isRaceDay().catch(e => {
+    log(`[${new Date().toLocaleTimeString()}] ⚠️  isRaceDay failed: ${e.message}`);
+    return { isRaceDay: false };
+  });
   
+  if (raceDayResult) {
+    // Race day → scrape immediately, then poll every 5s
+    await doScrape(raceDayResult);
+    scheduleNext(SCRAPE_INTERVAL_RACE_DAY);
+  } else {
+    // Non-race day → only scrape if > 12h since last
+    const elapsed = now - lastScrapeTime;
+    if (elapsed >= MIN_INTERVAL_NON_RACE_DAY) {
+      const hoursSince = lastScrapeTime === 0 ? 'never' : `${Math.round(elapsed / 3600000)}h`;
+      log(`[${new Date().toLocaleTimeString()}] ⏰ Non-race day, ${hoursSince} since last → fetching once`);
+      await doScrape(raceDayResult);
+    }
+    scheduleNext(HOURLY_WAKE);
+  }
+}
+
+// ─── Actual scrape (no scheduling) ─────────────────────────────────────────
+async function doScrape(raceDayResult) {
   isScraping = true;
   const startTime = Date.now();
   const today = new Date().toISOString().split('T')[0];
   
   try {
-    const raceInfo = await getTodayRaces();
+    // Use pre-checked race day result (avoid redundant DB call)
+    const raceInfo = await getTodayRaces(raceDayResult);
     
     if (!raceInfo) {
-      log(`[${new Date().toLocaleTimeString()}] 📅 No race today, sleeping 12h`);
+      log(`[${new Date().toLocaleTimeString()}] 📅 No race today`);
       isScraping = false;
-      lastScrapeTime = now;
-      scheduleNext(SCRAPE_INTERVAL_NON_RACE_DAY);
+      lastScrapeTime = Date.now();
       return;
     }
     
@@ -501,16 +517,13 @@ async function scrapeCycle() {
     const finished = total - races.length;
     log(`[${new Date().toLocaleTimeString()}] 🚀 Scraping ${venue} races [${races.join(', ')}]${finished > 0 ? ` (${finished} finished)` : ''}`);
     
-    // Session start
     await sessionStart(races.map(r => ({ race_id: buildRaceId(today, venue, r) })));
-    
     const results = await scrapeAllRaces(today, venue, races, total);
     
     if (results.length === 0) {
       log(`[${new Date().toLocaleTimeString()}] ❌ No data`);
     } else {
       log(`[${new Date().toLocaleTimeString()}] ✅ Scraped ${results.length} races in ${Date.now() - startTime}ms`);
-      
       await saveToMongoDB(results);
       await broadcastBatch(results, races.map(r => buildRaceId(today, venue, r)));
     }
@@ -518,21 +531,17 @@ async function scrapeCycle() {
     lastScrapeTime = Date.now();
     isScraping = false;
     
-    // Schedule next based on whether it's still race day
-    scheduleNext(SCRAPE_INTERVAL_RACE_DAY);
-    
   } catch (e) {
     console.error(`[${new Date().toLocaleTimeString()}] ❌ Error: ${e.message}`);
     isScraping = false;
     lastScrapeTime = Date.now();
-    scheduleNext(SCRAPE_INTERVAL_RACE_DAY);
   }
 }
 
 // ─── Schedule next run ─────────────────────────────────────────────────────
 function scheduleNext(interval) {
   if (scheduledTimeout) clearTimeout(scheduledTimeout);
-  scheduledTimeout = setTimeout(scrapeCycle, interval);
+  scheduledTimeout = setTimeout(maybeScrape, interval);
 }
 
 // ─── Graceful shutdown ─────────────────────────────────────────────────────
@@ -554,14 +563,21 @@ async function main() {
 ╔══════════════════════════════════════════════════════╗
 ║   🏇 HKJC Odds Collector - Smart Schedule           ║
 ╠══════════════════════════════════════════════════════╣
-║   Race day:     every 5 seconds                     ║
-║   Non-race day: every 12 hours                      ║
+║   Wake every hour to check race day status          ║
+║   Race day:     scrape every 5 seconds              ║
+║   Non-race day: scrape once if > 12h since last     ║
 ║   Skip if:     < 5s since last or scrape in prog   ║
 ╚══════════════════════════════════════════════════════╝
   `);
   
-  // Initial scrape — scheduleNext() inside scrapeCycle handles all rescheduling
-  await scrapeCycle();
+  // Start hourly wake cycle — await first check, then keep event loop alive
+  try {
+    await maybeScrape();
+  } catch (e) {
+    log(`[${new Date().toLocaleTimeString()}] ⚠️  maybeScrape crashed: ${e.message}`);
+  }
+  // Keep-alive heartbeat (prevents Node from exiting if no timers pending)
+  setInterval(() => {}, 25 * 60 * 60 * 1000);
 }
 
 main().catch(e => {
