@@ -199,14 +199,19 @@ class RaceCardScraper:
                     if dist == 0:
                         continue
 
+                    # postTime 是真正的比賽日（用 input race_date 不可靠，
+                    # 因為 World Pool / 補抓時 input date ≠ actual race date）
+                    actual_post_time = race.get("postTime", "")
+                    actual_race_date = actual_post_time[:10]  # "2026-04-04"
+
                     race_meta = {
                         "race_no": race_no,
-                        "race_date": race_date,
+                        "race_date": actual_race_date,
                         "venue": venue,
                         "distance": dist,
                         "race_name_en": race.get("raceName_en", ""),
                         "race_name_ch": race.get("raceName_ch", ""),
-                        "post_time": race.get("postTime", ""),
+                        "post_time": actual_post_time,
                         "rating_type": race.get("ratingType", ""),
                         "race_track": (
                             race.get("raceTrack", {}).get("description_en", "")
