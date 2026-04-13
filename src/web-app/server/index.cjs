@@ -221,8 +221,31 @@ app.get('/api/racecards', async (req, res) => {
     return res.status(400).json({error: 'date required'});
   }
   
-  const query = { race_date: date };
-  if (venue) query.venue = venue;
+  // World Pool race name keywords (must exclude these even if race_type field is missing)
+  const wpKeywords = ['world pool', 'worldpool', '全球匯合彩池', '全球彩池'];
+  const buildQuery = (date, venue, includeWorldPool) => {
+    const base = { race_date: date };
+    if (venue) base.venue = venue;
+    if (!includeWorldPool) {
+      // Filter out world_pool by race_type OR by race name keywords (for old records)
+      base.$and = [
+        {
+          $or: [
+            { race_type: 'local' },           // new records: explicitly local
+            { race_type: { $exists: false } } // old records without race_type field
+          ]
+        },
+        {
+          $nor: wpKeywords.flatMap(kw => [
+            { race_name_en: { $regex: kw, $options: 'i' } },
+            { race_name_ch: { $regex: kw, $options: 'i' } }
+          ])
+        }
+      ];
+    }
+    return base;
+  };
+  const query = buildQuery(date, venue, !!req.query.include_worldpool);
   
   const racecards = await db.collection('racecards')
     .find(query)

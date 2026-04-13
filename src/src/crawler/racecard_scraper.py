@@ -277,6 +277,40 @@ class RaceCardScraper:
         logger.info(f"   ✅ Scraped {len(racecards)} races")
         return racecards
 
+    # World Pool race name keywords (case-insensitive)
+    _WP_KEYWORDS = [
+        # English
+        "world pool", "worldpool",
+        # Chinese
+        "全球匯合彩池", "全球彩池",
+        # International markers
+        "international", "overseas",
+        # Explicit country prefixes in race names
+        "australia", "(aus)", "(nz)", "(uk)", "(ire)",
+        "澳洲", "紐西蘭", "英國", "愛爾蘭",
+        # World Pool-specific names
+        "co trophy", "co. trophy",
+        # Known World Pool race names (2026-04-08, 2026-04-12 etc.)
+        "chairman", "chairman's", "chairman's quality",
+        "doncaster", "don caster",
+        "derby", "打吡",
+        "卡賓會", "育馬", "史密夫",
+        "唐加士打", "貝堯", "baaqar",
+        "鄉郊",
+    ]
+
+    def _detect_race_type(self, race_name_en: str, race_name_ch: str) -> str:
+        """
+        Detect whether a race is a World Pool (overseas/international) race.
+        Uses race name keywords as the primary signal.
+        Returns 'world_pool' or 'local'.
+        """
+        combined = f"{race_name_en} {race_name_ch}".lower()
+        for kw in self._WP_KEYWORDS:
+            if kw.lower() in combined:
+                return "world_pool"
+        return "local"
+
     def save_to_mongodb(self, racecards: List[Dict]) -> bool:
         """Save race cards to MongoDB. Matches original interface."""
         if not racecards:
@@ -289,13 +323,25 @@ class RaceCardScraper:
                 race_id = (
                     f"{rc['race_date'].replace('-', '_')}_{rc['venue']}_{rc['race_no']}"
                 )
-                doc = {**rc, "race_id": race_id, "scrape_at": datetime.now()}
+                # Detect race_type from race name keywords
+                race_type = self._detect_race_type(
+                    rc.get("race_name_en", ""),
+                    rc.get("race_name_ch", "")
+                )
+                doc = {
+                    **rc,
+                    "race_id": race_id,
+                    "race_type": race_type,
+                    "scrape_at": datetime.now(),
+                }
                 # Upsert each race
                 collection.update_one(
                     {"race_id": race_id}, {"$set": doc}, upsert=True
                 )
+                if race_type == "world_pool":
+                    logger.info(f"   🌍 World Pool detected: R{rc['race_no']} — {rc.get('race_name_ch', '')}")
                 count += 1
-            logger.info(f"   💾 Saved {count} races to MongoDB")
+            logger.info(f"   💾 Saved {count} races to MongoDB (race_type set)")
             return True
         except Exception as e:
             logger.error(f"   ❌ MongoDB save failed: {e}")
