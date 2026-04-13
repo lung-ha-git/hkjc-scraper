@@ -301,8 +301,13 @@ class RaceCardScraper:
         # 2026-04-11 World Pool races
         "香港賽馬會全球匯合彩池",  # 精確中文名
         # 2026-04-04 World Pool races
-        "葉健士公開賽",  # 會跟 "葉健士" 精確匹配
+        "葉健士公開賽",  # The Quokka Cup (Perth, World Pool)
         "澳洲盃",        # 澳洲盃 (World Pool)
+        # 2026-04-08 Australian WP races
+        "鄉郊",          # Country Championships (Australia)
+        "育馬",          # Sires' Produce (Australia)
+        "史密夫",        # T J Smith Stakes (Australia)
+        "貝堯",          # P J Bell Stakes (Australia)
     ]
 
     def _detect_race_type(self, race_name_en: str, race_name_ch: str) -> str:
