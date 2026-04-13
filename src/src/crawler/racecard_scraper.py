@@ -283,25 +283,26 @@ class RaceCardScraper:
         return racecards
 
     # World Pool race name keywords (case-insensitive)
+    # ⚠️ 只用精確匹配的關鍵字，避免誤殺同名本地賽
+    # 例如 "Chairman's Trophy" 是本地賽，不能用 "chairman"
     _WP_KEYWORDS = [
-        # English
+        # Explicit World Pool branding
         "world pool", "worldpool",
-        # Chinese
         "全球匯合彩池", "全球彩池",
-        # International markers
-        "international", "overseas",
-        # Explicit country prefixes in race names
+        # Country-specific keywords in race name
         "australia", "(aus)", "(nz)", "(uk)", "(ire)",
         "澳洲", "紐西蘭", "英國", "愛爾蘭",
-        # World Pool-specific names
+        # World Pool specific race names (精確匹配)
         "co trophy", "co. trophy",
-        # Known World Pool race names (2026-04-08, 2026-04-12 etc.)
-        "chairman", "chairman's", "chairman's quality",
-        "doncaster", "don caster",
-        "derby", "打吡",
-        "卡賓會", "育馬", "史密夫",
-        "唐加士打", "貝堯", "baaqar",
-        "鄉郊",
+        # 2026-04-08 World Pool races
+        "chairman's quality",  # 主席讓賽 (World Pool)
+        "doncaster",           # 唐加士打一哩賽 (World Pool)
+        "baaqar",              # Baaqar Stakes (World Pool)
+        # 2026-04-11 World Pool races
+        "香港賽馬會全球匯合彩池",  # 精確中文名
+        # 2026-04-04 World Pool races
+        "葉健士公開賽",  # 會跟 "葉健士" 精確匹配
+        "澳洲盃",        # 澳洲盃 (World Pool)
     ]
 
     def _detect_race_type(self, race_name_en: str, race_name_ch: str) -> str:
