@@ -15,10 +15,11 @@ kanban_plugin: '{"columns":["待處理","進行中","已完成","已驗證","需
 
 ## 已驗證
 
-- [x] [[TASK-015|TASK-015: Webapp 顯示跑道資料]] #已驗證 #The_Debugger #Dev_Alpha #High
-- [x] [[TASK-016|TASK-016: 修復 Webapp 不明時間格式 `上午：08:10...`]] #已驗證 #The_Debugger #Dev_Alpha #Medium
-- [x] [[TASK-017|TASK-017: Webapp 增加開跑時間（從 WebSocket 獲取）]] #已驗證 #The_Debugger #Dev_Alpha #High
-- [x] [[TASK-018|TASK-018: Webapp 增加賠率更新時間]] #已驗證 #The_Debugger #Dev_Alpha #Medium
+- [x] [[TASK-019|TASK-019: 🐛 Bugfix — Web App 顯示錯誤排位表（World Pool 賽事混入）]] #已驗證 #Dev_Alpha #The_Debugger #High
+- [x] [[TASK-015|TASK-015: Webapp 顯示跑道資料]] #已驗證 #已測試 #The_Tester #The_Debugger #Dev_Alpha #High
+- [x] [[TASK-016|TASK-016: 修復 Webapp 不明時間格式 `上午：08:10...`]] #已驗證 #已測試 #The_Tester #The_Debugger #Dev_Alpha #Medium
+- [x] [[TASK-017|TASK-017: Webapp 增加開跑時間（從 WebSocket 獲取）]] #已驗證 #已測試 #The_Tester #The_Debugger #Dev_Alpha #High
+- [x] [[TASK-018|TASK-018: Webapp 增加賠率更新時間]] #已驗證 #已測試 #The_Tester #The_Debugger #Dev_Alpha #Medium
 - [x] [[TASK-010|TASK-010: Odds Collector Log 重新實作 + 驗證完整功能]] #已驗證 #The_Debugger #High
 - [x] [[TASK-012|TASK-012: 修復 Scraper `isRaceDay` ReferenceError]] #已驗證 #Dev_Alpha #High
 - [x] [[TASK-013|TASK-013: API Server 啟動時預加載 Odds Cache]] #已驗證 #Dev_Alpha #High
