@@ -300,6 +300,12 @@ class RaceCardScraper:
         "baaqar",              # Baaqar Stakes (World Pool)
         # 2026-04-11 World Pool races
         "香港賽馬會全球匯合彩池",  # 精確中文名
+        "悉尼盃",          # Sydney Cup (Australia)
+        "藍寶石",          # Sapphire Stakes (Australia)
+        "南太平洋",        # South Pacific Classic (Australia)
+        "珀斯",            # Perth races (Percy Sykes, etc)
+        "皇治",            # Royal Sovereign Stakes (Australia)
+        "決賽",            # Championships Finals (Australia)
         # 2026-04-04 World Pool races
         "葉健士公開賽",  # The Quokka Cup (Perth, World Pool)
         "澳洲盃",        # 澳洲盃 (World Pool)
