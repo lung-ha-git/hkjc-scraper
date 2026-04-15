@@ -1,0 +1,106 @@
+----------------------------------------------------------------------
+Ran 11 tests in 0.160s
+
+OK
+
+======================================================================
+  🧪 HKJC FIELD CONSISTENCY TESTS
+  Testing: FixtureScraper → sync_fixtures → racecards → odds
+======================================================================
+
+======================================================================
+  FIELD CONSISTENCY TEST REPORT — 2026-04-15 17:47:53
+======================================================================
+
+  Total:  13  |  ✅ Passed: 13  |  ❌ Failed: 0
+
+  ✅ PASS  FixtureScraper (active) uses 'date' field for output dict
+         → 'date': date_str: True, 'race_date': bug: False
+  ✅ PASS  crawler/fixture_scraper.py uses 'date' (not 'race_date')
+         → ✅ OK
+  ✅ PASS  src/crawler/fixture_scraper.py uses 'date' (not 'race_date')
+         → ✅ OK
+  ✅ PASS  sync_fixtures uses fixture.get('date') for reading
+         → ✅ Uses 'date'
+  ✅ PASS  sync_fixtures reads 'date' (not 'race_date') from scraper output
+         → get('date'): True, get('race_date'): False
+  ✅ PASS  sync_fixtures writes 'date' as MongoDB field key
+         → "date": race_date in source: True
+  ✅ PASS  daily_pipeline.py accesses fixture['date'] (5x) vs fixture['race_date'] (0x)
+         → date: 5, race_date: 0
+  ✅ PASS  odds_collector.js reads fixtures['date'] (source not accessible from host)
+         → ⚠️  Source in container — manual check required
+  ✅ PASS  racecard_scraper uses 'race_no' field name
+         → race_no: True, raceNo bug: False
+  ✅ PASS  racecards pipeline stores with 'race_date' field
+         → Uses race_date for race-level documents ✅
+  ✅ PASS  Multiple venues per date: collector query finds correct venue
+         → Found 1 fixture(s) for 2026-04-08 HV
+  ✅ PASS  Round-trip: scraper['date'] → sync_fixtures → MongoDB fixtures['date']
+         → Correct value: '2026-04-15' | Buggy value: 'None'
+  ✅ PASS  Round-trip catches bug: fixture.get('race_date') would be None
+         → fixture.get('race_date') = None ← THIS IS THE BUG
+
+======================================================================
+  END OF REPORT
+======================================================================
+
+
+✅ ALL 13 TESTS PASSED — safe to commit
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.046s
+
+OK
+
+======================================================================
+  🧪 HKJC WEBAPP API TESTS
+  Testing: /api/health, /api/fixtures, /api/racecards, /api/races
+======================================================================
+
+======================================================================
+  WEBAPP API TEST REPORT — 2026-04-15 17:47:53
+======================================================================
+
+  Total:  16  |  ✅ Passed: 0  |  ❌ Failed: 16
+
+  ❌ FAIL  /api/health returns 200 with {ok: 1}
+         → status=None, data=None
+  ❌ FAIL  Webapp server reachable
+         → <urlopen error [Errno 61] Connection refused>
+  ❌ FAIL  Fixtures have 'date' or 'race_date' field
+         → No data
+  ❌ FAIL  /api/fixtures?type=past returns 200
+         → status=None, count=N/A
+  ❌ FAIL  /api/fixtures returns 200 with list
+         → status=None, type=NoneType
+  ❌ FAIL  /api/fixtures?type=upcoming handles empty gracefully
+         → status=None
+  ❌ FAIL  Racecards horses check
+         → No racecards data (status=None)
+  ❌ FAIL  /api/racecards requires date parameter (400 without)
+         → status=None (expected 400)
+  ❌ FAIL  Venue consistency check
+         → No racecards data
+  ❌ FAIL  /api/racecards?date=2026-04-15&venue=HV returns data
+         → status=None, keys=<class 'NoneType'>
+  ❌ FAIL  /api/races returns 200 with list
+         → status=None, type=NoneType
+  ❌ FAIL  /api/jersey/H436 returns image/gif for known horse
+         → <urlopen error [Errno 61] Connection refused>
+  ❌ FAIL  /api/jersey/:id for unknown horse returns 404 or null
+         → status=None
+  ❌ FAIL  API fixtures date field check
+         → No data
+  ❌ FAIL  API racecards schema check
+         → No data
+  ❌ FAIL  Missing date param returns HTTP 400
+         → status=None (expected 400)
+
+======================================================================
+  END OF REPORT
+======================================================================
+
+
+❌ 16 test(s) FAILED
+
