@@ -196,20 +196,30 @@ app.get('/api/jersey/:horseId', async (req, res) => {
 app.get('/api/fixtures', async (req, res) => {
   const { mode = 'upcoming' } = req.query; // 'upcoming', 'past', or 'all'
   const today = new Date().toISOString().split('T')[0];
-  
+
+  // Support both old schema (date field) and new schema (race_date field)
   let query = {};
   if (mode === 'upcoming') {
-    query = { date: { $gte: today } };
+    query = { $or: [{ date: { $gte: today } }, { race_date: { $gte: today } }] };
   } else if (mode === 'past') {
-    query = { date: { $lt: today } };
+    query = { $or: [{ date: { $lt: today } }, { race_date: { $lt: today } }] };
   }
-  
+
+  // Normalize: project date/race_date -> normalizedDate for consistent sorting
+  // Keep original fields intact; add normalizedDate for sort key
+  const sortKey = mode === 'past' ? -1 : 1;
   const fixtures = await db.collection('fixtures')
-    .find(query)
-    .sort({ date: mode === 'past' ? -1 : 1 })
-    .limit(20)
+    .aggregate([
+      { $match: query },
+      { $addFields: {
+        normalizedDate: { $ifNull: ['$date', '$race_date'] }
+      }},
+      { $sort: { normalizedDate: sortKey } },
+      { $limit: 20 },
+      { $project: { normalizedDate: 0 } }
+    ])
     .toArray();
-  
+
   res.json(fixtures);
 });
 
@@ -221,8 +231,31 @@ app.get('/api/racecards', async (req, res) => {
     return res.status(400).json({error: 'date required'});
   }
   
-  const query = { race_date: date };
-  if (venue) query.venue = venue;
+  // World Pool race name keywords (must exclude these even if race_type field is missing)
+  const wpKeywords = ['world pool', 'worldpool', '全球匯合彩池', '全球彩池'];
+  const buildQuery = (date, venue, includeWorldPool) => {
+    const base = { race_date: date };
+    if (venue) base.venue = venue;
+    if (!includeWorldPool) {
+      // Filter out world_pool by race_type OR by race name keywords (for old records)
+      base.$and = [
+        {
+          $or: [
+            { race_type: 'local' },           // new records: explicitly local
+            { race_type: { $exists: false } } // old records without race_type field
+          ]
+        },
+        {
+          $nor: wpKeywords.flatMap(kw => [
+            { race_name_en: { $regex: kw, $options: 'i' } },
+            { race_name_ch: { $regex: kw, $options: 'i' } }
+          ])
+        }
+      ];
+    }
+    return base;
+  };
+  const query = buildQuery(date, venue, !!req.query.include_worldpool);
   
   const racecards = await db.collection('racecards')
     .find(query)
@@ -844,7 +877,7 @@ app.get('/api/models/download/:filename', (req, res) => {
 });
 
 // ─── Logs download API ─────────────────────────────────────────────────────────
-const PIPELINE_LOGS_DIR = '/app/logs/pipeline';
+const PIPELINE_LOGS_DIR = '/app/logs/pipeline/pipeline';
 const ODDS_LOGS_DIR = '/app/scrapers/logs';
 
 // List all available logs
