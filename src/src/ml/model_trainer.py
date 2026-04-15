@@ -30,6 +30,8 @@ except ImportError:
 
 from src.ml.training_data import TrainingDataBuilder
 from src.database.connection import DatabaseConnection
+import joblib, os
+from datetime import datetime
 from src.utils import logger
 
 
@@ -383,11 +385,32 @@ def main():
         end_date="2026-03-01"
     )
     
+    # Save models
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    base = "/app/models/checkpoints"
+    os.makedirs(base, exist_ok=True)
+
+    if place_model:
+        place_path = f"{base}/place_{ts}.pkl"
+        joblib.dump(place_model, place_path)
+        print(f"Place model saved: {place_path}")
+        active_place = "/app/xgb_model_place.pkl"
+        joblib.dump(place_model, active_place)
+        print(f"Active Place model: {active_place}")
+
+    if win_model:
+        win_path = f"{base}/win_{ts}.pkl"
+        joblib.dump(win_model, win_path)
+        print(f"Win model saved: {win_path}")
+        active_win = "/app/xgb_model_win.pkl"
+        joblib.dump(win_model, active_win)
+        print(f"Active Win model: {active_win}")
+
     print("\n" + "="*60)
     print("Training Complete!")
     print("="*60)
-    print(f"\nPlace Model Accuracy: {place_results.get('accuracy', 0):.3f}")
-    print(f"Win Model Accuracy: {win_results.get('accuracy', 0):.3f}")
+    print(f"Place Model AUC: {place_results.get('auc', 0):.3f} | Accuracy: {place_results.get('accuracy', 0):.3f}")
+    print(f"Win Model AUC:    {win_results.get('auc', 0):.3f} | Accuracy: {win_results.get('accuracy', 0):.3f}")
     
     return place_model, win_model, place_results, win_results
 
