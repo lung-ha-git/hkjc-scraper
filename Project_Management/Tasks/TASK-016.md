@@ -1,21 +1,28 @@
 ---
 task_id: TASK-016
-status: 已完成
+status: 已測試
 priority: Medium
 assignee: Dev_Alpha
 reviewer: The_Debugger
+tester: The_Tester
 created: 2026-04-01
 started: 
 completed: 2026-04-01 
-verified: 
+verified: 2026-04-01
+tested: 2026-04-03
 tags:
-  - 已完成
+  - 已測試
   - Dev_Alpha
+  - The_Tester
 verified: 2026-04-01
 reviewer_notes: |
   ✅ 驗收標準 1-2 全部滿足：怪異時間文字已移除，無替代顯示
   ✅ Bug fix 精準，直接刪除目標 JSX
   → 移至「已驗證」
+tester_notes: |
+  ✅ 靜態審查 S-01~S-03 全部 Pass
+  ✅ `📡 上午：08:10...` 代碼已完全移除（搜尋全文件無結果）
+  ✅ 連線狀態由 TASK-018 🟢/🔴 統一處理
 ---
 
 # TASK-016: 移除 WebSocket 連線時長顯示 `📡 上午：08:10...`

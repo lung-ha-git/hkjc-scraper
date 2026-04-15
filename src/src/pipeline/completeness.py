@@ -41,7 +41,7 @@ def get_recent_horse_ids(days_back: int = 30) -> Set[str]:
         start_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
         
         entries = list(db.db["racecard_entries"].find(
-            {"race_date": {"$gte": start_date}},
+            {"date": {"$gte": start_date}},
             {"hkjc_horse_id": 1}
         ))
         

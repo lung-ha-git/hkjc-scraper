@@ -279,6 +279,12 @@ class RaceCardScraper:
         await context.close()
 
         racecards.sort(key=lambda r: r["race_no"])
+
+        # Ensure every card has a race_id (needed for upsert by callers)
+        for rc in racecards:
+            if "race_id" not in rc:
+                rc["race_id"] = f"{rc.get('race_date', '').replace('-', '_')}_{rc.get('venue', '')}_{rc.get('race_no', '')}"
+
         logger.info(f"   ✅ Scraped {len(racecards)} races")
         return racecards
 

@@ -1,21 +1,30 @@
 ---
 task_id: TASK-017
-status: 已完成
+status: 已測試
 priority: High
 assignee: Dev_Alpha
 reviewer: The_Debugger
+tester: The_Tester
 created: 2026-04-01
 started: 
 completed: 2026-04-01 
-verified: 
+verified: 2026-04-01
+tested: 2026-04-03
 tags:
-  - 已完成
+  - 已測試
   - Dev_Alpha
+  - The_Tester
 verified: 2026-04-01
 reviewer_notes: |
   ✅ 驗收標準 1-4 全部滿足：桌面/手機顯示、格式統一「⏱ 14:30」、臨近高亮
   ✅ 利用現有 /api/racecards 的 race_time，無需新增 API
   → 移至「已驗證」
+tester_notes: |
+  ✅ 靜態審查 S-01~S-07 全部 Pass
+  ✅ raceTimeStr 正確格式化 post_time (HH:MM)
+  ✅ isRaceTimeNear 正確判斷 < 5 分鐘臨近
+  ✅ API 驗證 post_time: "2026-03-29T12:45:00+08:00" 存在
+  ✅ Desktop/Mobile 兩處皆有顯示
 ---
 
 # TASK-017: Webapp 增加開跑時間（從 WebSocket 獲取）

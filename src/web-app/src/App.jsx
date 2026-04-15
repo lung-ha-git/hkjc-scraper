@@ -197,12 +197,16 @@ function App() {
     try {
       const res = await axios.get('/api/fixtures');
       if (!res.data || res.data.length === 0) { setLoading(false); return; }
-      
+
+      // Normalize: support both old (date) and new (race_date) API schemas
+      const normalize = (f) => ({ ...f, date: f.date ?? f.race_date });
+      const normalized = res.data.map(normalize);
+
       // FIX: Check each individual (date, venue) fixture for local races
       // Also detect World Pool-only dates so we can skip them
-      const fixturesToTry = res.data.slice(0, 8); // {date, venue} pairs
+      const fixturesToTry = normalized.slice(0, 8); // {date, venue} pairs
       const results = await Promise.all(
-        fixturesToTry.map(fix => 
+        fixturesToTry.map(fix =>
           // First check WITH world_pool to see if this date has ANY races (local + wp)
           axios.get(`/api/racecards?date=${fix.date}&venue=${fix.venue}&include_worldpool=true`).then(r => ({
             fixture: fix,
@@ -231,8 +235,8 @@ function App() {
           console.log(`[fetchFixtures] No local races — World Pool-only dates: ${wpDates.join(', ')}`);
         }
         // Fallback to first fixture (will show empty state for WP-only date)
-        setFixtures([res.data[0]]);
-        setSelectedFixture(res.data[0]);
+        setFixtures([normalized[0]]);
+        setSelectedFixture(normalized[0]);
       }
       setLoading(false);
     } catch (error) {

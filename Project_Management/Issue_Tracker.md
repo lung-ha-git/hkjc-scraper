@@ -1738,3 +1738,82 @@ TASK-004 從 **需重做** → **已驗證** (2026-03-27 23:22)
 | 日期 | 更新內容 |
 |------|----------|
 | 2026-04-03 22:10 | 完成 TASK-015~018 靜態審查，功能測試通過（The_Tester）|
+
+---
+
+## 測試任務 #2026-04-13-01：Kanban 心跳檢查 — 2026-04-13 17:10
+
+### 任務資訊
+| 欄位 | 內容 |
+|------|------|
+| 觸發 | Cron Job 15分鐘心跳檢查 |
+| Tester | The_Tester |
+| 檢查時間 | 2026-04-13 17:10 (Asia/Hong_Kong) |
+| 狀態 | ✅ **No test tasks pending** — 所有 Task 已驗證，Issue 全數關閉 |
+
+---
+
+### 一、已驗證欄位任務清單（複查）
+
+| # | Task | 驗證人 | Priority | 測試狀態 |
+|---|------|--------|----------|----------|
+| 1 | TASK-001: Feature Document & Technical Guide | Dev_Alpha | Medium | ✅ 已驗證 |
+| 2 | TASK-002: Docker 化 HKJC 專案 | Dev_Alpha | High | ✅ 已驗證 |
+| 3 | TASK-003: Docker 安裝與起始文檔 | The_Tester | High | ✅ 已驗證 |
+| 4 | TASK-004: Pipeline Cron Job 驗證 | The_Debugger | High | ✅ 已驗證 (IT-006 修復後) |
+| 5 | TASK-005: Cloudflare Tunnel (horse.fatlung.com) | Dev_Alpha | High | ✅ 已驗證 |
+| 6 | TASK-006: sync_past_race_results 修復 | The_Debugger | High | ✅ 已驗證 |
+| 7 | TASK-007: predict API Feature Mismatch (19→29) | The_Debugger | High | ✅ 已驗證 |
+| 8 | TASK-008: odds-collector 加入 Docker | The_Brain | High | ✅ 已驗證 |
+| 9 | TASK-009: Team Check Cron Log Accumulation | Dev_Alpha | Medium | ✅ 已驗證 |
+| 10 | TASK-010: Odds Collector Log 重新實作 | The_Debugger | High | ✅ 已驗證 |
+| 11 | TASK-011: Pipeline Cron Job 未運行調查 | The_Debugger | High | ✅ 已驗證 |
+| 12 | TASK-012: 修復 Scraper isRaceDay ReferenceError | Dev_Alpha | High | ✅ 已驗證 |
+| 13 | TASK-013: API Server 啟動時預加載 Odds Cache | Dev_Alpha | High | ✅ 已驗證 |
+| 14 | TASK-014: API Server 預加載 Odds Cache（預防重啟後失效）| Dev_Alpha | High | ✅ 已驗證 |
+| 15 | TASK-015: Webapp 顯示跑道資料 | The_Tester | High | ✅ 已驗證 |
+| 16 | TASK-016: 修復 Webapp 不明時間格式 | The_Tester | Medium | ✅ 已驗證 |
+| 17 | TASK-017: Webapp 增加開跑時間 | The_Tester | High | ✅ 已驗證 |
+| 18 | TASK-018: Webapp 增加連線狀態及最後更新時間 | The_Tester | Medium | ✅ 已驗證 |
+| 19 | TASK-019: Webapp 顯示錯誤排位表（World Pool）| Dev_Alpha / The_Debugger | High | ✅ 已驗證 |
+| 20 | TASK-020: Pipeline 添加 --force-racecards 參數 | Dev_Alpha | High | ✅ 已驗證 |
+
+---
+
+### 二、Issue 狀態總結
+
+| Issue # | 描述 | 狀態 |
+|---------|------|------|
+| IT-001 | Feature Document checkbox 未同步 | ✅ 已修復 |
+| IT-002 | Technical Guide 缺少 .env 說明 | ✅ 已修復 |
+| IT-003 | 目錄結構未 100% 驗證 | ✅ 已驗證 |
+| IT-004 | docker-compose.yml 靜態審查 | ✅ 已驗證 |
+| IT-005 | Docker Desktop 未安裝 | ✅ 已解決 |
+| IT-006 | TASK-004 Cron Job 未運行 | ✅ 已修復 (根本原因: /etc/cron.d/ 格式錯誤) |
+| IT-007 | Webapp 評分顯示錯誤 (rating_change → rating) | ✅ 已修復 |
+| IT-008 | API 缺少 xgboost 套件 | ✅ 已修復 |
+| IT-009 | Odds Collector 無法自動調度 | ✅ 已修復 |
+| IT-010 | 模型下載功能 | ✅ 已完成 |
+
+**全部 10 個 Issue 已關閉 ✅**
+
+---
+
+### 三、Kanban 欄位狀態
+
+| 欄位 | 數量 | 狀態 |
+|------|------|------|
+| 待處理 | 0 | ✅ 無待處理任務 |
+| 進行中 | 0 | ✅ 無進行中任務 |
+| 已完成 | 0 | ✅ 無待 Code Review 任務 |
+| 已驗證 | 20 | ✅ 全部 20 個 Task 已驗證 |
+| 需重做 | 0 | ✅ 無需重做任務 |
+
+---
+
+### 四、歷史記錄
+
+| 日期 | 更新內容 |
+|------|----------|
+| 2026-04-03 22:10 | 完成 TASK-015~018 靜態審查，功能測試通過（The_Tester）|
+| 2026-04-13 17:10 | 心跳檢查：全部 20 個 Task 已驗證，10 個 Issue 全數關閉，團隊無阻塞項目 |

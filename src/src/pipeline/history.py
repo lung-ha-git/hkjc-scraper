@@ -154,13 +154,13 @@ def get_race_gaps(days: int = 30) -> List[Dict]:
     
     # Get all fixtures in range
     fixtures = list(db.db["fixtures"].find({
-        "race_date": {"$gte": start_date}
+        "date": {"$gte": start_date}
     }))
     
     gaps = []
     
     for fixture in fixtures:
-        race_date = fixture["race_date"]
+        race_date = fixture["date"]  # Canonical field: "date"
         venue = fixture["venue"]
         expected = fixture.get("race_count", 8)
         

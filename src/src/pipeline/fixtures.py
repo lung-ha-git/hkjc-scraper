@@ -51,11 +51,11 @@ async def sync_fixtures(months: List[tuple] = None) -> int:
             fixtures = await scraper.parse_month(year, month)
             
             for fixture in fixtures:
-                race_date = fixture.get("race_date")
+                race_date = fixture.get("date")  # Canonical field: "date"
                 venue = fixture.get("venue")
                 
                 fixture_doc = {
-                    "date": race_date,  # Canonical field: "date"
+                    "date": race_date,
                     "venue": venue,
                     "race_count": fixture.get("race_count", 12),
                     "first_race_time": fixture.get("first_race_time"),

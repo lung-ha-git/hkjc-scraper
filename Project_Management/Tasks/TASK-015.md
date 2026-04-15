@@ -1,21 +1,28 @@
 ---
 task_id: TASK-015
-status: 已完成
+status: 已測試
 priority: High
 assignee: Dev_Alpha
 reviewer: The_Debugger
+tester: The_Tester
 created: 2026-04-01
 started: 
 completed: 2026-04-01 
-verified: 
+verified: 2026-04-01
+tested: 2026-04-03
 tags:
-  - 已完成
+  - 已測試
   - Dev_Alpha
+  - The_Tester
 verified: 2026-04-01
 reviewer_notes: |
   ✅ 驗收標準 1-3 全部滿足：桌面版顯示跑道代碼、手機版顯示、無資料顯示「-」
   ✅ 代碼修改合理，使用現有 API 欄位
   → 移至「已驗證」
+tester_notes: |
+  ✅ 靜態審查 S-01~S-05 全部 Pass
+  ✅ 功能測試：Webapp 可訪問，API 含 race_track 欄位
+  ✅ Edge Case：track_condition 為 null，race_track 回傳 "TURF"，代碼正確處理
 ---
 
 # TASK-015: Webapp 顯示跑道資料

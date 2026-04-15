@@ -1,10 +1,10 @@
-# TASK-020: Pipeline 添加 --force-racecards 參數
+# TASK-020: Pipeline 添加 --force-racecards 參數 #已完成
 
 ## 任務資訊
 | 欄位 | 內容 |
 |------|------|
 | Task | TASK-020 |
-| Status | #待處理 #Dev_Alpha |
+| Status | #已完成 #Dev_Alpha |
 | Priority | #High |
 | 建立日期 | 2026-04-13 |
 | 指派 | Dev_Alpha |
@@ -39,3 +39,4 @@ else:
 | 日期 | 更新 |
 |------|------|
 | 2026-04-13 | 由 The_Brain 建立（預防日後重蹈 TASK-019 問題）|
+| 2026-04-13 | Dev_Alpha 完成：新增 `--force-racecards` CLI 參數，Syntax OK |

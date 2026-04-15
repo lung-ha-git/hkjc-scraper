@@ -1,21 +1,30 @@
 ---
 task_id: TASK-018
-status: 已完成
+status: 已測試
 priority: Medium
 assignee: Dev_Alpha
 reviewer: The_Debugger
+tester: The_Tester
 created: 2026-04-01
 started: 
 completed: 2026-04-01 
-verified: 
+verified: 2026-04-01
+tested: 2026-04-03
 tags:
-  - 已完成
+  - 已測試
   - Dev_Alpha
+  - The_Tester
 verified: 2026-04-01
 reviewer_notes: |
   ✅ 驗收標準 1-4 全部滿足：桌面顯示精確秒數、綠/紅連線燈、手機同步、2分鐘警告
   ✅ 斷線處理完善，超時提示清晰
   → 移至「已驗證」
+tester_notes: |
+  ✅ 靜態審查 S-01~S-08 全部 Pass
+  ✅ Desktop: 🟢/🔴 燈 + lastUpdateLabel (HH:MM:SS) + ⚠️ stale warning
+  ✅ Mobile: 🟢/🔴 燈 + ⚠️ warning（不顯示秒數以節省空間，可接受）
+  ✅ isStale 正確判斷 > 2 分鐘無更新
+  ⚠️ Minor deviation: Mobile 不顯示秒數（節省螢幕空間），⚠️ 警告則正常顯示
 ---
 
 # TASK-018: Webapp 增加賠率更新時間

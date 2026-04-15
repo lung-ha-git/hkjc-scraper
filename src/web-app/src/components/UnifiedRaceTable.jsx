@@ -120,12 +120,14 @@ export default function UnifiedRaceTable({ predictions, currentEntries, oddsData
                 <div className={`rank rank-${p?.predicted_rank}`}>{p ? p.predicted_rank : '—'}</div>
               </td>
               <td className="ut-no">
-                <span className="horse-no-label">{entry.horse_no}</span>
-                {proxyJerseyUrl(entry.jersey_url) ? (
-                  <img src={proxyJerseyUrl(entry.jersey_url)} alt={entry.horse_no} className="ut-jersey" />
-                ) : (
-                  <div className="badge" style={{ background: color }}>{entry.horse_no}</div>
-                )}
+                <div className="ut-no-inner">
+                  <span className="horse-no-label">{entry.horse_no}</span>
+                  {proxyJerseyUrl(entry.jersey_url) ? (
+                    <img src={proxyJerseyUrl(entry.jersey_url)} alt={entry.horse_no} className="ut-jersey" />
+                  ) : (
+                    <div className="badge" style={{ background: color }}>{entry.horse_no}</div>
+                  )}
+                </div>
               </td>
               <td className="ut-name">
                 <div className="ut-horse">{entry.horse_name}{scratched ? ' ✕' : ''}</div>

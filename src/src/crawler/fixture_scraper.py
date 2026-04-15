@@ -154,7 +154,7 @@ class FixtureScraper:
                                     race_count = fixture_race_count
 
                                 race_meetings.append({
-                                    'race_date': date_str,
+                                    'date': date_str,
                                     'venue': venue,
                                     'race_count': race_count,
                                     'source_url': url,

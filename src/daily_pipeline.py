@@ -92,8 +92,9 @@ class FutureRacePipeline:
     4. 把 racecards 和 racecard_entries 存入 MongoDB
     """
     
-    def __init__(self, dry_run: bool = False):
+    def __init__(self, dry_run: bool = False, force_racecards: bool = False):
         self.dry_run = dry_run
+        self.force_racecards = force_racecards
         self.results = {
             "fixtures": 0,
             "racecards": 0,
@@ -109,18 +110,24 @@ class FutureRacePipeline:
         # Step 1: Sync fixtures
         self._sync_fixtures()
         
-        # Step 2: Get next race day
-        next_race = self._get_next_race_day()
+        # Step 2 & 3 & 4: Scrape racecards for ALL upcoming fixtures (both HV and ST)
+        # Uses scrape_next_racecards() which loops through ALL pending fixtures
+        from src.pipeline.racecards import scrape_next_racecards
+        count = asyncio.run(scrape_next_racecards())
+        self.results["racecards"] = count
         
-        if not next_race:
-            logger.warning("⚠️ 没有找到未来的比赛日")
-            return False
-        
-        # Step 3 & 4: Scrape racecards
-        self._scrape_racecards(next_race)
-        
-        # Step 5: FEAT-006 - Validate racecard entries vs odds page (only on race day)
-        self._validate_entries(next_race)
+        # Step 5: FEAT-006 - Validate racecard entries (only on race day, both HV and ST)
+        # Re-use the same fixture logic for each today fixture
+        today_str = dt.now().strftime("%Y-%m-%d")
+        db = DatabaseConnection()
+        db.connect()
+        today_fixtures = list(db.db["fixtures"].find({ 
+            "date": today_str,
+            "scrape_status": {"$in": ["completed", "race_day"]}
+        }))
+        db.disconnect()
+        for fix in today_fixtures:
+            self._validate_entries(fix)
         
         self._log_summary()
         return len(self.results.get("errors", [])) == 0
@@ -197,7 +204,9 @@ class FutureRacePipeline:
                 "venue": venue
             })
             
-            if existing >= fixture.get("race_count", 0) and fixture.get("race_count", 0) > 0:
+            if self.force_racecards:
+                logger.info(f"   🔄 --force-racecards: 強制重抓")
+            elif existing >= fixture.get("race_count", 0) and fixture.get("race_count", 0) > 0:
                 logger.info(f"   ✅ {race_date} ({venue}) 已有 {existing} 場 racecards，直接標記完成")
                 db.db["fixtures"].update_one(
                     {"date": race_date, "venue": venue},
@@ -559,14 +568,22 @@ class HistoricalOptimizationPipeline:
             return
         
         try:
+            meta = result.get("metadata", {})
+            hkjc_race_id = race_id  # Same format: 2026_04_08_HV_1
             doc = {
                 "race_id": race_id,
+                "hkjc_race_id": hkjc_race_id,
                 "race_date": race_date,
                 "venue": venue,
                 "race_no": race_no,
+                "class": meta.get("class"),
+                "distance": meta.get("distance"),
+                "track_condition": meta.get("track"),
+                "prize": meta.get("prize"),
                 "results": result.get("results"),
                 "payout": result.get("payout"),
-                "scrape_time": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat(),
+                "modified_at": datetime.now().isoformat(),
             }
             
             # UPSERT - not delete + insert!
@@ -871,6 +888,11 @@ def main():
         help="Part 2 & 3: 检查过去多少日的赛事 (default 30)"
     )
     parser.add_argument(
+        "--force-racecards",
+        action="store_true",
+        help="Part 1: 強制重新抓取 racecards（忽略現有數據）"
+    )
+    parser.add_argument(
         "--skip-sync",
         action="store_true",
         help="Part 3: 只检查不加入同步队列"
@@ -881,6 +903,7 @@ def main():
     logger.info("🚀 HKJC Daily Pipeline 启动")
     logger.info(f"   时间: {datetime.now()}")
     logger.info(f"   Dry Run: {args.dry_run}")
+    logger.info(f"   Force Racecards: {args.force_racecards}")
     logger.info(f"   Skip Training: {args.skip_training}")
 
     # Collect per-part results for MongoDB logging
@@ -890,7 +913,7 @@ def main():
 
     # Part 1: Future Race
     if args.part is None or args.part == 1:
-        future = FutureRacePipeline(dry_run=args.dry_run)
+        future = FutureRacePipeline(dry_run=args.dry_run, force_racecards=args.force_racecards)
         part_results["part1"] = {"success": future.run(), "data": future.results}
         success = part_results["part1"]["success"] and success
 
