@@ -113,6 +113,22 @@ function App() {
   // WebSocket for real-time odds
   const { oddsData, oddsHistory, connected, error: oddsError, session, scratched } = useOddsSocket(raceId);
 
+  // TASK-018: Track last odds update time
+  const [lastOddsUpdate, setLastOddsUpdate] = useState(null);
+
+  useEffect(() => {
+    if (!raceId) { setLastOddsUpdate(null); return; }
+    if (connected && !lastOddsUpdate) {
+      setLastOddsUpdate(new Date());
+    }
+  }, [connected, raceId]);
+
+  useEffect(() => {
+    if (Object.keys(oddsData || {}).length > 0) {
+      setLastOddsUpdate(new Date());
+    }
+  }, [oddsData]);
+
   // Direct history fetch for sparklines (backup when socket hook doesn't populate history)
   const [sparklineHistory, setSparklineHistory] = useState({});
 
@@ -181,21 +197,47 @@ function App() {
     try {
       const res = await axios.get('/api/fixtures');
       if (!res.data || res.data.length === 0) { setLoading(false); return; }
-      // Parallel check dates to find one with racecards
-      const datesToTry = [...new Set([
-        ...res.data.slice(0, 5).map(f => f.date)
-      ])].slice(0, 8);
+
+      // Normalize: support both old (date) and new (race_date) API schemas
+      const normalize = (f) => ({ ...f, date: f.date ?? f.race_date });
+      const normalized = res.data.map(normalize);
+
+      // FIX: Check each individual (date, venue) fixture for local races
+      // Also detect World Pool-only dates so we can skip them
+      const fixturesToTry = normalized.slice(0, 8); // {date, venue} pairs
       const results = await Promise.all(
-        datesToTry.map(d => axios.get(`/api/racecards?date=${d}`).then(r => ({
-          date: d, hasData: !!(r.data?.racecards?.length > 0)
-        })).catch(() => ({ date: d, hasData: false })))
+        fixturesToTry.map(fix =>
+          // First check WITH world_pool to see if this date has ANY races (local + wp)
+          axios.get(`/api/racecards?date=${fix.date}&venue=${fix.venue}&include_worldpool=true`).then(r => ({
+            fixture: fix,
+            hasLocalData: !!(r.data?.racecards?.length > 0),  // local races (default API filter)
+            hasAnyData: !!(r.data?.racecards?.length > 0),      // total races incl world_pool
+            racecardCount: r.data?.racecards?.length || 0,
+          })).catch(() => ({ fixture: fix, hasLocalData: false, hasAnyData: false, racecardCount: 0 }))
+        )
       );
-      const match = results.find(r => r.hasData);
-      const pick = match
-        ? res.data.find(f => f.date === match.date) || { date: match.date, venue: 'ST' }
-        : res.data[0];
-      setFixtures([pick]);
-      setSelectedFixture(pick);
+      
+      // Find first fixture with local races
+      const match = results.find(r => r.hasLocalData);
+      
+      if (match) {
+        // Found a fixture with local races
+        setFixtures([match.fixture]);
+        setSelectedFixture(match.fixture);
+      } else {
+        // No local races found at all (e.g. all upcoming dates are World Pool-only)
+        // Check if this date has World Pool races — if so, show a notice instead
+        const wpDates = results
+          .filter(r => r.hasAnyData && !r.hasLocalData)
+          .map(r => r.fixture.date);
+        
+        if (wpDates.length > 0) {
+          console.log(`[fetchFixtures] No local races — World Pool-only dates: ${wpDates.join(', ')}`);
+        }
+        // Fallback to first fixture (will show empty state for WP-only date)
+        setFixtures([normalized[0]]);
+        setSelectedFixture(normalized[0]);
+      }
       setLoading(false);
     } catch (error) {
       console.log('Error fetching fixtures:', error);
@@ -206,7 +248,10 @@ function App() {
   const fetchRacecards = async () => {
     if (!selectedFixture) return;
     try {
-      const res = await axios.get(`/api/racecards?date=${selectedFixture.date}`);
+      // Pass venue so API returns the correct venue's racecards
+      // (no venue = all venues, but we want specifically the selectedFixture's venue)
+      const url = `/api/racecards?date=${selectedFixture.date}&venue=${selectedFixture.venue}`;
+      const res = await axios.get(url);
       setRacecardData(res.data);
       if (res.data.racecards && res.data.racecards.length > 0) {
         setSelectedRaceNo(res.data.racecards[0].race_no);
@@ -369,6 +414,43 @@ function App() {
     return { type: 'color', value: JERSEY_COLORS[(horseNo - 1) % JERSEY_COLORS.length] };
   };
 
+  // ⚠️ These must be before `if (loading)` — hooks after early returns violate React rules
+  const currentRaceCards = racecardData?.racecards?.find(rc => rc.race_no === selectedRaceNo);
+  const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo) || [];
+  const activePredictions = predictions.filter(p => !scratched.includes(p.horse_no));
+
+  // TASK-017: Race time — format post_time and near-start highlight
+  const raceTimeStr = useMemo(() => {
+    const pt = currentRaceCards?.post_time;
+    if (!pt) return null;
+    const d = new Date(pt);
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }, [currentRaceCards?.post_time]);
+  const isRaceTimeNear = useMemo(() => {
+    if (!currentRaceCards?.post_time) return false;
+    const raceDateTime = new Date(currentRaceCards.post_time);
+    const diffMin = (raceDateTime - new Date()) / 60000;
+    return diffMin > 0 && diffMin < 5;
+  }, [currentRaceCards?.post_time]);
+
+  // TASK-018: Format last update time (HH:MM:SS)
+  const lastUpdateLabel = useMemo(() => {
+    if (!lastOddsUpdate) return null;
+    return lastOddsUpdate.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }, [lastOddsUpdate]);
+
+  // TASK-018: Stale warning (> 2 minutes since last update)
+  const isStale = useMemo(() => {
+    if (!lastOddsUpdate) return false;
+    return (Date.now() - lastOddsUpdate.getTime()) > 2 * 60 * 1000;
+  }, [lastOddsUpdate]);
+
+  // TASK-015: Track label
+  const trackLabel = useMemo(() => {
+    const code = currentRaceCards?.race_track;
+    return code || '-';
+  }, [currentRaceCards?.race_track]);
+
   if (loading) {
     return (
       <div className="app">
@@ -376,11 +458,6 @@ function App() {
       </div>
     );
   }
-
-  const currentRaceCards = racecardData?.racecards?.find(rc => rc.race_no === selectedRaceNo);
-  const currentEntries = racecardData?.entries?.filter(e => e.race_no === selectedRaceNo) || [];
-  // Filter predictions to exclude scratched horses
-  const activePredictions = predictions.filter(p => !scratched.includes(p.horse_no));
 
   return (
     <div className="app">
@@ -410,12 +487,19 @@ function App() {
                 <div className="race-info">
                   <span>第 {selectedRaceNo} 場</span>
                   <span>{currentRaceCards?.distance || '-'}m</span>
-                  <span>{currentRaceCards?.class || '-'}</span>
-                  {session?.started_at && (
-                    <span className="odds-service-time">
-                      📡 {fmtTime(session.started_at)}{session.finished_at ? ` – ${fmtTime(session.finished_at)}` : ' – ...'}
-                    </span>
-                  )}
+                  <span>{currentRaceCards?.class_ch || '-'}</span>
+                  {/* TASK-015: Track code + condition */}
+                  <span className="track-label">{trackLabel}</span>
+                  {/* TASK-017: Race start time */}
+                  <span className={`race-time ${isRaceTimeNear ? 'race-time-near' : ''}`}>
+                    {raceTimeStr ? `⏱ ${raceTimeStr}` : '⏱ -'}
+                  </span>
+                  {/* TASK-018: Connection status + last update time */}
+                  <span className="odds-status">
+                    {connected ? '🟢' : '🔴'}
+                    {lastUpdateLabel && <span className="last-update-time"> {lastUpdateLabel}</span>}
+                    {isStale && <span className="stale-warning"> ⚠️</span>}
+                  </span>
                 </div>
               </div>
               
@@ -664,6 +748,17 @@ function App() {
         <div className="ut-mobile-header">
           <span>第 {selectedRaceNo || '-'} 場</span>
           <span>{currentRaceCards?.distance ? `${currentRaceCards.distance}m` : ''}</span>
+          {/* TASK-015: Track code */}
+          <span className="track-label">{trackLabel}</span>
+          {/* TASK-017: Race start time */}
+          <span className={`race-time ${isRaceTimeNear ? 'race-time-near' : ''}`}>
+            {raceTimeStr ? `⏱ ${raceTimeStr}` : '⏱ -'}
+          </span>
+          {/* TASK-018: Connection indicator */}
+          <span className="odds-status">
+            {connected ? '🟢' : '🔴'}
+            {isStale && <span className="stale-warning"> ⚠️</span>}
+          </span>
           {raceConfidence != null && (
             <span className={`conf-dot ${raceConfidence > 65 ? 'high' : raceConfidence >= 55 ? 'medium' : 'low'}`}>
               信心 {raceConfidence}
