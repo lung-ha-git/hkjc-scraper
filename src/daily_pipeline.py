@@ -118,7 +118,7 @@ class FutureRacePipeline:
         
         # Step 5: FEAT-006 - Validate racecard entries (only on race day, both HV and ST)
         # Re-use the same fixture logic for each today fixture
-        today_str = dt.now().strftime("%Y-%m-%d")
+        today_str = datetime.now().strftime("%Y-%m-%d")
         db = DatabaseConnection()
         db.connect()
         today_fixtures = list(db.db["fixtures"].find({ 
@@ -236,7 +236,7 @@ class FutureRacePipeline:
                 # HKJC publishes racecards around noon the day BEFORE the race
                 # If today is race day, racecards won't appear - mark as race_day (no more retries needed)
                 from datetime import datetime as dt
-                today_str = dt.now().strftime("%Y-%m-%d")
+                today_str = datetime.now().strftime("%Y-%m-%d")
                 is_race_day = (race_date == today_str)
                 
                 if is_race_day:
@@ -276,7 +276,7 @@ class FutureRacePipeline:
         
         # Only validate on race day (when entries are finalized)
         from datetime import datetime as dt
-        today_str = dt.now().strftime("%Y-%m-%d")
+        today_str = datetime.now().strftime("%Y-%m-%d")
         is_race_day = (race_date == today_str)
         
         if not is_race_day:

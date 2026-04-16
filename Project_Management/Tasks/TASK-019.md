@@ -1,16 +1,18 @@
 ---
 task_id: TASK-019
-status: 待處理
+status: 已驗證
 priority: High
 assignee: Dev_Alpha
 reviewer: The_Debugger
 created: 2026-04-08
-started: 
-completed: 
-verified: 
+started: 2026-04-08
+completed: 2026-04-12
+verified: 2026-04-13
 tags:
-  - 待處理
+  - 已驗證
   - Dev_Alpha
+  - The_Debugger
+  - High
 ---
 
 # TASK-019: 🐛 Bugfix — Web App 顯示錯誤排位表（World Pool 賽事混入）
