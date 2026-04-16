@@ -31,8 +31,8 @@ services:
   # API 服務 (FastAPI + Python)
   api:
     build:
-      context: ./src
-      dockerfile: ../docker/api/Dockerfile
+      context: .
+      dockerfile: docker/api/Dockerfile
     container_name: hkjc-api
     restart: unless-stopped
     ports:
@@ -65,9 +65,8 @@ services:
   # 前端 Web 應用 (React + Vite)
   web:
     build:
-      context: ./src/web-app
-      dockerfile: ../../docker/web/Dockerfile
-    container_name: hkjc-web
+      context: .
+      dockerfile: docker/web/Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"

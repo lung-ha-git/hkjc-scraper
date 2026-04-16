@@ -1,0 +1,7 @@
+tunnel: 2a4be49514680cd48c40943763bea953
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: horse.fatlung.com
+    service: http://hkjc-web:80
+  - service: http_status:404
