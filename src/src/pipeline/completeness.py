@@ -32,21 +32,46 @@ CRITICAL_FIELDS_DISPLAY = [
 
 
 def get_recent_horse_ids(days_back: int = 30) -> Set[str]:
-    """Get all unique hkjc_horse_ids from racecard_entries in past N days"""
+    """Get all unique hkjc_horse_ids from racecard_entries in past N days.
+    
+    Bug fix (2026-04-16): field is 'race_date' not 'date'.
+    Also falls back to race_results for historical races (PART 2 doesn't
+    write racecard_entries for past dates).
+    """
     db = DatabaseConnection()
     if not db.connect():
         return set()
     
     try:
         start_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        ids = set()
         
+        # Source 1: racecard_entries (future races from PART 1)
+        # NOTE: field is race_date, NOT date
         entries = list(db.db["racecard_entries"].find(
-            {"date": {"$gte": start_date}},
+            {"race_date": {"$gte": start_date}},
             {"hkjc_horse_id": 1}
         ))
+        ids |= {e.get("hkjc_horse_id") for e in entries if e.get("hkjc_horse_id")}
         
-        ids = {e.get("hkjc_horse_id") for e in entries if e.get("hkjc_horse_id")}
-        logger.info(f"Found {len(ids)} unique horses from past {days_back} days")
+        # Source 2: race_results (historical races from old scraper)
+        # race_results.race_id format: "YYYY/MM/DD_VENUE_RN" → normalize to YYYY-MM-DD
+        cutoff = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        year = start_date[:4]  # e.g. "2026" (strip dash from "2026-")
+        # Must include race_id in projection to filter by date
+        results = list(db.db["race_results"].find(
+            {"race_id": {"$regex": year}},
+            {"horse_id": 1, "race_id": 1}  # include race_id for date filtering
+        ))
+        for r in results:
+            date_part = r.get("race_id", "")[:10].replace("/", "-")  # normalize
+            if date_part >= cutoff:
+                hid = r.get("horse_id")
+                if hid:
+                    ids.add(hid)
+        
+        logger.info(f"Found {len(ids)} unique horses from past {days_back} days "
+                     f"(rc_entries + race_results)")
         return ids
     
     finally:
