@@ -80,7 +80,7 @@ services:
     depends_on:
       - api
     networks:
-      - hkjc_hkjc-network
+      - hkjc-network
 
   # Odds Collector (Chromium/Playwright 爬蟲) - 永遠運行
   odds-collector:
