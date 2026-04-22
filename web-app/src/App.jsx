@@ -202,41 +202,56 @@ function App() {
       const normalize = (f) => ({ ...f, date: f.date ?? f.race_date });
       const normalized = res.data.map(normalize);
 
-      // FIX: Check each individual (date, venue) fixture for local races
+      // FIX: Check each individual (date, venue) fixture for local races AND odds data
       // Also detect World Pool-only dates so we can skip them
       const fixturesToTry = normalized.slice(0, 8); // {date, venue} pairs
       const results = await Promise.all(
         fixturesToTry.map(fix =>
           // First check WITH world_pool to see if this date has ANY races (local + wp)
-          axios.get(`/api/racecards?date=${fix.date}&venue=${fix.venue}&include_worldpool=true`).then(r => ({
-            fixture: fix,
-            hasLocalData: !!(r.data?.racecards?.length > 0),  // local races (default API filter)
-            hasAnyData: !!(r.data?.racecards?.length > 0),      // total races incl world_pool
-            racecardCount: r.data?.racecards?.length || 0,
-          })).catch(() => ({ fixture: fix, hasLocalData: false, hasAnyData: false, racecardCount: 0 }))
+          axios.get(`/api/racecards?date=${fix.date}&venue=${fix.venue}&include_worldpool=true`).then(async r => {
+            const hasLocalData = !!(r.data?.racecards?.length > 0);
+            if (!hasLocalData) return { fixture: fix, hasLocalData: false, hasOdds: false, racecardCount: 0 };
+            // FIX: Verify this fixture actually has odds data for R1
+            // ST returns racecards but has no odds — need to double-check with odds history API
+            try {
+              const oddsRes = await axios.get(`/api/odds/history/${fix.date}_${fix.venue}_R1`);
+              const hasOdds = !!(oddsRes.data?.times?.length > 0);
+              return { fixture: fix, hasLocalData: true, hasOdds, racecardCount: r.data?.racecards?.length || 0 };
+            } catch {
+              return { fixture: fix, hasLocalData: true, hasOdds: false, racecardCount: r.data?.racecards?.length || 0 };
+            }
+          }).catch(() => ({ fixture: fix, hasLocalData: false, hasOdds: false, racecardCount: 0 }))
         )
       );
       
-      // Find first fixture with local races
-      const match = results.find(r => r.hasLocalData);
+      // Find first fixture with local races AND odds data
+      const match = results.find(r => r.hasLocalData && r.hasOdds);
       
       if (match) {
-        // Found a fixture with local races
+        // Found a fixture with local races and odds
         setFixtures([match.fixture]);
         setSelectedFixture(match.fixture);
       } else {
-        // No local races found at all (e.g. all upcoming dates are World Pool-only)
-        // Check if this date has World Pool races — if so, show a notice instead
-        const wpDates = results
-          .filter(r => r.hasAnyData && !r.hasLocalData)
-          .map(r => r.fixture.date);
-        
-        if (wpDates.length > 0) {
-          console.log(`[fetchFixtures] No local races — World Pool-only dates: ${wpDates.join(', ')}`);
+        // No fixture has odds data — try local races only (fallback)
+        const localMatch = results.find(r => r.hasLocalData);
+        if (localMatch) {
+          console.log(`[fetchFixtures] No odds data found — falling back to fixture with racecards only: ${localMatch.fixture.venue}`);
+          setFixtures([localMatch.fixture]);
+          setSelectedFixture(localMatch.fixture);
+        } else {
+          // No local races found at all (e.g. all upcoming dates are World Pool-only)
+          // Check if this date has World Pool races — if so, show a notice instead
+          const wpDates = results
+            .filter(r => r.hasAnyData && !r.hasLocalData)
+            .map(r => r.fixture.date);
+          
+          if (wpDates.length > 0) {
+            console.log(`[fetchFixtures] No local races — World Pool-only dates: ${wpDates.join(', ')}`);
+          }
+          // Fallback to first fixture (will show empty state for WP-only date)
+          setFixtures([normalized[0]]);
+          setSelectedFixture(normalized[0]);
         }
-        // Fallback to first fixture (will show empty state for WP-only date)
-        setFixtures([normalized[0]]);
-        setSelectedFixture(normalized[0]);
       }
       setLoading(false);
     } catch (error) {

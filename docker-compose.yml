@@ -31,8 +31,8 @@ services:
   # API 服務 (FastAPI + Python)
   api:
     build:
-      context: ./src
-      dockerfile: ../docker/api/Dockerfile
+      context: .
+      dockerfile: docker/api/Dockerfile
     container_name: hkjc-api
     restart: unless-stopped
     ports:
@@ -65,9 +65,8 @@ services:
   # 前端 Web 應用 (React + Vite)
   web:
     build:
-      context: ./src/web-app
-      dockerfile: ../../docker/web/Dockerfile
-    container_name: hkjc-web
+      context: .
+      dockerfile: docker/web/Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"
@@ -81,7 +80,7 @@ services:
     depends_on:
       - api
     networks:
-      - hkjc-network
+      - hkjc_hkjc-network
 
   # Odds Collector (Chromium/Playwright 爬蟲) - 永遠運行
   odds-collector:
@@ -122,9 +121,6 @@ services:
       - hkjc-network
     volumes:
       - odds_logs:/app/scrapers/logs
-    # 只在賽事日手動啟動
-    profiles:
-      - race-day
 
   # Daily Pipeline (數據同步 + 模型訓練)
   pipeline:
@@ -149,6 +145,34 @@ services:
       - hkjc-network
     command: ["/bin/sh", "-c", "service cron start && tail -f /dev/null"]
 
+  # n8n Workflow Automation
+  n8n:
+    image: n8nio/n8n
+    container_name: hkjc-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678}
+      # Ollama 連線設定（macOS 用 host.docker.internal，Linux 用主機 IP）
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - N8N_AI_CONFIG_OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - TZ=Asia/Hong_Kong
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - hkjc-network
+    profiles:
+      - n8n
   # Cloudflare Tunnel
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -189,6 +213,8 @@ volumes:
   odds_logs:
     driver: local
   models_data:
+    driver: local
+  n8n_data:
     driver: local
 
 networks:
